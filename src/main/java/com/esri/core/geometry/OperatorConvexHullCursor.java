@@ -164,45 +164,61 @@ class OperatorConvexHullCursor extends GeometryCursor {
 	}
 
 	static boolean isConvex_(Geometry geom, ProgressTracker progress_tracker) {
-		if (geom.isEmpty())
+		if (geom.isEmpty()) {
+			Clipper.flags[0] = true;
 			return true; // vacuously true
+		}
 
 		Geometry.Type type = geom.getType();
 
-		if (type == Geometry.Type.Point)
+		if (type == Geometry.Type.Point) {
+			Clipper.flags[1] = true;
 			return true; // vacuously true
+		}
 
 		if (type == Geometry.Type.Envelope) {
+			Clipper.flags[2] = true;
 			Envelope envelope = (Envelope) geom;
-			if (envelope.getXMin() == envelope.getXMax() || envelope.getYMin() == envelope.getYMax())
+			if (envelope.getXMin() == envelope.getXMax() || envelope.getYMin() == envelope.getYMax()) {
+				Clipper.flags[3] = true;
 				return false;
+			}
 
 			return true;
 		}
 
 		if (MultiPath.isSegment(type.value())) {
+			Clipper.flags[4] = true;
 			Segment segment = (Segment) geom;
-			if (segment.getStartXY().equals(segment.getEndXY()))
+			if (segment.getStartXY().equals(segment.getEndXY())) {
+				Clipper.flags[5] =true;
 				return false;
+			}
 
 			return true; // true, but we will upgrade to a Polyline for the ConvexHull operation
 		}
 
 		if (type == Geometry.Type.MultiPoint) {
+			Clipper.flags[6] = true;
 			MultiPoint multi_point = (MultiPoint) geom;
 
-			if (multi_point.getPointCount() == 1)
+			if (multi_point.getPointCount() == 1) {
+				Clipper.flags[7] = true;
 				return true; // vacuously true, but we will downgrade to a Point for the ConvexHull operation
-
+			}
 			return false;
 		}
 
 		if (type == Geometry.Type.Polyline) {
+			Clipper.flags[8] = true;
 			Polyline polyline = (Polyline) geom;
 
 			if (polyline.getPathCount() == 1 && polyline.getPointCount() == 2) {
-				if (!polyline.getXY(0).equals(polyline.getXY(1)))
+				Clipper.flags[9] = true;
+				if (!polyline.getXY(0).equals(polyline.getXY(1))) {
+					Clipper.flags[10] = true;
 					return true; // vacuously true
+				}
 			}
 
 			return false; // create convex hull
@@ -210,9 +226,11 @@ class OperatorConvexHullCursor extends GeometryCursor {
 
 		Polygon polygon = (Polygon) geom;
 
-		if (polygon.getPathCount() != 1 || polygon.getPointCount() < 3)
+		if (polygon.getPathCount() != 1 || polygon.getPointCount() < 3) {
+			Clipper.flags[11] = true;
 			return false;
-
+		}
+		Clipper.flags[12] = true;
 		return ConvexHull.isPathConvex(polygon, 0, progress_tracker);
 	}
 }
