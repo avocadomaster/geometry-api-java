@@ -35,6 +35,8 @@ import java.io.Serializable;
  */
 public final class Line extends Segment implements Serializable {
 
+	public static boolean[] flags = new boolean[8];
+
 	@Override
 	public Geometry.Type getType() {
 		return Type.Line;
@@ -440,10 +442,13 @@ public final class Line extends Segment implements Serializable {
 		double vLengthError = vlength * 3 * NumberUtils.doubleEps();
 		if (vlength <= Math.max(tolerance, vLengthError)) {
 			assert (vlength != 0 || pt.isEqual(start));// probably never asserts
-			if (bExcludeExactEndPoints && vlength == 0)
-				return NumberUtils.TheNaN;
-			else
-				return 0;
+			if (bExcludeExactEndPoints && vlength == 0) {
+				flags[0]=true;
+				return NumberUtils.TheNaN; //ID:1
+			} else {
+				flags[1]=true;
+				return 0;//ID:2
+			}
 		}
 
 		Point2D end2D = getEndXY();
@@ -453,10 +458,13 @@ public final class Line extends Segment implements Serializable {
 		vLengthError = vlength * 3 * NumberUtils.doubleEps();
 		if (vlength <= Math.max(tolerance, vLengthError)) {
 			assert (vlength != 0 || pt.isEqual(end2D));// probably never asserts
-			if (bExcludeExactEndPoints && vlength == 0)
-				return NumberUtils.TheNaN;
-			else
-				return 1.0;
+			if (bExcludeExactEndPoints && vlength == 0) {
+				flags[2]=true;
+				return NumberUtils.TheNaN;//ID:3
+			}else {
+				flags[3]=true;
+				return 1.0; //ID:4
+			}
 		}
 
 		// Find a distance from the line to pt.
@@ -502,7 +510,10 @@ public final class Line extends Segment implements Serializable {
 																			// to
 																			// return
 																			// 0.
-							return 0;
+						{
+							flags[4]=true;
+							return 0; //ID:5
+						}
 					} else if (Point2D.distance(ptOnLine, end2D) <= tolerance)// the
 																				// projected
 																				// point
@@ -516,14 +527,17 @@ public final class Line extends Segment implements Serializable {
 																				// to
 																				// return
 																				// 1.0.
-						return 1.0;
-
-					return t;
+					{
+						flags[5]=true;
+						return 1.0; //ID:6
+					}
+					flags[6]=true;
+					return t; //ID:7
 				}
 			}
 		}
-
-		return NumberUtils.TheNaN;
+		flags[7]=true;
+		return NumberUtils.TheNaN; //ID:8
 	}
 
 	@Override
