@@ -51,8 +51,11 @@ public class TestJSonGeometry extends TestCase {
 		// 4326 GCS_WGS_1984
 		SpatialReference sr = SpatialReference.create(completeStr);
 		assertNotNull(sr);
-	}
-
+		int x = 0;
+		for(boolean b : Clipper.flags)
+			System.out.println("Flag " + x++ + ": " + (b ? "COVERED" : "NOT COVERED"));
+	} 
+	
 }
 
 final class HashMapClassForTesting {

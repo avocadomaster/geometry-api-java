@@ -23,13 +23,16 @@
  */
 package com.esri.core.geometry;
 
+import java.io.*;
+
 class Clipper {
 	Envelope2D m_extent;
 	EditShape m_shape;
 	int m_geometry;
 	int m_vertices_on_extent_index;
 	AttributeStreamOfInt32 m_vertices_on_extent;
-
+	public static boolean[] flags = new boolean[16];
+	
 	int checkSegmentIntersection_(Envelope2D seg_env, int side,
 			double clip_value) {
 		switch (side) {
@@ -39,28 +42,36 @@ class Clipper {
 			} else if (seg_env.xmin >= clip_value) {
 				return 1;// inside
 			} else
+			{
 				return -1; // intersects
+			}
 		case 1:
 			if (seg_env.ymin < clip_value && seg_env.ymax <= clip_value) {
 				return 0;
 			} else if (seg_env.ymin >= clip_value) {
 				return 1;
 			} else
+			{
 				return -1;
+			}
 		case 2:
 			if (seg_env.xmin >= clip_value && seg_env.xmax > clip_value) {
 				return 0;
 			} else if (seg_env.xmax <= clip_value) {
 				return 1;
 			} else
+			{
 				return -1;
+			}
 		case 3:
 			if (seg_env.ymin >= clip_value && seg_env.ymax > clip_value) {
 				return 0;
 			} else if (seg_env.ymax <= clip_value) {
 				return 1;
 			} else
+			{
 				return -1;
+			}
 		}
 		assert (false);// cannot be here
 		return 0;
@@ -981,14 +992,19 @@ class Clipper {
 
 	void fixPaths_() {
 		for (int ivert = 0, nvert = m_vertices_on_extent.size(); ivert < nvert; ivert++) {
+			flags[0] = true;
 			int vertex = m_vertices_on_extent.get(ivert);
 			if (vertex != -1)
+			{
+				flags[1] = true;
 				m_shape.setPathToVertex_(vertex, -1);
+			}
 		}
 
 		int path_count = 0;
 		int geometry_size = 0;
 		for (int path = m_shape.getFirstPath(m_geometry); path != -1;) {
+			flags[2] = true;
 			int first = m_shape.getFirstVertex(path);
 			if (first == -1 || path != m_shape.getPathFromVertex(first)) { // The
 																			// path's
@@ -1015,6 +1031,7 @@ class Clipper {
 																			// such
 																			// path
 																			// object.
+				flags[3] = true;
 				int p = path;
 				path = m_shape.getNextPath(path);
 				m_shape.setFirstVertex_(p, -1);
@@ -1025,12 +1042,14 @@ class Clipper {
 			int vertex = first;
 			int path_size = 0;
 			do {
+				flags[4] = true;
 				m_shape.setPathToVertex_(vertex, path);
 				path_size++;
 				vertex = m_shape.getNextVertex(vertex);
 			} while (vertex != first);
 
 			if (path_size <= 2) {
+				flags[5] = true;
 				int ind = m_shape.getUserIndex(first,
 						m_vertices_on_extent_index);
 				m_vertices_on_extent.set(ind, -1);
@@ -1039,6 +1058,7 @@ class Clipper {
 					ind = m_shape.getUserIndex(nv, m_vertices_on_extent_index);
 					m_vertices_on_extent.set(ind, -1);
 					m_shape.removeVertex(nv, false);
+					flags[6] = true;
 				}
 				int p = path;
 				path = m_shape.getNextPath(path);
@@ -1056,31 +1076,44 @@ class Clipper {
 		}
 
 		for (int ivert = 0, nvert = m_vertices_on_extent.size(); ivert < nvert; ivert++) {
+			flags[7] = true;
 			int vertex = m_vertices_on_extent.get(ivert);
 			if (vertex == -1)
+			{
+				flags[8] = true;
 				continue;
+			}
 			int path = m_shape.getPathFromVertex(vertex);
 			if (path != -1)
+			{
+				flags[9] = true;
 				continue;
+			}
 
 			path = m_shape.insertPath(m_geometry, -1);
 			int path_size = 0;
 			int first = vertex;
 			do {
+				flags[10] = true;
 				m_shape.setPathToVertex_(vertex, path);
 				path_size++;
 				vertex = m_shape.getNextVertex(vertex);
 			} while (vertex != first);
 
 			if (path_size <= 2) {
+				flags[11] = true;
 				int ind = m_shape.getUserIndex(first,
 						m_vertices_on_extent_index);
 				m_vertices_on_extent.set(ind, -1);
 				int nv = m_shape.removeVertex(first, false);
 				if (path_size == 2) {
+					flags[12] = true;
 					ind = m_shape.getUserIndex(nv, m_vertices_on_extent_index);
 					if (ind >= 0)
+					{
+						flags[13] = true;
 						m_vertices_on_extent.set(ind, -1);
+					}
 					else {
 						// this vertex is not on the extent.
 					}
@@ -1109,9 +1142,10 @@ class Clipper {
 		int total_point_count = 0;
 		for (int geometry = m_shape.getFirstGeometry(); geometry != -1; geometry = m_shape
 				.getNextGeometry(geometry)) {
+			flags[14] = true;
 			total_point_count += m_shape.getPointCount(geometry);
 		}
-
+		flags[15] = true;
 		m_shape.setTotalPointCount_(total_point_count);
 	}
 
