@@ -23,44 +23,67 @@
  */
 package com.esri.core.geometry;
 
+import java.io.*;
+
 class Clipper {
 	Envelope2D m_extent;
 	EditShape m_shape;
 	int m_geometry;
 	int m_vertices_on_extent_index;
 	AttributeStreamOfInt32 m_vertices_on_extent;
-
+	public static boolean[] flags = new boolean[12];
+	
 	int checkSegmentIntersection_(Envelope2D seg_env, int side,
 			double clip_value) {
 		switch (side) {
 		case 0:
 			if (seg_env.xmin < clip_value && seg_env.xmax <= clip_value) {
+				flags[0] = true;
 				return 0; // outside (or on the border)
 			} else if (seg_env.xmin >= clip_value) {
+				flags[1] = true;
 				return 1;// inside
 			} else
+			{
+				flags[2] = true;
 				return -1; // intersects
+			}
 		case 1:
 			if (seg_env.ymin < clip_value && seg_env.ymax <= clip_value) {
+				flags[3] = true;
 				return 0;
 			} else if (seg_env.ymin >= clip_value) {
+				flags[4] = true;
 				return 1;
 			} else
+			{
+				flags[5] = true;
 				return -1;
+			}
 		case 2:
 			if (seg_env.xmin >= clip_value && seg_env.xmax > clip_value) {
+				flags[6] = true;
 				return 0;
 			} else if (seg_env.xmax <= clip_value) {
+				flags[7] = true;
 				return 1;
 			} else
+			{
+				flags[8] = true;
 				return -1;
+			}
 		case 3:
 			if (seg_env.ymin >= clip_value && seg_env.ymax > clip_value) {
+				flags[9] = true;
 				return 0;
 			} else if (seg_env.ymax <= clip_value) {
+				flags[10] = true;
 				return 1;
 			} else
+			{
+				flags[11] = true;
 				return -1;
+			}
 		}
 		assert (false);// cannot be here
 		return 0;
