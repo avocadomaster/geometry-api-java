@@ -29,6 +29,7 @@ class Clipper {
 	int m_geometry;
 	int m_vertices_on_extent_index;
 	AttributeStreamOfInt32 m_vertices_on_extent;
+	public static boolean[] flags = new boolean[13];
 
 	int checkSegmentIntersection_(Envelope2D seg_env, int side,
 			double clip_value) {
