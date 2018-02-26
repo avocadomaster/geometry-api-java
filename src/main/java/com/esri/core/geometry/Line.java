@@ -35,7 +35,9 @@ import java.io.Serializable;
  */
 public final class Line extends Segment implements Serializable {
 
-	@Override
+    public static boolean[] flags = new boolean[13];
+
+    @Override
 	public Geometry.Type getType() {
 		return Type.Line;
 	}
@@ -692,33 +694,57 @@ public final class Line extends Segment implements Serializable {
 				|| line1.m_xStart == line2.m_xEnd
 				&& line1.m_yStart == line2.m_yEnd) {
 			counter++;
-			if (!bExcludeExactEndpoints)
-				return 1;
+			flags[0] = true;
+			if (!bExcludeExactEndpoints) {
+			    flags[1] = true;
+                return 1;
+            }
 		}
 
 		if (line1.m_xEnd == line2.m_xStart && line1.m_yEnd == line2.m_yStart
 				|| line1.m_xEnd == line2.m_xEnd && line1.m_yEnd == line2.m_yEnd) {
 			counter++;
-			if (counter == 2)
-				return 2; // counter == 2 means both endpoints coincide (Lines
+			flags[2] = true;
+			if (counter == 2) {
+                flags[3] = true;
+                return 2; // counter == 2 means both endpoints coincide (Lines
+            }
 							// overlap).
-			if (!bExcludeExactEndpoints)
-				return 1;
+			if (!bExcludeExactEndpoints) {
+                flags[4] = true;
+                return 1;
+            }
 		}
 
-		if (line2._isIntersectingPoint(line1.getStartXY(), tolerance, true))
-			return 1;// return true;
-		if (line2._isIntersectingPoint(line1.getEndXY(), tolerance, true))
-			return 1;// return true;
-		if (line1._isIntersectingPoint(line2.getStartXY(), tolerance, true))
-			return 1;// return true;
-		if (line1._isIntersectingPoint(line2.getEndXY(), tolerance, true))
-			return 1;// return true;
+		if (line2._isIntersectingPoint(line1.getStartXY(), tolerance, true)) {
+            flags[5] = true;
+            return 1;// return true;
+        }
+		if (line2._isIntersectingPoint(line1.getEndXY(), tolerance, true)) {
+            flags[6] = true;
+            return 1;// return true;
+        }
+		if (line1._isIntersectingPoint(line2.getStartXY(), tolerance, true)) {
+            flags[7] = true;
+            return 1;// return true;
+        }
+		if (line1._isIntersectingPoint(line2.getEndXY(), tolerance, true)) {
+            flags[8] = true;
+            return 1;// return true;
+        }
 
-		if (bExcludeExactEndpoints && (counter != 0))
-			return 0;// return false;
-
-		return _isIntersectingHelper(line1, line2) == false ? 0 : 1;
+		if (bExcludeExactEndpoints && (counter != 0)) {
+            flags[9] = true;
+            return 0;// return false;
+        }
+        flags[10] = true;
+        if (_isIntersectingHelper(line1, line2) == false) {
+            flags[11] = true;
+            return 0;
+        } else {
+            flags[12] = true;
+            return 1;
+        }
 	}
 
 	int _intersectLineLineExact(Line line1, Line line2,
