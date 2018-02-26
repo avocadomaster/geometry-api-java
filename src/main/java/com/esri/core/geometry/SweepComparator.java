@@ -598,14 +598,19 @@ class SweepComparator extends Treap.Comparator {
 
 	int compareSegments(int leftElm, int left_vertex, int right_elm,
 			int right_vertex) {
+		Clipper.flags[0] = true;
 		SimpleEdge edgeLeft = tryGetCachedEdge_(leftElm);
 		if (edgeLeft == null) {
-			if (m_vertex_1 == left_vertex)
+			Clipper.flags[1] = true;
+			if (m_vertex_1 == left_vertex) {
+				Clipper.flags[2] = true;
 				edgeLeft = m_temp_simple_edge_1;
+			}
 			else {
 				m_vertex_1 = left_vertex;
 				edgeLeft = tryCreateCachedEdge_(leftElm);
 				if (edgeLeft == null) {
+					Clipper.flags[3] = true;
 					edgeLeft = m_temp_simple_edge_1;
 					m_temp_simple_edge_1.m_value = leftElm;
 				}
@@ -616,12 +621,16 @@ class SweepComparator extends Treap.Comparator {
 
 		SimpleEdge edgeRight = tryGetCachedEdge_(right_elm);
 		if (edgeRight == null) {
-			if (m_vertex_2 == right_vertex)
+			Clipper.flags[4] = true;
+			if (m_vertex_2 == right_vertex) {
+				Clipper.flags[5] =true;
 				edgeRight = m_temp_simple_edge_2;
+			}
 			else {
 				m_vertex_2 = right_vertex;
 				edgeRight = tryCreateCachedEdge_(right_elm);
 				if (edgeRight == null) {
+					Clipper.flags[6] = true;
 					edgeRight = m_temp_simple_edge_2;
 					m_temp_simple_edge_2.m_value = right_elm;
 				}
@@ -630,26 +639,38 @@ class SweepComparator extends Treap.Comparator {
 		} else
 			m_vertex_2 = right_vertex;
 
-		if (edgeLeft.m_b_curve || edgeRight.m_b_curve)
+		if (edgeLeft.m_b_curve || edgeRight.m_b_curve) {
+			Clipper.flags[7] = true;
 			return compareSegments_(left_vertex, right_vertex, edgeLeft,
 					edgeRight);
+		}
 
 		// Usually we work with lines, so process them in the fastest way.
 		// First check - assume segments are far apart. compare x intervals
-		if (edgeLeft.m_env.vmax < edgeRight.m_env.vmin)
+		if (edgeLeft.m_env.vmax < edgeRight.m_env.vmin) {
+			Clipper.flags[8] = true;
 			return -1;
-		if (edgeRight.m_env.vmax < edgeLeft.m_env.vmin)
+		}
+		if (edgeRight.m_env.vmax < edgeLeft.m_env.vmin) {
+			Clipper.flags[9] = true;
 			return 1;
+		}
 
 		// compare case by case.
 		int kind = edgeLeft.m_b_horizontal ? 1 : 0;
 		kind |= edgeRight.m_b_horizontal ? 2 : 0;
-		if (kind == 0)// both segments are non-horizontal
+		if (kind == 0) {// both segments are non-horizontal
+			Clipper.flags[10] = true;
 			return compareNonHorizontal_(edgeLeft, edgeRight);
-		else if (kind == 1) // line_1 horizontal, line_2 is not
+		}
+		else if (kind == 1) {// line_1 horizontal, line_2 is not
+			Clipper.flags[11] = true;
 			return compareHorizontal1_(edgeLeft.m_line, edgeRight.m_line);
-		else if (kind == 2) // line_2 horizontal, line_1 is not
+		}
+		else if (kind == 2) { // line_2 horizontal, line_1 is not
+			Clipper.flags[12] = true;
 			return compareHorizontal1_(edgeRight.m_line, edgeLeft.m_line) * -1;
+		}
 		else
 			// if (kind == 3) //both horizontal
 			return compareHorizontal2_(edgeLeft.m_line, edgeRight.m_line);
