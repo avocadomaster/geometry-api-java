@@ -30,6 +30,8 @@ class Clipper {
 	int m_vertices_on_extent_index;
 	AttributeStreamOfInt32 m_vertices_on_extent;
 
+	public static boolean[] flags = new boolean[36];
+
 	int checkSegmentIntersection_(Envelope2D seg_env, int side,
 			double clip_value) {
 		switch (side) {
@@ -79,8 +81,10 @@ class Clipper {
 	MultiPath clipPolygon2_(Polygon polygon_in, double tolerance,
 			double densify_dist) {
 		// If extent is degenerate, return 0.
-		if (m_extent.getWidth() == 0 || m_extent.getHeight() == 0)
+		if (m_extent.getWidth() == 0 || m_extent.getHeight() == 0) {
+			flags[0] = true; // 0
 			return (MultiPath) polygon_in.createInstance();
+		}
 
 		Envelope2D orig_env2D = new Envelope2D();
 		polygon_in.queryLooseEnvelope(orig_env2D);
@@ -102,29 +106,34 @@ class Clipper {
 		// clip the polygon successively by each plane
 		boolean b_all_outside = false;
 		for (int iclip_plane = 0; !b_all_outside && iclip_plane < 4; iclip_plane++) {
+			flags[1] = true; // 1
 			boolean b_intersects_plane = false;
 			boolean b_axis_x = (iclip_plane & 1) != 0;
 			double clip_value = 0;
 			switch (iclip_plane) {
 			case 0:
+				flags[2] = true; // 2
 				clip_value = m_extent.xmin;
 				b_intersects_plane = orig_env2D.xmin <= clip_value
 						&& orig_env2D.xmax >= clip_value;
 				assert (b_intersects_plane || clip_value < orig_env2D.xmin);
 				break;
 			case 1:
-				clip_value = m_extent.ymin;
+				flags[3] = true; // 3
+				clip_value = m_extent.ymin; // 3
 				b_intersects_plane = orig_env2D.ymin <= clip_value
 						&& orig_env2D.ymax >= clip_value;
 				assert (b_intersects_plane || clip_value < orig_env2D.ymin);
 				break;
 			case 2:
+				flags[4] = true; // 4
 				clip_value = m_extent.xmax;
 				b_intersects_plane = orig_env2D.xmin <= clip_value
 						&& orig_env2D.xmax >= clip_value;
 				assert (b_intersects_plane || clip_value > orig_env2D.xmax);
 				break;
 			case 3:
+				flags[5] = true; // 5
 				clip_value = m_extent.ymax;
 				b_intersects_plane = orig_env2D.ymin <= clip_value
 						&& orig_env2D.ymax >= clip_value;
@@ -132,9 +141,11 @@ class Clipper {
 				break;
 			}
 
-			if (!b_intersects_plane)
+			if (!b_intersects_plane) {
+				flags[6] = true; // 6
 				continue;// Optimize for common case when only few sides of the
-							// clipper envelope intersect the geometry.
+				// clipper envelope intersect the geometry.
+			}
 
 			b_all_outside = true;
 			for (int path = m_shape.getFirstPath(m_geometry); path != -1;) {
@@ -143,8 +154,10 @@ class Clipper {
 				int first = m_shape.getFirstVertex(path);
 				int vertex = first;
 				do {
+					flags[7] = true; // 7
 					Segment segment = m_shape.getSegment(vertex);
 					if (segment == null) {
+						flags[8] = true; // 8
 						segment = line;
 						m_shape.getXY(vertex, pt_1);
 						segment.setStartXY(pt_1);
@@ -162,9 +175,11 @@ class Clipper {
 						int count = segment.intersectionWithAxis2D(b_axis_x,
 								clip_value, result_ordinates, parameters);
 						if (count > 0) {
+							flags[9] = true; // 9
 							split_count = m_shape.splitSegment(vertex,
 									parameters, count);
 						} else {
+							flags[10] = true; // 10
 							assert (count == 0);// might be -1 when the segment
 												// is almost parallel to the
 												// clip lane. Just to see this
@@ -182,11 +197,13 @@ class Clipper {
 						int split_vert = vertex;
 						int next_split_vert = m_shape.getNextVertex(split_vert);
 						for (int i = 0; i < split_count; i++) {
+							flags[11] = true; // 11
 							m_shape.getXY(split_vert, pt_1);
 							m_shape.getXY(next_split_vert, pt_2);
 
 							Segment sub_seg = m_shape.getSegment(split_vert);
 							if (sub_seg == null) {
+								flags[12] = true; // 12
 								sub_seg = line;
 								sub_seg.setStartXY(pt_1);
 								sub_seg.setEndXY(pt_2);
@@ -206,9 +223,11 @@ class Clipper {
 									double d_1 = Math.abs(pt_1.x - clip_value);
 									double d_2 = Math.abs(pt_2.x - clip_value);
 									if (d_1 < d_2) {
+										flags[13] = true; // 13
 										pt_1.x = clip_value;
 										m_shape.setXY(split_vert, pt_1);
 									} else {
+										flags[14] = true; // 14
 										pt_2.x = clip_value;
 										m_shape.setXY(next_split_vert, pt_2);
 									}
@@ -217,9 +236,11 @@ class Clipper {
 									double d_1 = Math.abs(pt_1.y - clip_value);
 									double d_2 = Math.abs(pt_2.y - clip_value);
 									if (d_1 < d_2) {
+										flags[15] = true; // 15
 										pt_1.y = clip_value;
 										m_shape.setXY(split_vert, pt_1);
 									} else {
+										flags[16] = true; // 16
 										pt_2.y = clip_value;
 										m_shape.setXY(next_split_vert, pt_2);
 									}
@@ -229,6 +250,7 @@ class Clipper {
 								// the segment.
 								sub_seg = m_shape.getSegment(split_vert);
 								if (sub_seg == null) {
+									flags[17] = true; // 17
 									sub_seg = line;
 									sub_seg.setStartXY(pt_1);
 									sub_seg.setEndXY(pt_2);
@@ -242,15 +264,20 @@ class Clipper {
 
 							int old_inside = inside;
 							inside = sub_segment_plane_intersection_status;
-							if (firstinside == -1)
+							if (firstinside == -1) {
+								flags[18] = true; // 18
 								firstinside = inside;
+							}
 
 							// add connections along the clipping plane line
 							if (old_inside == 0 && inside == 1) {
+								flags[19] = true; // 19
 								// going from outside to inside. Do nothing
 							} else if (old_inside == 1 && inside == 0) {
+								flags[20] = true; // 20
 								// going from inside to outside
 							} else if (old_inside == 0 && inside == 0) {
+								flags[21] = true; // 21
 								// staying outside
 								// remember the start point of the outside
 								// segment to be deleted.
@@ -261,6 +288,7 @@ class Clipper {
 							}
 
 							if (inside == 1) {
+								flags[22] = true; // 22
 								b_all_outside = false;
 							}
 
@@ -272,18 +300,24 @@ class Clipper {
 					}
 
 					if (split_count == 0) {
+						flags[23] = true; // 23
 						assert (seg_plane_intersection_status != -1);// cannot
 																		// happen.
 						int old_inside = inside;
 						inside = seg_plane_intersection_status;
-						if (firstinside == -1)
+						if (firstinside == -1) {
+							flags[24] = true; // 24
 							firstinside = inside;
+						}
 
 						if (old_inside == 0 && inside == 1) {
+							flags[25] = true; // 25
 							// going from outside to inside.
 						} else if (old_inside == 1 && inside == 0) {
+							flags[26] = true; // 26
 							// going from inside to outside
 						} else if (old_inside == 0 && inside == 0) {
+							flags[27] = true; // 27
 							// remember the start point of the outside segment
 							// to be deleted.
 							delete_candidates.add(vertex); // is a candidate to
@@ -291,6 +325,7 @@ class Clipper {
 						}
 
 						if (inside == 1) {
+							flags[28] = true; // 28
 							b_all_outside = false;
 						}
 
@@ -301,33 +336,43 @@ class Clipper {
 
 				if (firstinside == 0 && inside == 0) {// first vertex need to be
 														// deleted.
+
+					flags[29] = true; // 29
 					delete_candidates.add(first); // is a candidate to be
 													// deleted
 				}
 
 				for (int i = 0, n = delete_candidates.size(); i < n; i++) {
+					flags[30] = true; // 30
 					int delete_vert = delete_candidates.get(i);
 					m_shape.removeVertex(delete_vert, false);
 				}
 				delete_candidates.clear(false);
 				if (m_shape.getPathSize(path) < 3) {
+					flags[31] = true; // 31
 					path = m_shape.removePath(path);
 				} else {
+					flags[32] = true; // 32
 					path = m_shape.getNextPath(path);
 				}
 			}
 		}
 
-		if (b_all_outside)
+		if (b_all_outside) {
+			flags[33] = true; // 33
 			return (MultiPath) polygon_in.createInstance();
+		}
 
 		// After the clipping, we could have produced unwanted segment overlaps
 		// along the clipping envelope boundary.
 		// Detect and resolve that case if possible.
 		resolveBoundaryOverlaps_();
-		if (densify_dist > 0)
+		if (densify_dist > 0) {
+			flags[34] = true; // 34
 			densifyAlongClipExtent_(densify_dist);
+		}
 
+		flags[35] = true; // 35
 		return (MultiPath) m_shape.getGeometry(m_geometry);
 	}
 
