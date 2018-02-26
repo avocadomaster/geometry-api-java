@@ -784,6 +784,10 @@ public class TestWktParser extends TestCase {
 
 		currentToken = wktParser.nextToken();
 		assertTrue(currentToken == WktParser.WktToken.not_available);
+
+		int x = 0;
+		for(boolean b : Clipper.flags)
+			System.out.println("Flag " + x++ + ": " + (b ? "COVERED" : "NOT COVERED"));
 	}
 
 	@Test

@@ -30,6 +30,8 @@ class Clipper {
 	int m_vertices_on_extent_index;
 	AttributeStreamOfInt32 m_vertices_on_extent;
 
+	public static boolean[] flags = new boolean[23];
+
 	int checkSegmentIntersection_(Envelope2D seg_env, int side,
 			double clip_value) {
 		switch (side) {
@@ -1133,11 +1135,15 @@ class Clipper {
 	// corner_is_inside);
 	static Geometry clip(Geometry geometry, Envelope2D extent,
 			double tolerance, double densify_dist) {
-		if (geometry.isEmpty())
+		if (geometry.isEmpty()) {
+			flags[0] = true; // 0
 			return geometry;
+		}
 
-		if (extent.isEmpty())
+		if (extent.isEmpty()) {
+			flags[1] = true; // 1
 			return geometry.createInstance(); // return an empty geometry
+		}
 
 		int geomtype = geometry.getType().value();
 
@@ -1145,47 +1151,64 @@ class Clipper {
 		// After that we'll check the envelope intersection for the optimization
 		if (geomtype == Geometry.Type.Point.value()) {
 			Point2D pt = ((Point) geometry).getXY();
-			if (extent.contains(pt))
+			if (extent.contains(pt)) {
+				flags[2] = true; // 2
 				return geometry;
-			else
+			}
+			else {
+				flags[3] = true; // 3
 				return geometry.createInstance(); // return an empty geometry
+			}
 		} else if (geomtype == Geometry.Type.Envelope.value()) {
 			Envelope2D env = new Envelope2D();
 			geometry.queryEnvelope2D(env);
 			if (env.intersect(extent)) {
+				flags[4] = true; // 4
 				Envelope result_env = new Envelope();
 				geometry.copyTo(result_env);
 				result_env.setEnvelope2D(env);
 				return result_env;
-			} else
+			} else {
+				flags[5] = true; // 5
 				return geometry.createInstance(); // return an empty geometry
+			}
 		}
 
 		// Test the geometry envelope
 		Envelope2D env_2D = new Envelope2D();
 		geometry.queryLooseEnvelope2D(env_2D);
-		if (extent.contains(env_2D))
+		if (extent.contains(env_2D)) {
+			flags[6] = true; // 6
 			return geometry;// completely inside of bounds
-		if (!extent.isIntersecting(env_2D))
+		}
+		if (!extent.isIntersecting(env_2D)) {
+			flags[7] = true; // 7
 			return geometry.createInstance();// outside of bounds. return empty
-												// geometry.
+			// geometry.
+		}
 
 		MultiVertexGeometryImpl impl = (MultiVertexGeometryImpl) geometry
 				._getImpl();
 		GeometryAccelerators accel = impl._getAccelerators();
 		if (accel != null) {
+			flags[8] = true; // 8
 			RasterizedGeometry2D rgeom = accel.getRasterizedGeometry();
 			if (rgeom != null) {
+				flags[9] = true; // 9
 				RasterizedGeometry2D.HitType hit = rgeom
 						.queryEnvelopeInGeometry(extent);
 				if (hit == RasterizedGeometry2D.HitType.Inside) {
-					if (geomtype != Geometry.Type.Polygon.value())
+					flags[10] = true; // 10
+					if (geomtype != Geometry.Type.Polygon.value()) {
+						flags[11] = true; // 11
 						throw GeometryException.GeometryInternalError();
+					}
 
 					Polygon poly = new Polygon(geometry.getDescription());
 					poly.addEnvelope(extent, false);
 					return poly;
 				} else if (hit == RasterizedGeometry2D.HitType.Outside) {
+					flags[12] = true; // 12
 					return geometry.createInstance();// outside of bounds.
 														// return empty
 														// geometry.
@@ -1207,16 +1230,22 @@ class Clipper {
 			// multipoint.
 			int ipoints0 = 0;
 			for (int ipoints = 0; ipoints < npoints; ipoints++) {
+				flags[13] = true; // 13
 				Point2D pt = new Point2D();
 				xy.read(2 * ipoints, pt);
 
 				if (!extent.contains(pt)) {// vertex is outside of the envelope
-					if (ipoints0 == 0)
+					flags[14] = true; // 14
+					if (ipoints0 == 0) {
+						flags[15] = true; // 15
 						multi_point_out = (MultiPoint) multi_point
 								.createInstance();
+					}
 
-					if (ipoints0 < ipoints)
+					if (ipoints0 < ipoints) {
+						flags[16] = true; // 16
 						multi_point_out.add(multi_point, ipoints0, ipoints);
+					}
 
 					ipoints0 = ipoints + 1;// ipoints0 contains index of vertex
 											// right after the last clipped out
@@ -1226,21 +1255,30 @@ class Clipper {
 
 			// add the rest of the batch to the result multipoint (only if
 			// something has been already clipped out)
-			if (ipoints0 > 0)
+			if (ipoints0 > 0) {
+				flags[17] = true; // 17
 				multi_point_out.add(multi_point, ipoints0, npoints);
+			}
 
-			if (ipoints0 == 0)
+			if (ipoints0 == 0) {
+				flags[18] = true; // 18
 				return multi_point;// everything is inside, so return the input
-									// geometry
-			else
+				// geometry
+			}
+			else {
+				flags[19] = true; // 19
 				return multi_point_out;// clipping has happend, return the
-										// clipped geometry
+				// clipped geometry
+			}
 		}
 		case Geometry.GeometryType.Polygon:
+			flags[20] = true; // 20
 		case Geometry.GeometryType.Polyline:
+			flags[21] = true; // 21
 			return clipMultiPath_((MultiPath) geometry, extent, tolerance,
 					densify_dist);
 		default:
+			flags[22] = true; // 22
 			assert (false);
 			throw GeometryException.GeometryInternalError();
 		}
