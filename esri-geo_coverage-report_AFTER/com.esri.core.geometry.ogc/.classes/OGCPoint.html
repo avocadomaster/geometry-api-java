@@ -1,0 +1,194 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OGCPoint</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry.ogc</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OGCPoint (com.esri.core.geometry.ogc)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OGCPoint</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    61.5%
+  </span>
+  <span class="absValue">
+    (8/ 13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (12/ 18)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2017 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;package com.esri.core.geometry.ogc;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;import java.nio.ByteBuffer;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;import com.esri.core.geometry.GeometryEngine;
+<i>30</i>&nbsp;import com.esri.core.geometry.MultiPoint;
+<i>31</i>&nbsp;import com.esri.core.geometry.Operator;
+<i>32</i>&nbsp;import com.esri.core.geometry.OperatorExportToWkb;
+<i>33</i>&nbsp;import com.esri.core.geometry.OperatorFactoryLocal;
+<i>34</i>&nbsp;import com.esri.core.geometry.Point;
+<i>35</i>&nbsp;import com.esri.core.geometry.SpatialReference;
+<i>36</i>&nbsp;import com.esri.core.geometry.WkbExportFlags;
+<i>37</i>&nbsp;import com.esri.core.geometry.WktExportFlags;
+<i>38</i>&nbsp;
+<i>39</i>&nbsp;public final class OGCPoint extends OGCGeometry {
+<b class="fc"><i>40</i>&nbsp;	public OGCPoint(Point pt, SpatialReference sr) {</b>
+<b class="fc"><i>41</i>&nbsp;		point = pt;</b>
+<b class="fc"><i>42</i>&nbsp;		esriSR = sr;</b>
+<b class="fc"><i>43</i>&nbsp;	}</b>
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;	@Override
+<i>46</i>&nbsp;	public String asText() {
+<b class="fc"><i>47</i>&nbsp;		return GeometryEngine.geometryToWkt(getEsriGeometry(),</b>
+<i>48</i>&nbsp;				WktExportFlags.wktExportPoint);
+<i>49</i>&nbsp;	}
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;	@Override
+<i>52</i>&nbsp;	public ByteBuffer asBinary() {
+<i>53</i>&nbsp;		OperatorExportToWkb op = (OperatorExportToWkb) OperatorFactoryLocal
+<b class="fc"><i>54</i>&nbsp;				.getInstance().getOperator(Operator.Type.ExportToWkb);</b>
+<b class="fc"><i>55</i>&nbsp;		return op.execute(WkbExportFlags.wkbExportPoint, getEsriGeometry(),</b>
+<i>56</i>&nbsp;				null);
+<i>57</i>&nbsp;	}
+<i>58</i>&nbsp;
+<i>59</i>&nbsp;	public double X() {
+<b class="fc"><i>60</i>&nbsp;		return point.getX();</b>
+<i>61</i>&nbsp;	}
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;	public double Y() {
+<b class="fc"><i>64</i>&nbsp;		return point.getY();</b>
+<i>65</i>&nbsp;	}
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;	public double Z() {
+<b class="nc"><i>68</i>&nbsp;		return point.getZ();</b>
+<i>69</i>&nbsp;	}
+<i>70</i>&nbsp;
+<i>71</i>&nbsp;	public double M() {
+<b class="nc"><i>72</i>&nbsp;		return point.getM();</b>
+<i>73</i>&nbsp;	}
+<i>74</i>&nbsp;
+<i>75</i>&nbsp;	@Override
+<i>76</i>&nbsp;	public String geometryType() {
+<b class="fc"><i>77</i>&nbsp;		return &quot;Point&quot;;</b>
+<i>78</i>&nbsp;	}
+<i>79</i>&nbsp;
+<i>80</i>&nbsp;	@Override
+<i>81</i>&nbsp;	public OGCGeometry boundary() {
+<b class="nc"><i>82</i>&nbsp;		return new OGCMultiPoint(new MultiPoint(getEsriGeometry()</b>
+<b class="nc"><i>83</i>&nbsp;				.getDescription()), esriSR);// return empty point</b>
+<i>84</i>&nbsp;	}
+<i>85</i>&nbsp;
+<i>86</i>&nbsp;	@Override
+<i>87</i>&nbsp;	public OGCGeometry locateAlong(double mValue) {
+<i>88</i>&nbsp;		// TODO Auto-generated method stub
+<b class="nc"><i>89</i>&nbsp;		throw new UnsupportedOperationException();</b>
+<i>90</i>&nbsp;	}
+<i>91</i>&nbsp;
+<i>92</i>&nbsp;	@Override
+<i>93</i>&nbsp;	public OGCGeometry locateBetween(double mStart, double mEnd) {
+<i>94</i>&nbsp;		// TODO Auto-generated method stub
+<b class="nc"><i>95</i>&nbsp;		throw new UnsupportedOperationException();</b>
+<i>96</i>&nbsp;	}
+<i>97</i>&nbsp;
+<i>98</i>&nbsp;	@Override
+<i>99</i>&nbsp;	public com.esri.core.geometry.Geometry getEsriGeometry() {
+<b class="fc"><i>100</i>&nbsp;		return point;</b>
+<i>101</i>&nbsp;	}
+<i>102</i>&nbsp;	
+<i>103</i>&nbsp;	@Override
+<i>104</i>&nbsp;	public OGCGeometry convertToMulti()
+<i>105</i>&nbsp;	{
+<b class="fc"><i>106</i>&nbsp;		return new OGCMultiPoint(point, esriSR);</b>
+<i>107</i>&nbsp;	}
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;	com.esri.core.geometry.Point point;
+<i>110</i>&nbsp;
+<i>111</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

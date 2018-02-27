@@ -1,0 +1,1485 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OperatorImportFromGeoJsonLocal</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OperatorImportFromGeoJsonLocal (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OperatorImportFromGeoJsonLocal</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (4/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.2%
+  </span>
+  <span class="absValue">
+    (13/ 16)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">OperatorImportFromGeoJsonLocal$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">OperatorImportFromGeoJsonLocal$GeoJsonType</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">OperatorImportFromGeoJsonLocal$GeoJsonValues</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/ 7)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">OperatorImportFromGeoJsonLocal$OperatorImportFromGeoJsonHelper</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/ 21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (544/ 635)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    93.8%
+  </span>
+  <span class="absValue">
+    (30/ 32)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (568/ 663)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;import com.esri.core.geometry.VertexDescription.Semantics;
+<i>27</i>&nbsp;import java.util.ArrayList;
+<i>28</i>&nbsp;
+<b class="fc"><i>29</i>&nbsp;class OperatorImportFromGeoJsonLocal extends OperatorImportFromGeoJson {</b>
+<b class="fc"><i>30</i>&nbsp;	static enum GeoJsonType {</b>
+<b class="fc"><i>31</i>&nbsp;		Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection;</b>
+<i>32</i>&nbsp;		static GeoJsonType fromGeoJsonValue(int v) {
+<b class="nc"><i>33</i>&nbsp;			return GeoJsonType.values()[v - 1];</b>
+<i>34</i>&nbsp;		}
+<i>35</i>&nbsp;		
+<i>36</i>&nbsp;		public int geogsjonvalue() {
+<b class="fc"><i>37</i>&nbsp;			return ordinal() + 1;</b>
+<i>38</i>&nbsp;		}
+<i>39</i>&nbsp;	};
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;	static interface GeoJsonValues {
+<b class="fc"><i>42</i>&nbsp;		public final static int Point = GeoJsonType.Point.geogsjonvalue();</b>
+<b class="fc"><i>43</i>&nbsp;		public final static int LineString = GeoJsonType.LineString.geogsjonvalue();</b>
+<b class="fc"><i>44</i>&nbsp;		public final static int Polygon = GeoJsonType.Polygon.geogsjonvalue();</b>
+<b class="fc"><i>45</i>&nbsp;		public final static int MultiPoint = GeoJsonType.MultiPoint.geogsjonvalue();</b>
+<b class="fc"><i>46</i>&nbsp;		public final static int MultiLineString = GeoJsonType.MultiLineString.geogsjonvalue();</b>
+<b class="fc"><i>47</i>&nbsp;		public final static int MultiPolygon = GeoJsonType.MultiPolygon.geogsjonvalue();</b>
+<b class="fc"><i>48</i>&nbsp;		public final static int GeometryCollection = GeoJsonType.GeometryCollection.geogsjonvalue();</b>
+<i>49</i>&nbsp;	};
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;	@Override
+<i>52</i>&nbsp;	public MapGeometry execute(int importFlags, Geometry.Type type,
+<i>53</i>&nbsp;			String geoJsonString, ProgressTracker progressTracker)
+<i>54</i>&nbsp;			throws JsonGeometryException {
+<b class="fc"><i>55</i>&nbsp;		MapGeometry map_geometry = OperatorImportFromGeoJsonHelper</b>
+<b class="fc"><i>56</i>&nbsp;				.importFromGeoJson(importFlags, type, JsonParserReader.createFromString(geoJsonString), progressTracker, false);</b>
+<b class="fc"><i>57</i>&nbsp;		return map_geometry;</b>
+<i>58</i>&nbsp;	}
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;	@Override
+<i>61</i>&nbsp;	public MapGeometry execute(int importFlags, Geometry.Type type,
+<i>62</i>&nbsp;			JsonReader jsonReader, ProgressTracker progressTracker)
+<i>63</i>&nbsp;			throws JsonGeometryException {
+<b class="nc"><i>64</i>&nbsp;		if (jsonReader == null)</b>
+<b class="nc"><i>65</i>&nbsp;			return null;</b>
+<i>66</i>&nbsp;
+<b class="nc"><i>67</i>&nbsp;		return OperatorImportFromGeoJsonHelper.importFromGeoJson(importFlags,</b>
+<i>68</i>&nbsp;				type, jsonReader, progressTracker, false);
+<i>69</i>&nbsp;	}
+<i>70</i>&nbsp;
+<b class="fc"><i>71</i>&nbsp;	static final class OperatorImportFromGeoJsonHelper {</b>
+<i>72</i>&nbsp;
+<i>73</i>&nbsp;		private AttributeStreamOfDbl m_position;
+<i>74</i>&nbsp;		private AttributeStreamOfDbl m_zs;
+<i>75</i>&nbsp;		private AttributeStreamOfDbl m_ms;
+<i>76</i>&nbsp;		private AttributeStreamOfInt32 m_paths;
+<i>77</i>&nbsp;		private AttributeStreamOfInt8 m_path_flags;
+<i>78</i>&nbsp;		private Point m_point; // special case for Points
+<i>79</i>&nbsp;		private boolean m_b_has_zs;
+<i>80</i>&nbsp;		private boolean m_b_has_ms;
+<i>81</i>&nbsp;		private boolean m_b_has_zs_known;
+<i>82</i>&nbsp;		private boolean m_b_has_ms_known;
+<i>83</i>&nbsp;		private int m_num_embeddings;
+<i>84</i>&nbsp;
+<i>85</i>&nbsp;		int m_ogcType;
+<i>86</i>&nbsp;
+<b class="fc"><i>87</i>&nbsp;		OperatorImportFromGeoJsonHelper() {</b>
+<b class="fc"><i>88</i>&nbsp;			m_position = null;</b>
+<b class="fc"><i>89</i>&nbsp;			m_zs = null;</b>
+<b class="fc"><i>90</i>&nbsp;			m_ms = null;</b>
+<b class="fc"><i>91</i>&nbsp;			m_paths = null;</b>
+<b class="fc"><i>92</i>&nbsp;			m_path_flags = null;</b>
+<b class="fc"><i>93</i>&nbsp;			m_point = null;</b>
+<b class="fc"><i>94</i>&nbsp;			m_b_has_zs = false;</b>
+<b class="fc"><i>95</i>&nbsp;			m_b_has_ms = false;</b>
+<b class="fc"><i>96</i>&nbsp;			m_b_has_zs_known = false;</b>
+<b class="fc"><i>97</i>&nbsp;			m_b_has_ms_known = false;</b>
+<b class="fc"><i>98</i>&nbsp;			m_num_embeddings = 0;</b>
+<b class="fc"><i>99</i>&nbsp;			m_ogcType = 0;</b>
+<b class="fc"><i>100</i>&nbsp;		}</b>
+<i>101</i>&nbsp;
+<i>102</i>&nbsp;		static MapGeometry importFromGeoJson(int importFlags,
+<i>103</i>&nbsp;				Geometry.Type type, JsonReader json_iterator,
+<i>104</i>&nbsp;				ProgressTracker progress_tracker, boolean skip_coordinates)
+<i>105</i>&nbsp;				throws JsonGeometryException {
+<b class="fc"><i>106</i>&nbsp;			OperatorImportFromGeoJsonHelper geo_json_helper = new OperatorImportFromGeoJsonHelper();</b>
+<b class="fc"><i>107</i>&nbsp;			MapOGCStructure ms = geo_json_helper.importFromGeoJsonImpl(</b>
+<i>108</i>&nbsp;					importFlags, type, json_iterator, progress_tracker,
+<i>109</i>&nbsp;					skip_coordinates, 0);
+<i>110</i>&nbsp;			
+<b class="fc"><i>111</i>&nbsp;			if (geo_json_helper.m_ogcType == GeoJsonValues.GeometryCollection &amp;&amp; !skip_coordinates)</b>
+<b class="nc"><i>112</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>113</i>&nbsp;
+<b class="fc"><i>114</i>&nbsp;			return new MapGeometry(ms.m_ogcStructure.m_geometry,</b>
+<i>115</i>&nbsp;					ms.m_spatialReference);
+<i>116</i>&nbsp;		}
+<i>117</i>&nbsp;
+<i>118</i>&nbsp;		static MapOGCStructure importFromGeoJson(int importFlags,
+<i>119</i>&nbsp;				Geometry.Type type, JsonReader json_iterator,
+<i>120</i>&nbsp;				ProgressTracker progress_tracker, boolean skip_coordinates,
+<i>121</i>&nbsp;				int recursion) throws JsonGeometryException {
+<b class="fc"><i>122</i>&nbsp;			OperatorImportFromGeoJsonHelper geo_json_helper = new OperatorImportFromGeoJsonHelper();</b>
+<b class="fc"><i>123</i>&nbsp;			MapOGCStructure ms = geo_json_helper.importFromGeoJsonImpl(</b>
+<i>124</i>&nbsp;					importFlags, type, json_iterator, progress_tracker,
+<i>125</i>&nbsp;					skip_coordinates, recursion);
+<i>126</i>&nbsp;			
+<b class="fc"><i>127</i>&nbsp;			if (geo_json_helper.m_ogcType == GeoJsonValues.GeometryCollection &amp;&amp; !skip_coordinates)</b>
+<b class="nc"><i>128</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>129</i>&nbsp;
+<b class="fc"><i>130</i>&nbsp;			return ms;</b>
+<i>131</i>&nbsp;		}		
+<i>132</i>&nbsp;		MapOGCStructure importFromGeoJsonImpl(int importFlags,
+<i>133</i>&nbsp;				Geometry.Type type, JsonReader json_iterator,
+<i>134</i>&nbsp;				ProgressTracker progress_tracker, boolean skip_coordinates,
+<i>135</i>&nbsp;				int recursion) throws JsonGeometryException {
+<b class="fc"><i>136</i>&nbsp;			OperatorImportFromGeoJsonHelper geo_json_helper = this;</b>
+<b class="fc"><i>137</i>&nbsp;			boolean b_type_found = false;</b>
+<b class="fc"><i>138</i>&nbsp;			boolean b_coordinates_found = false;</b>
+<b class="fc"><i>139</i>&nbsp;			boolean b_crs_found = false;</b>
+<b class="fc"><i>140</i>&nbsp;			boolean b_crsURN_found = false;</b>
+<b class="fc"><i>141</i>&nbsp;			boolean b_geometry_collection = false;</b>
+<b class="fc"><i>142</i>&nbsp;			boolean b_geometries_found = false;</b>
+<b class="fc"><i>143</i>&nbsp;			GeoJsonType geo_json_type = null;</b>
+<i>144</i>&nbsp;
+<b class="fc"><i>145</i>&nbsp;			Geometry geometry = null;</b>
+<b class="fc"><i>146</i>&nbsp;			SpatialReference spatial_reference = null;</b>
+<i>147</i>&nbsp;
+<i>148</i>&nbsp;			JsonReader.Token current_token;
+<b class="fc"><i>149</i>&nbsp;			String field_name = null;</b>
+<b class="fc"><i>150</i>&nbsp;			MapOGCStructure ms = new MapOGCStructure();</b>
+<i>151</i>&nbsp;
+<b class="fc"><i>152</i>&nbsp;			while ((current_token = json_iterator.nextToken()) != JsonReader.Token.END_OBJECT) {</b>
+<b class="fc"><i>153</i>&nbsp;				field_name = json_iterator.currentString();</b>
+<i>154</i>&nbsp;
+<b class="fc"><i>155</i>&nbsp;				if (field_name.equals(&quot;type&quot;)) {</b>
+<b class="fc"><i>156</i>&nbsp;					if (b_type_found) {</b>
+<b class="nc"><i>157</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>158</i>&nbsp;					}
+<i>159</i>&nbsp;
+<b class="fc"><i>160</i>&nbsp;					b_type_found = true;</b>
+<b class="fc"><i>161</i>&nbsp;					current_token = json_iterator.nextToken();</b>
+<i>162</i>&nbsp;
+<b class="fc"><i>163</i>&nbsp;					if (current_token != JsonReader.Token.VALUE_STRING) {</b>
+<b class="nc"><i>164</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>165</i>&nbsp;					}
+<i>166</i>&nbsp;
+<b class="fc"><i>167</i>&nbsp;					String s = json_iterator.currentString();</b>
+<i>168</i>&nbsp;					try {
+<b class="fc"><i>169</i>&nbsp;						geo_json_type = GeoJsonType.valueOf(s);</b>
+<b class="nc"><i>170</i>&nbsp;					} catch (Exception ex) {</b>
+<b class="nc"><i>171</i>&nbsp;						throw new JsonGeometryException(s);</b>
+<b class="fc"><i>172</i>&nbsp;					}</b>
+<i>173</i>&nbsp;					
+<b class="fc"><i>174</i>&nbsp;					if (geo_json_type == GeoJsonType.GeometryCollection) {</b>
+<b class="fc"><i>175</i>&nbsp;						if (type != Geometry.Type.Unknown)</b>
+<b class="nc"><i>176</i>&nbsp;							throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>177</i>&nbsp;						
+<b class="fc"><i>178</i>&nbsp;						b_geometry_collection = true;</b>
+<i>179</i>&nbsp;					}
+<b class="fc"><i>180</i>&nbsp;				} else if (field_name.equals(&quot;geometries&quot;))	{</b>
+<b class="fc"><i>181</i>&nbsp;					b_geometries_found = true;</b>
+<b class="fc"><i>182</i>&nbsp;					if (type != Geometry.Type.Unknown)</b>
+<b class="nc"><i>183</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>184</i>&nbsp;					
+<b class="fc"><i>185</i>&nbsp;					if (recursion &gt; 10) {</b>
+<b class="nc"><i>186</i>&nbsp;						throw new JsonGeometryException(&quot;deep geojson&quot;);</b>
+<i>187</i>&nbsp;					}
+<i>188</i>&nbsp;					
+<b class="fc"><i>189</i>&nbsp;					if (skip_coordinates) {</b>
+<b class="nc"><i>190</i>&nbsp;						json_iterator.skipChildren();</b>
+<i>191</i>&nbsp;					} else {
+<b class="fc"><i>192</i>&nbsp;						current_token = json_iterator.nextToken();</b>
+<i>193</i>&nbsp;	
+<b class="fc"><i>194</i>&nbsp;						ms.m_ogcStructure = new OGCStructure();</b>
+<b class="fc"><i>195</i>&nbsp;						ms.m_ogcStructure.m_type = GeoJsonValues.GeometryCollection;</b>
+<b class="fc"><i>196</i>&nbsp;						ms.m_ogcStructure.m_structures = new ArrayList&lt;OGCStructure&gt;(</b>
+<i>197</i>&nbsp;								0);
+<i>198</i>&nbsp;	
+<b class="fc"><i>199</i>&nbsp;						if (current_token == JsonReader.Token.START_ARRAY) {</b>
+<b class="fc"><i>200</i>&nbsp;							current_token = json_iterator.nextToken();</b>
+<b class="fc"><i>201</i>&nbsp;							while (current_token != JsonReader.Token.END_ARRAY) {</b>
+<b class="fc"><i>202</i>&nbsp;								MapOGCStructure child = importFromGeoJson(</b>
+<i>203</i>&nbsp;										importFlags
+<i>204</i>&nbsp;												| GeoJsonImportFlags.geoJsonImportSkipCRS,
+<i>205</i>&nbsp;										type, json_iterator,
+<i>206</i>&nbsp;										progress_tracker, false,
+<i>207</i>&nbsp;										recursion + 1);
+<b class="fc"><i>208</i>&nbsp;								ms.m_ogcStructure.m_structures</b>
+<b class="fc"><i>209</i>&nbsp;										.add(child.m_ogcStructure);</b>
+<i>210</i>&nbsp;								
+<b class="fc"><i>211</i>&nbsp;								current_token = json_iterator.nextToken();</b>
+<b class="fc"><i>212</i>&nbsp;							}</b>
+<i>213</i>&nbsp;						}
+<b class="nc"><i>214</i>&nbsp;						else if (current_token != JsonReader.Token.VALUE_NULL) {</b>
+<b class="nc"><i>215</i>&nbsp;							throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>216</i>&nbsp;						}
+<i>217</i>&nbsp;					}
+<b class="fc"><i>218</i>&nbsp;				} else if (field_name.equals(&quot;coordinates&quot;)) {</b>
+<i>219</i>&nbsp;					
+<b class="fc"><i>220</i>&nbsp;					if (b_coordinates_found) {</b>
+<b class="nc"><i>221</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>222</i>&nbsp;					}
+<i>223</i>&nbsp;
+<b class="fc"><i>224</i>&nbsp;					b_coordinates_found = true;</b>
+<b class="fc"><i>225</i>&nbsp;					current_token = json_iterator.nextToken();</b>
+<i>226</i>&nbsp;
+<b class="fc"><i>227</i>&nbsp;					if (skip_coordinates) {</b>
+<b class="nc"><i>228</i>&nbsp;						json_iterator.skipChildren();</b>
+<i>229</i>&nbsp;					} else {// According to the spec, the value of the
+<i>230</i>&nbsp;							// coordinates must be an array. However, I do an
+<i>231</i>&nbsp;							// extra check for null too.
+<b class="fc"><i>232</i>&nbsp;						if (current_token != JsonReader.Token.VALUE_NULL) {</b>
+<b class="fc"><i>233</i>&nbsp;							if (current_token != JsonReader.Token.START_ARRAY) {</b>
+<b class="nc"><i>234</i>&nbsp;								throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>235</i>&nbsp;							}
+<i>236</i>&nbsp;
+<b class="fc"><i>237</i>&nbsp;							geo_json_helper.import_coordinates_(json_iterator,</b>
+<i>238</i>&nbsp;									progress_tracker);
+<i>239</i>&nbsp;						}
+<i>240</i>&nbsp;					}
+<b class="fc"><i>241</i>&nbsp;				} else if (field_name.equals(&quot;crs&quot;)) {</b>
+<b class="fc"><i>242</i>&nbsp;					if (b_crs_found || b_crsURN_found) {</b>
+<b class="nc"><i>243</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>244</i>&nbsp;					}
+<i>245</i>&nbsp;
+<b class="fc"><i>246</i>&nbsp;					b_crs_found = true;</b>
+<b class="fc"><i>247</i>&nbsp;					current_token = json_iterator.nextToken();</b>
+<i>248</i>&nbsp;
+<b class="fc"><i>249</i>&nbsp;					if ((importFlags &amp; GeoJsonImportFlags.geoJsonImportSkipCRS) == 0)</b>
+<b class="fc"><i>250</i>&nbsp;						spatial_reference = importSpatialReferenceFromCrs(</b>
+<i>251</i>&nbsp;								json_iterator, progress_tracker);
+<i>252</i>&nbsp;					else
+<b class="nc"><i>253</i>&nbsp;						json_iterator.skipChildren();</b>
+<b class="fc"><i>254</i>&nbsp;				} else if (field_name.equals(&quot;crsURN&quot;)) {</b>
+<b class="fc"><i>255</i>&nbsp;					if (b_crs_found || b_crsURN_found) {</b>
+<b class="nc"><i>256</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>257</i>&nbsp;					}
+<i>258</i>&nbsp;
+<b class="fc"><i>259</i>&nbsp;					b_crsURN_found = true;</b>
+<b class="fc"><i>260</i>&nbsp;					current_token = json_iterator.nextToken();</b>
+<i>261</i>&nbsp;
+<b class="fc"><i>262</i>&nbsp;					spatial_reference = importSpatialReferenceFromCrsUrn_(</b>
+<i>263</i>&nbsp;							json_iterator, progress_tracker);
+<i>264</i>&nbsp;				} else {
+<b class="nc"><i>265</i>&nbsp;					json_iterator.nextToken();</b>
+<b class="nc"><i>266</i>&nbsp;					json_iterator.skipChildren();</b>
+<i>267</i>&nbsp;				}
+<i>268</i>&nbsp;			}
+<i>269</i>&nbsp;
+<i>270</i>&nbsp;			// According to the spec, a GeoJSON object must have both a type and
+<i>271</i>&nbsp;			// a coordinates array
+<b class="fc"><i>272</i>&nbsp;			if (!b_type_found || (!b_geometry_collection &amp;&amp; !b_coordinates_found &amp;&amp; !skip_coordinates)) {</b>
+<b class="nc"><i>273</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>274</i>&nbsp;			}
+<i>275</i>&nbsp;			
+<b class="fc"><i>276</i>&nbsp;			if ((!b_geometry_collection &amp;&amp; b_geometries_found) || (b_geometry_collection &amp;&amp; !b_geometries_found)) {</b>
+<b class="nc"><i>277</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);//found &quot;geometries&quot; but did not see &quot;GeometryCollection&quot;</b>
+<i>278</i>&nbsp;			}
+<i>279</i>&nbsp;				
+<i>280</i>&nbsp;
+<b class="fc"><i>281</i>&nbsp;			if (!skip_coordinates &amp;&amp; !b_geometry_collection) {</b>
+<b class="fc"><i>282</i>&nbsp;				geometry = geo_json_helper.createGeometry_(geo_json_type,</b>
+<b class="fc"><i>283</i>&nbsp;						type.value());</b>
+<i>284</i>&nbsp;
+<b class="fc"><i>285</i>&nbsp;				ms.m_ogcStructure = new OGCStructure();</b>
+<b class="fc"><i>286</i>&nbsp;				ms.m_ogcStructure.m_type = m_ogcType;</b>
+<b class="fc"><i>287</i>&nbsp;				ms.m_ogcStructure.m_geometry = geometry;</b>
+<i>288</i>&nbsp;			}
+<i>289</i>&nbsp;
+<b class="fc"><i>290</i>&nbsp;			if (!b_crs_found</b>
+<i>291</i>&nbsp;					&amp;&amp; !b_crsURN_found
+<i>292</i>&nbsp;					&amp;&amp; ((importFlags &amp; GeoJsonImportFlags.geoJsonImportSkipCRS) == 0)
+<i>293</i>&nbsp;					&amp;&amp; ((importFlags &amp; GeoJsonImportFlags.geoJsonImportNoWGS84Default) == 0)) {
+<b class="fc"><i>294</i>&nbsp;				spatial_reference = SpatialReference.create(4326); // the spec</b>
+<i>295</i>&nbsp;																	// gives a
+<i>296</i>&nbsp;																	// default
+<i>297</i>&nbsp;																	// of 4326
+<i>298</i>&nbsp;																	// if no crs
+<i>299</i>&nbsp;																	// is given
+<i>300</i>&nbsp;			}
+<i>301</i>&nbsp;
+<b class="fc"><i>302</i>&nbsp;			ms.m_spatialReference = spatial_reference;</b>
+<b class="fc"><i>303</i>&nbsp;			return ms;</b>
+<i>304</i>&nbsp;		}
+<i>305</i>&nbsp;
+<i>306</i>&nbsp;		// We have to import the coordinates in the most general way possible to
+<i>307</i>&nbsp;		// not assume the type of geometry we&#39;re parsing.
+<i>308</i>&nbsp;		// JSON allows for unordered objects, so it&#39;s possible that the
+<i>309</i>&nbsp;		// coordinates array can come before the type tag when parsing
+<i>310</i>&nbsp;		// sequentially, otherwise
+<i>311</i>&nbsp;		// we would have to parse using a JSON_object, which would be easier,
+<i>312</i>&nbsp;		// but not as space/time efficient. So this function blindly imports the
+<i>313</i>&nbsp;		// coordinates
+<i>314</i>&nbsp;		// into the attribute stream(s), and will later assign them to a
+<i>315</i>&nbsp;		// geometry after the type tag is found.
+<i>316</i>&nbsp;		private void import_coordinates_(JsonReader json_iterator,
+<i>317</i>&nbsp;				ProgressTracker progress_tracker) throws JsonGeometryException {
+<b class="fc"><i>318</i>&nbsp;			assert (json_iterator.currentToken() == JsonReader.Token.START_ARRAY);</b>
+<i>319</i>&nbsp;
+<b class="fc"><i>320</i>&nbsp;			int coordinates_level_lower = 1;</b>
+<b class="fc"><i>321</i>&nbsp;			int coordinates_level_upper = 4;</b>
+<i>322</i>&nbsp;
+<b class="fc"><i>323</i>&nbsp;			json_iterator.nextToken();</b>
+<i>324</i>&nbsp;
+<b class="fc"><i>325</i>&nbsp;			while (json_iterator.currentToken() != JsonReader.Token.END_ARRAY) {</b>
+<b class="fc"><i>326</i>&nbsp;				if (isDouble_(json_iterator)) {</b>
+<b class="fc"><i>327</i>&nbsp;					if (coordinates_level_upper &gt; 1) {</b>
+<b class="fc"><i>328</i>&nbsp;						coordinates_level_upper = 1;</b>
+<i>329</i>&nbsp;					}
+<b class="fc"><i>330</i>&nbsp;				} else if (json_iterator.currentToken() == JsonReader.Token.START_ARRAY) {</b>
+<b class="fc"><i>331</i>&nbsp;					if (coordinates_level_lower &lt; 2) {</b>
+<b class="fc"><i>332</i>&nbsp;						coordinates_level_lower = 2;</b>
+<i>333</i>&nbsp;					}
+<i>334</i>&nbsp;				} else {
+<b class="nc"><i>335</i>&nbsp;					throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>336</i>&nbsp;				}
+<i>337</i>&nbsp;
+<b class="fc"><i>338</i>&nbsp;				if (coordinates_level_lower &gt; coordinates_level_upper) {</b>
+<b class="fc"><i>339</i>&nbsp;					throw new IllegalArgumentException(&quot;invalid argument&quot;);</b>
+<i>340</i>&nbsp;				}
+<i>341</i>&nbsp;
+<b class="fc"><i>342</i>&nbsp;				if (coordinates_level_lower == coordinates_level_upper</b>
+<i>343</i>&nbsp;						&amp;&amp; coordinates_level_lower == 1) {// special
+<i>344</i>&nbsp;															// code
+<i>345</i>&nbsp;															// for
+<i>346</i>&nbsp;															// Points
+<b class="fc"><i>347</i>&nbsp;					readCoordinateAsPoint_(json_iterator);</b>
+<i>348</i>&nbsp;				} else {
+<b class="fc"><i>349</i>&nbsp;					boolean b_add_path_level_3 = true;</b>
+<b class="fc"><i>350</i>&nbsp;					boolean b_polygon_start_level_4 = true;</b>
+<i>351</i>&nbsp;
+<b class="fc"><i>352</i>&nbsp;					assert (json_iterator.currentToken() == JsonReader.Token.START_ARRAY);</b>
+<b class="fc"><i>353</i>&nbsp;					json_iterator.nextToken();</b>
+<i>354</i>&nbsp;
+<b class="fc"><i>355</i>&nbsp;					while (json_iterator.currentToken() != JsonReader.Token.END_ARRAY) {</b>
+<b class="fc"><i>356</i>&nbsp;						if (isDouble_(json_iterator)) {</b>
+<b class="fc"><i>357</i>&nbsp;							if (coordinates_level_upper &gt; 2) {</b>
+<b class="fc"><i>358</i>&nbsp;								coordinates_level_upper = 2;</b>
+<i>359</i>&nbsp;							}
+<b class="fc"><i>360</i>&nbsp;						} else if (json_iterator.currentToken() == JsonReader.Token.START_ARRAY) {</b>
+<b class="fc"><i>361</i>&nbsp;							if (coordinates_level_lower &lt; 3) {</b>
+<b class="fc"><i>362</i>&nbsp;								coordinates_level_lower = 3;</b>
+<i>363</i>&nbsp;							}
+<i>364</i>&nbsp;						} else {
+<b class="nc"><i>365</i>&nbsp;							throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>366</i>&nbsp;						}
+<i>367</i>&nbsp;
+<b class="fc"><i>368</i>&nbsp;						if (coordinates_level_lower &gt; coordinates_level_upper) {</b>
+<b class="fc"><i>369</i>&nbsp;							throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>370</i>&nbsp;						}
+<i>371</i>&nbsp;
+<b class="fc"><i>372</i>&nbsp;						if (coordinates_level_lower == coordinates_level_upper</b>
+<i>373</i>&nbsp;								&amp;&amp; coordinates_level_lower == 2) {// LineString
+<i>374</i>&nbsp;																	// or
+<i>375</i>&nbsp;																	// MultiPoint
+<b class="fc"><i>376</i>&nbsp;							addCoordinate_(json_iterator);</b>
+<i>377</i>&nbsp;						} else {
+<b class="fc"><i>378</i>&nbsp;							boolean b_add_path_level_4 = true;</b>
+<i>379</i>&nbsp;
+<b class="fc"><i>380</i>&nbsp;							assert (json_iterator.currentToken() == JsonReader.Token.START_ARRAY);</b>
+<b class="fc"><i>381</i>&nbsp;							json_iterator.nextToken();</b>
+<i>382</i>&nbsp;
+<b class="fc"><i>383</i>&nbsp;							while (json_iterator.currentToken() != JsonReader.Token.END_ARRAY) {</b>
+<b class="fc"><i>384</i>&nbsp;								if (isDouble_(json_iterator)) {</b>
+<b class="fc"><i>385</i>&nbsp;									if (coordinates_level_upper &gt; 3) {</b>
+<b class="fc"><i>386</i>&nbsp;										coordinates_level_upper = 3;</b>
+<i>387</i>&nbsp;									}
+<b class="fc"><i>388</i>&nbsp;								} else if (json_iterator.currentToken() == JsonReader.Token.START_ARRAY) {</b>
+<b class="fc"><i>389</i>&nbsp;									if (coordinates_level_lower &lt; 4) {</b>
+<b class="fc"><i>390</i>&nbsp;										coordinates_level_lower = 4;</b>
+<i>391</i>&nbsp;									}
+<i>392</i>&nbsp;								} else {
+<b class="nc"><i>393</i>&nbsp;									throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>394</i>&nbsp;								}
+<i>395</i>&nbsp;
+<b class="fc"><i>396</i>&nbsp;								if (coordinates_level_lower &gt; coordinates_level_upper) {</b>
+<b class="fc"><i>397</i>&nbsp;									throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>398</i>&nbsp;								}
+<i>399</i>&nbsp;
+<b class="fc"><i>400</i>&nbsp;								if (coordinates_level_lower == coordinates_level_upper</b>
+<i>401</i>&nbsp;										&amp;&amp; coordinates_level_lower == 3) {// Polygon
+<i>402</i>&nbsp;																			// or
+<i>403</i>&nbsp;																			// MultiLineString
+<b class="fc"><i>404</i>&nbsp;									if (b_add_path_level_3) {</b>
+<b class="fc"><i>405</i>&nbsp;										addPath_();</b>
+<b class="fc"><i>406</i>&nbsp;										b_add_path_level_3 = false;</b>
+<i>407</i>&nbsp;									}
+<i>408</i>&nbsp;
+<b class="fc"><i>409</i>&nbsp;									addCoordinate_(json_iterator);</b>
+<i>410</i>&nbsp;								} else {
+<b class="fc"><i>411</i>&nbsp;									assert (json_iterator.currentToken() == JsonReader.Token.START_ARRAY);</b>
+<b class="fc"><i>412</i>&nbsp;									json_iterator.nextToken();</b>
+<i>413</i>&nbsp;
+<b class="fc"><i>414</i>&nbsp;									if (json_iterator.currentToken() != JsonReader.Token.END_ARRAY) {</b>
+<b class="fc"><i>415</i>&nbsp;										if (!isDouble_(json_iterator)) {</b>
+<b class="fc"><i>416</i>&nbsp;											throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>417</i>&nbsp;										}
+<i>418</i>&nbsp;
+<b class="fc"><i>419</i>&nbsp;										assert (coordinates_level_lower == coordinates_level_upper &amp;&amp; coordinates_level_lower == 4);</b>
+<i>420</i>&nbsp;										// MultiPolygon
+<i>421</i>&nbsp;
+<b class="fc"><i>422</i>&nbsp;										if (b_add_path_level_4) {</b>
+<b class="fc"><i>423</i>&nbsp;											addPath_();</b>
+<b class="fc"><i>424</i>&nbsp;											addPathFlag_(b_polygon_start_level_4);</b>
+<b class="fc"><i>425</i>&nbsp;											b_add_path_level_4 = false;</b>
+<b class="fc"><i>426</i>&nbsp;											b_polygon_start_level_4 = false;</b>
+<i>427</i>&nbsp;										}
+<i>428</i>&nbsp;
+<b class="fc"><i>429</i>&nbsp;										addCoordinate_(json_iterator);</b>
+<i>430</i>&nbsp;									}
+<i>431</i>&nbsp;
+<b class="fc"><i>432</i>&nbsp;									json_iterator.nextToken();</b>
+<i>433</i>&nbsp;								}
+<i>434</i>&nbsp;							}
+<i>435</i>&nbsp;
+<b class="fc"><i>436</i>&nbsp;							json_iterator.nextToken();</b>
+<b class="fc"><i>437</i>&nbsp;						}</b>
+<i>438</i>&nbsp;					}
+<i>439</i>&nbsp;
+<b class="fc"><i>440</i>&nbsp;					json_iterator.nextToken();</b>
+<b class="fc"><i>441</i>&nbsp;				}</b>
+<i>442</i>&nbsp;			}
+<i>443</i>&nbsp;
+<b class="fc"><i>444</i>&nbsp;			if (m_paths != null) {</b>
+<b class="fc"><i>445</i>&nbsp;				m_paths.add(m_position.size() / 2); // add final path size</b>
+<i>446</i>&nbsp;			}
+<b class="fc"><i>447</i>&nbsp;			if (m_path_flags != null) {</b>
+<b class="fc"><i>448</i>&nbsp;				m_path_flags.add((byte) 0); // to match the paths size</b>
+<i>449</i>&nbsp;			}
+<i>450</i>&nbsp;
+<b class="fc"><i>451</i>&nbsp;			m_num_embeddings = coordinates_level_lower;</b>
+<b class="fc"><i>452</i>&nbsp;		}</b>
+<i>453</i>&nbsp;
+<i>454</i>&nbsp;		private void readCoordinateAsPoint_(JsonReader json_iterator)
+<i>455</i>&nbsp;				throws JsonGeometryException {
+<b class="fc"><i>456</i>&nbsp;			assert (isDouble_(json_iterator));</b>
+<i>457</i>&nbsp;
+<b class="fc"><i>458</i>&nbsp;			m_point = new Point();</b>
+<i>459</i>&nbsp;
+<b class="fc"><i>460</i>&nbsp;			double x = readDouble_(json_iterator);</b>
+<b class="fc"><i>461</i>&nbsp;			json_iterator.nextToken();</b>
+<b class="fc"><i>462</i>&nbsp;			double y = readDouble_(json_iterator);</b>
+<b class="fc"><i>463</i>&nbsp;			json_iterator.nextToken();</b>
+<i>464</i>&nbsp;
+<b class="fc"><i>465</i>&nbsp;			if (NumberUtils.isNaN(y)) {</b>
+<b class="nc"><i>466</i>&nbsp;				x = NumberUtils.NaN();</b>
+<i>467</i>&nbsp;			}
+<i>468</i>&nbsp;
+<b class="fc"><i>469</i>&nbsp;			m_point.setXY(x, y);</b>
+<i>470</i>&nbsp;
+<b class="fc"><i>471</i>&nbsp;			if (isDouble_(json_iterator)) {</b>
+<b class="fc"><i>472</i>&nbsp;				double z = readDouble_(json_iterator);</b>
+<b class="fc"><i>473</i>&nbsp;				json_iterator.nextToken();</b>
+<b class="fc"><i>474</i>&nbsp;				m_point.setZ(z);</b>
+<i>475</i>&nbsp;			}
+<i>476</i>&nbsp;
+<b class="fc"><i>477</i>&nbsp;			if (isDouble_(json_iterator)) {</b>
+<b class="fc"><i>478</i>&nbsp;				double m = readDouble_(json_iterator);</b>
+<b class="fc"><i>479</i>&nbsp;				json_iterator.nextToken();</b>
+<b class="fc"><i>480</i>&nbsp;				m_point.setM(m);</b>
+<i>481</i>&nbsp;			}
+<i>482</i>&nbsp;
+<b class="fc"><i>483</i>&nbsp;			if (json_iterator.currentToken() != JsonReader.Token.END_ARRAY) {</b>
+<b class="fc"><i>484</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>485</i>&nbsp;			}
+<b class="fc"><i>486</i>&nbsp;		}</b>
+<i>487</i>&nbsp;
+<i>488</i>&nbsp;		private void addCoordinate_(JsonReader json_iterator)
+<i>489</i>&nbsp;				throws JsonGeometryException {
+<b class="fc"><i>490</i>&nbsp;			assert (isDouble_(json_iterator));</b>
+<i>491</i>&nbsp;
+<b class="fc"><i>492</i>&nbsp;			if (m_position == null) {</b>
+<b class="fc"><i>493</i>&nbsp;				m_position = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="fc"><i>494</i>&nbsp;						.createDoubleStream(0);</b>
+<i>495</i>&nbsp;			}
+<i>496</i>&nbsp;
+<b class="fc"><i>497</i>&nbsp;			double x = readDouble_(json_iterator);</b>
+<b class="fc"><i>498</i>&nbsp;			json_iterator.nextToken();</b>
+<b class="fc"><i>499</i>&nbsp;			double y = readDouble_(json_iterator);</b>
+<b class="fc"><i>500</i>&nbsp;			json_iterator.nextToken();</b>
+<i>501</i>&nbsp;
+<b class="fc"><i>502</i>&nbsp;			int size = m_position.size();</b>
+<i>503</i>&nbsp;
+<b class="fc"><i>504</i>&nbsp;			m_position.add(x);</b>
+<b class="fc"><i>505</i>&nbsp;			m_position.add(y);</b>
+<i>506</i>&nbsp;
+<b class="fc"><i>507</i>&nbsp;			if (isDouble_(json_iterator)) {</b>
+<b class="fc"><i>508</i>&nbsp;				if (!m_b_has_zs_known) {</b>
+<b class="fc"><i>509</i>&nbsp;					m_b_has_zs_known = true;</b>
+<b class="fc"><i>510</i>&nbsp;					m_b_has_zs = true;</b>
+<b class="fc"><i>511</i>&nbsp;					m_zs = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="fc"><i>512</i>&nbsp;							.createDoubleStream(0);</b>
+<i>513</i>&nbsp;				} else {
+<b class="fc"><i>514</i>&nbsp;					if (!m_b_has_zs) {</b>
+<b class="nc"><i>515</i>&nbsp;						m_zs = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="nc"><i>516</i>&nbsp;								.createDoubleStream(size &gt;&gt; 1,</b>
+<i>517</i>&nbsp;										VertexDescription
+<b class="nc"><i>518</i>&nbsp;												.getDefaultValue(Semantics.Z));</b>
+<b class="nc"><i>519</i>&nbsp;						m_b_has_zs = true;</b>
+<i>520</i>&nbsp;					}
+<i>521</i>&nbsp;				}
+<i>522</i>&nbsp;
+<b class="fc"><i>523</i>&nbsp;				double z = readDouble_(json_iterator);</b>
+<b class="fc"><i>524</i>&nbsp;				json_iterator.nextToken();</b>
+<b class="fc"><i>525</i>&nbsp;				m_zs.add(z);</b>
+<b class="fc"><i>526</i>&nbsp;			} else {</b>
+<b class="fc"><i>527</i>&nbsp;				if (!m_b_has_zs_known) {</b>
+<b class="fc"><i>528</i>&nbsp;					m_b_has_zs_known = true;</b>
+<b class="fc"><i>529</i>&nbsp;					m_b_has_zs = false;</b>
+<i>530</i>&nbsp;				} else {
+<b class="fc"><i>531</i>&nbsp;					if (m_b_has_zs) {</b>
+<b class="nc"><i>532</i>&nbsp;						m_zs.add(VertexDescription.getDefaultValue(Semantics.Z));</b>
+<i>533</i>&nbsp;					}
+<i>534</i>&nbsp;				}
+<i>535</i>&nbsp;			}
+<i>536</i>&nbsp;
+<b class="fc"><i>537</i>&nbsp;			if (isDouble_(json_iterator)) {</b>
+<b class="fc"><i>538</i>&nbsp;				if (!m_b_has_ms_known) {</b>
+<b class="fc"><i>539</i>&nbsp;					m_b_has_ms_known = true;</b>
+<b class="fc"><i>540</i>&nbsp;					m_b_has_ms = true;</b>
+<b class="fc"><i>541</i>&nbsp;					m_ms = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="fc"><i>542</i>&nbsp;							.createDoubleStream(0);</b>
+<i>543</i>&nbsp;				} else {
+<b class="fc"><i>544</i>&nbsp;					if (!m_b_has_ms) {</b>
+<b class="fc"><i>545</i>&nbsp;						m_ms = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="fc"><i>546</i>&nbsp;								.createDoubleStream(size &gt;&gt; 1,</b>
+<i>547</i>&nbsp;										VertexDescription
+<b class="fc"><i>548</i>&nbsp;												.getDefaultValue(Semantics.M));</b>
+<b class="fc"><i>549</i>&nbsp;						m_b_has_ms = true;</b>
+<i>550</i>&nbsp;					}
+<i>551</i>&nbsp;				}
+<i>552</i>&nbsp;
+<b class="fc"><i>553</i>&nbsp;				double m = readDouble_(json_iterator);</b>
+<b class="fc"><i>554</i>&nbsp;				json_iterator.nextToken();</b>
+<b class="fc"><i>555</i>&nbsp;				m_ms.add(m);</b>
+<b class="fc"><i>556</i>&nbsp;			} else {</b>
+<b class="fc"><i>557</i>&nbsp;				if (!m_b_has_ms_known) {</b>
+<b class="fc"><i>558</i>&nbsp;					m_b_has_ms_known = true;</b>
+<b class="fc"><i>559</i>&nbsp;					m_b_has_ms = false;</b>
+<i>560</i>&nbsp;				} else {
+<b class="fc"><i>561</i>&nbsp;					if (m_b_has_ms) {</b>
+<b class="fc"><i>562</i>&nbsp;						m_zs.add(VertexDescription.getDefaultValue(Semantics.M));</b>
+<i>563</i>&nbsp;					}
+<i>564</i>&nbsp;				}
+<i>565</i>&nbsp;			}
+<i>566</i>&nbsp;
+<b class="fc"><i>567</i>&nbsp;			if (json_iterator.currentToken() != JsonReader.Token.END_ARRAY) {</b>
+<b class="nc"><i>568</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>569</i>&nbsp;			}
+<b class="fc"><i>570</i>&nbsp;		}</b>
+<i>571</i>&nbsp;
+<i>572</i>&nbsp;		private void addPath_() {
+<b class="fc"><i>573</i>&nbsp;			if (m_paths == null) {</b>
+<b class="fc"><i>574</i>&nbsp;				m_paths = (AttributeStreamOfInt32) AttributeStreamBase</b>
+<b class="fc"><i>575</i>&nbsp;						.createIndexStream(0);</b>
+<i>576</i>&nbsp;			}
+<i>577</i>&nbsp;
+<b class="fc"><i>578</i>&nbsp;			if (m_position == null) {</b>
+<b class="fc"><i>579</i>&nbsp;				m_paths.add(0);</b>
+<i>580</i>&nbsp;			} else {
+<b class="fc"><i>581</i>&nbsp;				m_paths.add(m_position.size() / 2);</b>
+<i>582</i>&nbsp;			}
+<b class="fc"><i>583</i>&nbsp;		}</b>
+<i>584</i>&nbsp;
+<i>585</i>&nbsp;		private void addPathFlag_(boolean b_polygon_start) {
+<b class="fc"><i>586</i>&nbsp;			if (m_path_flags == null) {</b>
+<b class="fc"><i>587</i>&nbsp;				m_path_flags = (AttributeStreamOfInt8) AttributeStreamBase</b>
+<b class="fc"><i>588</i>&nbsp;						.createByteStream(0);</b>
+<i>589</i>&nbsp;			}
+<i>590</i>&nbsp;
+<b class="fc"><i>591</i>&nbsp;			if (b_polygon_start) {</b>
+<b class="fc"><i>592</i>&nbsp;				m_path_flags</b>
+<b class="fc"><i>593</i>&nbsp;						.add((byte) (PathFlags.enumClosed | PathFlags.enumOGCStartPolygon));</b>
+<i>594</i>&nbsp;			} else {
+<b class="fc"><i>595</i>&nbsp;				m_path_flags.add((byte) PathFlags.enumClosed);</b>
+<i>596</i>&nbsp;			}
+<b class="fc"><i>597</i>&nbsp;		}</b>
+<i>598</i>&nbsp;
+<i>599</i>&nbsp;		private double readDouble_(JsonReader json_iterator)
+<i>600</i>&nbsp;				throws JsonGeometryException {
+<b class="fc"><i>601</i>&nbsp;			JsonReader.Token current_token = json_iterator.currentToken();</b>
+<b class="fc"><i>602</i>&nbsp;			if (current_token == JsonReader.Token.VALUE_NULL</b>
+<i>603</i>&nbsp;					|| (current_token == JsonReader.Token.VALUE_STRING &amp;&amp; json_iterator
+<b class="nc"><i>604</i>&nbsp;							.currentString().equals(&quot;NaN&quot;))) {</b>
+<b class="nc"><i>605</i>&nbsp;				return NumberUtils.NaN();</b>
+<i>606</i>&nbsp;			} else {
+<b class="fc"><i>607</i>&nbsp;				return json_iterator.currentDoubleValue();</b>
+<i>608</i>&nbsp;			}
+<i>609</i>&nbsp;		}
+<i>610</i>&nbsp;
+<i>611</i>&nbsp;		private boolean isDouble_(JsonReader json_iterator)
+<i>612</i>&nbsp;				throws JsonGeometryException {
+<b class="fc"><i>613</i>&nbsp;			JsonReader.Token current_token = json_iterator.currentToken();</b>
+<i>614</i>&nbsp;
+<b class="fc"><i>615</i>&nbsp;			if (current_token == JsonReader.Token.VALUE_NUMBER_FLOAT) {</b>
+<b class="fc"><i>616</i>&nbsp;				return true;</b>
+<i>617</i>&nbsp;			}
+<i>618</i>&nbsp;
+<b class="fc"><i>619</i>&nbsp;			if (current_token == JsonReader.Token.VALUE_NUMBER_INT) {</b>
+<b class="fc"><i>620</i>&nbsp;				return true;</b>
+<i>621</i>&nbsp;			}
+<i>622</i>&nbsp;
+<b class="fc"><i>623</i>&nbsp;			if (current_token == JsonReader.Token.VALUE_NULL</b>
+<i>624</i>&nbsp;					|| (current_token == JsonReader.Token.VALUE_STRING &amp;&amp; json_iterator
+<b class="nc"><i>625</i>&nbsp;							.currentString().equals(&quot;NaN&quot;))) {</b>
+<b class="nc"><i>626</i>&nbsp;				return true;</b>
+<i>627</i>&nbsp;			}
+<i>628</i>&nbsp;
+<b class="fc"><i>629</i>&nbsp;			return false;</b>
+<i>630</i>&nbsp;		}
+<i>631</i>&nbsp;
+<i>632</i>&nbsp;		//does not accept GeometryCollection
+<i>633</i>&nbsp;		private Geometry createGeometry_(GeoJsonType geo_json_type, int type)
+<i>634</i>&nbsp;				throws JsonGeometryException {
+<i>635</i>&nbsp;			Geometry geometry;
+<i>636</i>&nbsp;
+<b class="fc"><i>637</i>&nbsp;			if (type != Geometry.GeometryType.Unknown) {</b>
+<b class="fc"><i>638</i>&nbsp;				switch (type) {</b>
+<i>639</i>&nbsp;				case Geometry.GeometryType.Polygon:
+<b class="fc"><i>640</i>&nbsp;					if (geo_json_type != GeoJsonType.MultiPolygon</b>
+<i>641</i>&nbsp;							&amp;&amp; geo_json_type != GeoJsonType.Polygon) {
+<b class="nc"><i>642</i>&nbsp;						throw new GeometryException(&quot;invalid shape type&quot;);</b>
+<i>643</i>&nbsp;					}
+<i>644</i>&nbsp;					break;
+<i>645</i>&nbsp;				case Geometry.GeometryType.Polyline:
+<b class="nc"><i>646</i>&nbsp;					if (geo_json_type != GeoJsonType.MultiLineString</b>
+<i>647</i>&nbsp;							&amp;&amp; geo_json_type != GeoJsonType.LineString) {
+<b class="nc"><i>648</i>&nbsp;						throw new GeometryException(&quot;invalid shape type&quot;);</b>
+<i>649</i>&nbsp;					}
+<i>650</i>&nbsp;					break;
+<i>651</i>&nbsp;				case Geometry.GeometryType.MultiPoint:
+<b class="nc"><i>652</i>&nbsp;					if (geo_json_type != GeoJsonType.MultiPoint) {</b>
+<b class="nc"><i>653</i>&nbsp;						throw new GeometryException(&quot;invalid shape type&quot;);</b>
+<i>654</i>&nbsp;					}
+<i>655</i>&nbsp;					break;
+<i>656</i>&nbsp;				case Geometry.GeometryType.Point:
+<b class="nc"><i>657</i>&nbsp;					if (geo_json_type != GeoJsonType.Point) {</b>
+<b class="nc"><i>658</i>&nbsp;						throw new GeometryException(&quot;invalid shape type&quot;);</b>
+<i>659</i>&nbsp;					}
+<i>660</i>&nbsp;					break;
+<i>661</i>&nbsp;				default:
+<b class="nc"><i>662</i>&nbsp;					throw new GeometryException(&quot;invalid shape type&quot;);</b>
+<i>663</i>&nbsp;				}
+<i>664</i>&nbsp;			}
+<i>665</i>&nbsp;			
+<b class="fc"><i>666</i>&nbsp;			m_ogcType = geo_json_type.geogsjonvalue();</b>
+<b class="fc"><i>667</i>&nbsp;			if (geo_json_type == GeoJsonType.GeometryCollection)</b>
+<b class="nc"><i>668</i>&nbsp;				throw new IllegalArgumentException(&quot;invalid argument&quot;);</b>
+<i>669</i>&nbsp;			
+<b class="fc"><i>670</i>&nbsp;			if (m_position == null &amp;&amp; m_point == null) {</b>
+<b class="fc"><i>671</i>&nbsp;				switch (geo_json_type)</b>
+<i>672</i>&nbsp;				{
+<i>673</i>&nbsp;				case Point: {
+<b class="fc"><i>674</i>&nbsp;					if (m_num_embeddings &gt; 1) {</b>
+<b class="nc"><i>675</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>676</i>&nbsp;					}
+<i>677</i>&nbsp;
+<b class="fc"><i>678</i>&nbsp;					geometry = new Point();</b>
+<b class="fc"><i>679</i>&nbsp;					break;</b>
+<i>680</i>&nbsp;				}
+<i>681</i>&nbsp;				case MultiPoint: {
+<b class="fc"><i>682</i>&nbsp;					if (m_num_embeddings &gt; 2) {</b>
+<b class="nc"><i>683</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>684</i>&nbsp;					}
+<i>685</i>&nbsp;
+<b class="fc"><i>686</i>&nbsp;					geometry = new MultiPoint();</b>
+<b class="fc"><i>687</i>&nbsp;					break;</b>
+<i>688</i>&nbsp;				}
+<i>689</i>&nbsp;				case LineString: {
+<b class="fc"><i>690</i>&nbsp;					if (m_num_embeddings &gt; 2) {</b>
+<b class="nc"><i>691</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>692</i>&nbsp;					}
+<i>693</i>&nbsp;
+<b class="fc"><i>694</i>&nbsp;					geometry = new Polyline();</b>
+<b class="fc"><i>695</i>&nbsp;					break;</b>
+<i>696</i>&nbsp;				}
+<i>697</i>&nbsp;				case MultiLineString: {
+<b class="fc"><i>698</i>&nbsp;					if (m_num_embeddings &gt; 3) {</b>
+<b class="nc"><i>699</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>700</i>&nbsp;					}
+<i>701</i>&nbsp;
+<b class="fc"><i>702</i>&nbsp;					geometry = new Polyline();</b>
+<b class="fc"><i>703</i>&nbsp;					break;</b>
+<i>704</i>&nbsp;				}
+<i>705</i>&nbsp;				case Polygon: {
+<b class="fc"><i>706</i>&nbsp;					if (m_num_embeddings &gt; 3) {</b>
+<b class="nc"><i>707</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>708</i>&nbsp;					}
+<i>709</i>&nbsp;
+<b class="fc"><i>710</i>&nbsp;					geometry = new Polygon();</b>
+<b class="fc"><i>711</i>&nbsp;					break;</b>
+<i>712</i>&nbsp;				}
+<i>713</i>&nbsp;				case MultiPolygon: {
+<b class="fc"><i>714</i>&nbsp;					assert (m_num_embeddings &lt;= 4);</b>
+<b class="fc"><i>715</i>&nbsp;					geometry = new Polygon();</b>
+<b class="fc"><i>716</i>&nbsp;					break;</b>
+<i>717</i>&nbsp;				}
+<i>718</i>&nbsp;				default:
+<b class="nc"><i>719</i>&nbsp;					throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>720</i>&nbsp;				}
+<b class="fc"><i>721</i>&nbsp;			} else if (m_num_embeddings == 1) {</b>
+<b class="fc"><i>722</i>&nbsp;				if (geo_json_type != GeoJsonType.Point) {</b>
+<b class="nc"><i>723</i>&nbsp;					throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>724</i>&nbsp;				}
+<i>725</i>&nbsp;
+<b class="fc"><i>726</i>&nbsp;				assert (m_point != null);</b>
+<b class="fc"><i>727</i>&nbsp;				geometry = m_point;</b>
+<b class="fc"><i>728</i>&nbsp;			} else if (m_num_embeddings == 2) {</b>
+<b class="fc"><i>729</i>&nbsp;				if (geo_json_type == GeoJsonType.MultiPoint) {</b>
+<b class="fc"><i>730</i>&nbsp;					geometry = createMultiPointFromStreams_();</b>
+<b class="fc"><i>731</i>&nbsp;				} else if (geo_json_type == GeoJsonType.LineString) {</b>
+<b class="fc"><i>732</i>&nbsp;					geometry = createPolylineFromStreams_();</b>
+<i>733</i>&nbsp;				} else {
+<b class="fc"><i>734</i>&nbsp;					throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>735</i>&nbsp;				}
+<b class="fc"><i>736</i>&nbsp;			} else if (m_num_embeddings == 3) {</b>
+<b class="fc"><i>737</i>&nbsp;				if (geo_json_type == GeoJsonType.Polygon) {</b>
+<b class="fc"><i>738</i>&nbsp;					geometry = createPolygonFromStreams_();</b>
+<b class="fc"><i>739</i>&nbsp;				} else if (geo_json_type == GeoJsonType.MultiLineString) {</b>
+<b class="fc"><i>740</i>&nbsp;					geometry = createPolylineFromStreams_();</b>
+<i>741</i>&nbsp;				} else {
+<b class="fc"><i>742</i>&nbsp;					throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>743</i>&nbsp;				}
+<i>744</i>&nbsp;			} else {
+<b class="fc"><i>745</i>&nbsp;				if (geo_json_type != GeoJsonType.MultiPolygon) {</b>
+<b class="nc"><i>746</i>&nbsp;					throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>747</i>&nbsp;				}
+<i>748</i>&nbsp;
+<b class="fc"><i>749</i>&nbsp;				geometry = createPolygonFromStreams_();</b>
+<i>750</i>&nbsp;			}
+<i>751</i>&nbsp;
+<b class="fc"><i>752</i>&nbsp;			return geometry;</b>
+<i>753</i>&nbsp;		}
+<i>754</i>&nbsp;
+<i>755</i>&nbsp;		private Geometry createPolygonFromStreams_() {
+<b class="fc"><i>756</i>&nbsp;			assert (m_position != null);</b>
+<b class="fc"><i>757</i>&nbsp;			assert (m_paths != null);</b>
+<b class="fc"><i>758</i>&nbsp;			assert ((m_num_embeddings == 3 &amp;&amp; m_path_flags == null) || (m_num_embeddings == 4 &amp;&amp; m_path_flags != null));</b>
+<i>759</i>&nbsp;
+<b class="fc"><i>760</i>&nbsp;			Polygon polygon = new Polygon();</b>
+<b class="fc"><i>761</i>&nbsp;			MultiPathImpl multi_path_impl = (MultiPathImpl) polygon._getImpl();</b>
+<i>762</i>&nbsp;
+<b class="fc"><i>763</i>&nbsp;			checkPathPointCountsForMultiPath_(true);</b>
+<b class="fc"><i>764</i>&nbsp;			multi_path_impl.setAttributeStreamRef(Semantics.POSITION,</b>
+<i>765</i>&nbsp;					m_position);
+<i>766</i>&nbsp;
+<b class="fc"><i>767</i>&nbsp;			if (m_b_has_zs) {</b>
+<b class="fc"><i>768</i>&nbsp;				assert (m_zs != null);</b>
+<b class="fc"><i>769</i>&nbsp;				multi_path_impl.setAttributeStreamRef(Semantics.Z, m_zs);</b>
+<i>770</i>&nbsp;			}
+<i>771</i>&nbsp;
+<b class="fc"><i>772</i>&nbsp;			if (m_b_has_ms) {</b>
+<b class="nc"><i>773</i>&nbsp;				assert (m_ms != null);</b>
+<b class="nc"><i>774</i>&nbsp;				multi_path_impl.setAttributeStreamRef(Semantics.M, m_ms);</b>
+<i>775</i>&nbsp;			}
+<i>776</i>&nbsp;
+<b class="fc"><i>777</i>&nbsp;			if (m_path_flags == null) {</b>
+<b class="fc"><i>778</i>&nbsp;				m_path_flags = (AttributeStreamOfInt8) AttributeStreamBase</b>
+<b class="fc"><i>779</i>&nbsp;						.createByteStream(m_paths.size(), (byte) 0);</b>
+<b class="fc"><i>780</i>&nbsp;				m_path_flags</b>
+<b class="fc"><i>781</i>&nbsp;						.setBits(</b>
+<i>782</i>&nbsp;								0,
+<i>783</i>&nbsp;								(byte) (PathFlags.enumClosed | PathFlags.enumOGCStartPolygon));
+<i>784</i>&nbsp;
+<b class="fc"><i>785</i>&nbsp;				for (int i = 1; i &lt; m_path_flags.size() - 1; i++) {</b>
+<b class="fc"><i>786</i>&nbsp;					m_path_flags.setBits(i, (byte) PathFlags.enumClosed);</b>
+<i>787</i>&nbsp;				}
+<i>788</i>&nbsp;			}
+<i>789</i>&nbsp;
+<b class="fc"><i>790</i>&nbsp;			multi_path_impl.setPathStreamRef(m_paths);</b>
+<b class="fc"><i>791</i>&nbsp;			multi_path_impl.setPathFlagsStreamRef(m_path_flags);</b>
+<b class="fc"><i>792</i>&nbsp;			multi_path_impl</b>
+<b class="fc"><i>793</i>&nbsp;					.notifyModified(MultiVertexGeometryImpl.DirtyFlags.DirtyAll);</b>
+<i>794</i>&nbsp;
+<b class="fc"><i>795</i>&nbsp;			AttributeStreamOfInt8 path_flags_clone = new AttributeStreamOfInt8(</b>
+<i>796</i>&nbsp;					m_path_flags);
+<i>797</i>&nbsp;
+<b class="fc"><i>798</i>&nbsp;			for (int i = 0; i &lt; path_flags_clone.size() - 1; i++) {</b>
+<b class="fc"><i>799</i>&nbsp;				assert ((path_flags_clone.read(i) &amp; PathFlags.enumClosed) != 0);</b>
+<b class="fc"><i>800</i>&nbsp;				assert ((m_path_flags.read(i) &amp; PathFlags.enumClosed) != 0);</b>
+<i>801</i>&nbsp;
+<b class="fc"><i>802</i>&nbsp;				if ((path_flags_clone.read(i) &amp; PathFlags.enumOGCStartPolygon) != 0) {// Should</b>
+<i>803</i>&nbsp;																						// be
+<i>804</i>&nbsp;																						// clockwise
+<b class="fc"><i>805</i>&nbsp;					if (!InternalUtils.isClockwiseRing(multi_path_impl, i)) {</b>
+<b class="fc"><i>806</i>&nbsp;						multi_path_impl.reversePath(i); // make clockwise</b>
+<i>807</i>&nbsp;					}
+<i>808</i>&nbsp;				} else {// Should be counter-clockwise
+<b class="fc"><i>809</i>&nbsp;					if (InternalUtils.isClockwiseRing(multi_path_impl, i)) {</b>
+<b class="fc"><i>810</i>&nbsp;						multi_path_impl.reversePath(i); // make</b>
+<i>811</i>&nbsp;														// counter-clockwise
+<i>812</i>&nbsp;					}
+<i>813</i>&nbsp;				}
+<i>814</i>&nbsp;			}
+<i>815</i>&nbsp;			
+<b class="fc"><i>816</i>&nbsp;			multi_path_impl.setPathFlagsStreamRef(path_flags_clone);</b>
+<b class="fc"><i>817</i>&nbsp;			multi_path_impl.clearDirtyOGCFlags();</b>
+<i>818</i>&nbsp;
+<b class="fc"><i>819</i>&nbsp;			return polygon;</b>
+<i>820</i>&nbsp;		}
+<i>821</i>&nbsp;
+<i>822</i>&nbsp;		private Geometry createPolylineFromStreams_() {
+<b class="fc"><i>823</i>&nbsp;			assert (m_position != null);</b>
+<b class="fc"><i>824</i>&nbsp;			assert ((m_num_embeddings == 2 &amp;&amp; m_paths == null) || (m_num_embeddings == 3 &amp;&amp; m_paths != null));</b>
+<b class="fc"><i>825</i>&nbsp;			assert (m_path_flags == null);</b>
+<i>826</i>&nbsp;
+<b class="fc"><i>827</i>&nbsp;			Polyline polyline = new Polyline();</b>
+<b class="fc"><i>828</i>&nbsp;			MultiPathImpl multi_path_impl = (MultiPathImpl) polyline._getImpl();</b>
+<i>829</i>&nbsp;
+<b class="fc"><i>830</i>&nbsp;			if (m_paths == null) {</b>
+<b class="fc"><i>831</i>&nbsp;				m_paths = (AttributeStreamOfInt32) AttributeStreamBase</b>
+<b class="fc"><i>832</i>&nbsp;						.createIndexStream(0);</b>
+<b class="fc"><i>833</i>&nbsp;				m_paths.add(0);</b>
+<b class="fc"><i>834</i>&nbsp;				m_paths.add(m_position.size() / 2);</b>
+<i>835</i>&nbsp;			}
+<i>836</i>&nbsp;
+<b class="fc"><i>837</i>&nbsp;			checkPathPointCountsForMultiPath_(false);</b>
+<b class="fc"><i>838</i>&nbsp;			multi_path_impl.setAttributeStreamRef(Semantics.POSITION,</b>
+<i>839</i>&nbsp;					m_position);
+<i>840</i>&nbsp;
+<b class="fc"><i>841</i>&nbsp;			if (m_b_has_zs) {</b>
+<b class="fc"><i>842</i>&nbsp;				assert (m_zs != null);</b>
+<b class="fc"><i>843</i>&nbsp;				multi_path_impl.setAttributeStreamRef(Semantics.Z, m_zs);</b>
+<i>844</i>&nbsp;			}
+<i>845</i>&nbsp;
+<b class="fc"><i>846</i>&nbsp;			if (m_b_has_ms) {</b>
+<b class="fc"><i>847</i>&nbsp;				assert (m_ms != null);</b>
+<b class="fc"><i>848</i>&nbsp;				multi_path_impl.setAttributeStreamRef(Semantics.M, m_ms);</b>
+<i>849</i>&nbsp;			}
+<i>850</i>&nbsp;
+<b class="fc"><i>851</i>&nbsp;			m_path_flags = (AttributeStreamOfInt8) AttributeStreamBase</b>
+<b class="fc"><i>852</i>&nbsp;					.createByteStream(m_paths.size(), (byte) 0);</b>
+<i>853</i>&nbsp;
+<b class="fc"><i>854</i>&nbsp;			multi_path_impl.setPathStreamRef(m_paths);</b>
+<b class="fc"><i>855</i>&nbsp;			multi_path_impl.setPathFlagsStreamRef(m_path_flags);</b>
+<b class="fc"><i>856</i>&nbsp;			multi_path_impl</b>
+<b class="fc"><i>857</i>&nbsp;					.notifyModified(MultiVertexGeometryImpl.DirtyFlags.DirtyAll);</b>
+<i>858</i>&nbsp;
+<b class="fc"><i>859</i>&nbsp;			return polyline;</b>
+<i>860</i>&nbsp;		}
+<i>861</i>&nbsp;
+<i>862</i>&nbsp;		private Geometry createMultiPointFromStreams_() {
+<b class="fc"><i>863</i>&nbsp;			assert (m_position != null);</b>
+<b class="fc"><i>864</i>&nbsp;			assert (m_paths == null);</b>
+<b class="fc"><i>865</i>&nbsp;			assert (m_path_flags == null);</b>
+<i>866</i>&nbsp;
+<b class="fc"><i>867</i>&nbsp;			MultiPoint multi_point = new MultiPoint();</b>
+<b class="fc"><i>868</i>&nbsp;			MultiPointImpl multi_point_impl = (MultiPointImpl) multi_point</b>
+<b class="fc"><i>869</i>&nbsp;					._getImpl();</b>
+<b class="fc"><i>870</i>&nbsp;			multi_point_impl.setAttributeStreamRef(Semantics.POSITION,</b>
+<i>871</i>&nbsp;					m_position);
+<i>872</i>&nbsp;
+<b class="fc"><i>873</i>&nbsp;			if (m_b_has_zs) {</b>
+<b class="fc"><i>874</i>&nbsp;				assert (m_zs != null);</b>
+<b class="fc"><i>875</i>&nbsp;				multi_point_impl.setAttributeStreamRef(Semantics.Z, m_zs);</b>
+<i>876</i>&nbsp;			}
+<i>877</i>&nbsp;
+<b class="fc"><i>878</i>&nbsp;			if (m_b_has_ms) {</b>
+<b class="fc"><i>879</i>&nbsp;				assert (m_ms != null);</b>
+<b class="fc"><i>880</i>&nbsp;				multi_point_impl.setAttributeStreamRef(Semantics.M, m_ms);</b>
+<i>881</i>&nbsp;			}
+<i>882</i>&nbsp;			
+<b class="fc"><i>883</i>&nbsp;			multi_point_impl.resize(m_position.size() / 2);</b>
+<b class="fc"><i>884</i>&nbsp;			multi_point_impl.notifyModified(MultiVertexGeometryImpl.DirtyFlags.DirtyAll);</b>
+<b class="fc"><i>885</i>&nbsp;			return multi_point;</b>
+<i>886</i>&nbsp;		}
+<i>887</i>&nbsp;
+<i>888</i>&nbsp;		private void checkPathPointCountsForMultiPath_(boolean b_is_polygon) {
+<b class="fc"><i>889</i>&nbsp;			Point2D pt1 = new Point2D(), pt2 = new Point2D();</b>
+<b class="fc"><i>890</i>&nbsp;			double z1 = 0.0, z2 = 0.0, m1 = 0.0, m2 = 0.0;</b>
+<b class="fc"><i>891</i>&nbsp;			int path_count = m_paths.size() - 1;</b>
+<b class="fc"><i>892</i>&nbsp;			int guess_adjustment = 0;</b>
+<i>893</i>&nbsp;
+<b class="fc"><i>894</i>&nbsp;			if (b_is_polygon) {// Polygon</b>
+<b class="fc"><i>895</i>&nbsp;				guess_adjustment = path_count; // may remove up to path_count</b>
+<i>896</i>&nbsp;												// number of points
+<i>897</i>&nbsp;			} else {// Polyline
+<b class="fc"><i>898</i>&nbsp;				for (int path = 0; path &lt; path_count; path++) {</b>
+<b class="fc"><i>899</i>&nbsp;					int path_size = m_paths.read(path + 1) - m_paths.read(path);</b>
+<i>900</i>&nbsp;
+<b class="fc"><i>901</i>&nbsp;					if (path_size == 1) {</b>
+<b class="fc"><i>902</i>&nbsp;						guess_adjustment--; // will add a point for each path</b>
+<i>903</i>&nbsp;											// containing only 1 point
+<i>904</i>&nbsp;					}
+<i>905</i>&nbsp;				}
+<i>906</i>&nbsp;
+<b class="fc"><i>907</i>&nbsp;				if (guess_adjustment == 0) {</b>
+<b class="fc"><i>908</i>&nbsp;					return; // all paths are okay</b>
+<i>909</i>&nbsp;				}
+<i>910</i>&nbsp;			}
+<i>911</i>&nbsp;
+<b class="fc"><i>912</i>&nbsp;			AttributeStreamOfDbl adjusted_position = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="fc"><i>913</i>&nbsp;					.createDoubleStream(m_position.size() - guess_adjustment);</b>
+<b class="fc"><i>914</i>&nbsp;			AttributeStreamOfInt32 adjusted_paths = (AttributeStreamOfInt32) AttributeStreamBase</b>
+<b class="fc"><i>915</i>&nbsp;					.createIndexStream(m_paths.size());</b>
+<b class="fc"><i>916</i>&nbsp;			AttributeStreamOfDbl adjusted_zs = null;</b>
+<b class="fc"><i>917</i>&nbsp;			AttributeStreamOfDbl adjusted_ms = null;</b>
+<i>918</i>&nbsp;
+<b class="fc"><i>919</i>&nbsp;			if (m_b_has_zs) {</b>
+<b class="fc"><i>920</i>&nbsp;				adjusted_zs = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="fc"><i>921</i>&nbsp;						.createDoubleStream(m_zs.size() - guess_adjustment);</b>
+<i>922</i>&nbsp;			}
+<i>923</i>&nbsp;
+<b class="fc"><i>924</i>&nbsp;			if (m_b_has_ms) {</b>
+<b class="nc"><i>925</i>&nbsp;				adjusted_ms = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="nc"><i>926</i>&nbsp;						.createDoubleStream(m_ms.size() - guess_adjustment);</b>
+<i>927</i>&nbsp;			}
+<i>928</i>&nbsp;
+<b class="fc"><i>929</i>&nbsp;			int adjusted_start = 0;</b>
+<b class="fc"><i>930</i>&nbsp;			adjusted_paths.write(0, 0);</b>
+<i>931</i>&nbsp;
+<b class="fc"><i>932</i>&nbsp;			for (int path = 0; path &lt; path_count; path++) {</b>
+<b class="fc"><i>933</i>&nbsp;				int path_start = m_paths.read(path);</b>
+<b class="fc"><i>934</i>&nbsp;				int path_end = m_paths.read(path + 1);</b>
+<b class="fc"><i>935</i>&nbsp;				int path_size = path_end - path_start;</b>
+<b class="fc"><i>936</i>&nbsp;				assert (path_size != 0); // we should not have added empty parts</b>
+<i>937</i>&nbsp;											// on import
+<i>938</i>&nbsp;
+<b class="fc"><i>939</i>&nbsp;				if (path_size == 1) {</b>
+<b class="fc"><i>940</i>&nbsp;					insertIntoAdjustedStreams_(adjusted_position, adjusted_zs,</b>
+<i>941</i>&nbsp;							adjusted_ms, adjusted_start, path_start, path_size);
+<b class="fc"><i>942</i>&nbsp;					insertIntoAdjustedStreams_(adjusted_position, adjusted_zs,</b>
+<i>943</i>&nbsp;							adjusted_ms, adjusted_start + 1, path_start,
+<i>944</i>&nbsp;							path_size);
+<b class="fc"><i>945</i>&nbsp;					adjusted_start += 2;</b>
+<b class="fc"><i>946</i>&nbsp;				} else if (path_size &gt;= 3 &amp;&amp; b_is_polygon) {</b>
+<b class="fc"><i>947</i>&nbsp;					m_position.read(path_start * 2, pt1);</b>
+<b class="fc"><i>948</i>&nbsp;					m_position.read((path_end - 1) * 2, pt2);</b>
+<i>949</i>&nbsp;
+<b class="fc"><i>950</i>&nbsp;					if (m_b_has_zs) {</b>
+<b class="fc"><i>951</i>&nbsp;						z1 = m_zs.readAsDbl(path_start);</b>
+<b class="fc"><i>952</i>&nbsp;						z2 = m_zs.readAsDbl(path_end - 1);</b>
+<i>953</i>&nbsp;					}
+<i>954</i>&nbsp;
+<b class="fc"><i>955</i>&nbsp;					if (m_b_has_ms) {</b>
+<b class="nc"><i>956</i>&nbsp;						m1 = m_ms.readAsDbl(path_start);</b>
+<b class="nc"><i>957</i>&nbsp;						m2 = m_ms.readAsDbl(path_end - 1);</b>
+<i>958</i>&nbsp;					}
+<i>959</i>&nbsp;
+<b class="fc"><i>960</i>&nbsp;					if (pt1.equals(pt2)</b>
+<b class="fc"><i>961</i>&nbsp;							&amp;&amp; (NumberUtils.isNaN(z1) &amp;&amp; NumberUtils.isNaN(z2) || z1 == z2)</b>
+<b class="fc"><i>962</i>&nbsp;							&amp;&amp; (NumberUtils.isNaN(m1) &amp;&amp; NumberUtils.isNaN(m2) || m1 == m2)) {</b>
+<b class="fc"><i>963</i>&nbsp;						insertIntoAdjustedStreams_(adjusted_position,</b>
+<i>964</i>&nbsp;								adjusted_zs, adjusted_ms, adjusted_start,
+<i>965</i>&nbsp;								path_start, path_size - 1);
+<b class="fc"><i>966</i>&nbsp;						adjusted_start += path_size - 1;</b>
+<i>967</i>&nbsp;					} else {
+<b class="fc"><i>968</i>&nbsp;						insertIntoAdjustedStreams_(adjusted_position,</b>
+<i>969</i>&nbsp;								adjusted_zs, adjusted_ms, adjusted_start,
+<i>970</i>&nbsp;								path_start, path_size);
+<b class="fc"><i>971</i>&nbsp;						adjusted_start += path_size;</b>
+<i>972</i>&nbsp;					}
+<i>973</i>&nbsp;				} else {
+<b class="fc"><i>974</i>&nbsp;					insertIntoAdjustedStreams_(adjusted_position, adjusted_zs,</b>
+<i>975</i>&nbsp;							adjusted_ms, adjusted_start, path_start, path_size);
+<b class="fc"><i>976</i>&nbsp;					adjusted_start += path_size;</b>
+<i>977</i>&nbsp;				}
+<b class="fc"><i>978</i>&nbsp;				adjusted_paths.write(path + 1, adjusted_start);</b>
+<i>979</i>&nbsp;			}
+<i>980</i>&nbsp;
+<b class="fc"><i>981</i>&nbsp;			m_position = adjusted_position;</b>
+<b class="fc"><i>982</i>&nbsp;			m_paths = adjusted_paths;</b>
+<b class="fc"><i>983</i>&nbsp;			m_zs = adjusted_zs;</b>
+<b class="fc"><i>984</i>&nbsp;			m_ms = adjusted_ms;</b>
+<b class="fc"><i>985</i>&nbsp;		}</b>
+<i>986</i>&nbsp;
+<i>987</i>&nbsp;		private void insertIntoAdjustedStreams_(
+<i>988</i>&nbsp;				AttributeStreamOfDbl adjusted_position,
+<i>989</i>&nbsp;				AttributeStreamOfDbl adjusted_zs,
+<i>990</i>&nbsp;				AttributeStreamOfDbl adjusted_ms, int adjusted_start,
+<i>991</i>&nbsp;				int path_start, int count) {
+<b class="fc"><i>992</i>&nbsp;			adjusted_position.insertRange(adjusted_start * 2, m_position,</b>
+<i>993</i>&nbsp;					path_start * 2, count * 2, true, 2, adjusted_start * 2);
+<i>994</i>&nbsp;
+<b class="fc"><i>995</i>&nbsp;			if (m_b_has_zs) {</b>
+<b class="fc"><i>996</i>&nbsp;				adjusted_zs.insertRange(adjusted_start, m_zs, path_start,</b>
+<i>997</i>&nbsp;						count, true, 1, adjusted_start);
+<i>998</i>&nbsp;			}
+<i>999</i>&nbsp;
+<b class="fc"><i>1000</i>&nbsp;			if (m_b_has_ms) {</b>
+<b class="nc"><i>1001</i>&nbsp;				adjusted_ms.insertRange(adjusted_start, m_ms, path_start,</b>
+<i>1002</i>&nbsp;						count, true, 1, adjusted_start);
+<i>1003</i>&nbsp;			}
+<b class="fc"><i>1004</i>&nbsp;		}</b>
+<i>1005</i>&nbsp;
+<i>1006</i>&nbsp;		static SpatialReference importSpatialReferenceFromCrs(
+<i>1007</i>&nbsp;				JsonReader json_iterator, ProgressTracker progress_tracker)
+<i>1008</i>&nbsp;				throws JsonGeometryException {
+<i>1009</i>&nbsp;			// According to the spec, a null crs corresponds to no spatial
+<i>1010</i>&nbsp;			// reference
+<b class="fc"><i>1011</i>&nbsp;			if (json_iterator.currentToken() == JsonReader.Token.VALUE_NULL) {</b>
+<b class="fc"><i>1012</i>&nbsp;				return null;</b>
+<i>1013</i>&nbsp;			}
+<i>1014</i>&nbsp;
+<b class="fc"><i>1015</i>&nbsp;			if (json_iterator.currentToken() == JsonReader.Token.VALUE_STRING) {// see</b>
+<i>1016</i>&nbsp;																			// http://wiki.geojson.org/RFC-001
+<i>1017</i>&nbsp;																			// (this
+<i>1018</i>&nbsp;																			// is
+<i>1019</i>&nbsp;																			// deprecated,
+<i>1020</i>&nbsp;																			// but
+<i>1021</i>&nbsp;																			// there
+<i>1022</i>&nbsp;																			// may
+<i>1023</i>&nbsp;																			// be
+<i>1024</i>&nbsp;																			// data
+<i>1025</i>&nbsp;																			// with
+<i>1026</i>&nbsp;																			// this
+<i>1027</i>&nbsp;																			// format)
+<i>1028</i>&nbsp;
+<b class="fc"><i>1029</i>&nbsp;				String crs_short_form = json_iterator.currentString();</b>
+<b class="fc"><i>1030</i>&nbsp;				int wkid = GeoJsonCrsTables</b>
+<b class="fc"><i>1031</i>&nbsp;						.getWkidFromCrsShortForm(crs_short_form);</b>
+<i>1032</i>&nbsp;
+<b class="fc"><i>1033</i>&nbsp;				if (wkid == -1) {</b>
+<b class="nc"><i>1034</i>&nbsp;					throw new GeometryException(&quot;not implemented&quot;);</b>
+<i>1035</i>&nbsp;				}
+<i>1036</i>&nbsp;
+<b class="fc"><i>1037</i>&nbsp;				SpatialReference spatial_reference = null;</b>
+<i>1038</i>&nbsp;
+<i>1039</i>&nbsp;				try {
+<b class="fc"><i>1040</i>&nbsp;					spatial_reference = SpatialReference.create(wkid);</b>
+<b class="nc"><i>1041</i>&nbsp;				} catch (Exception e) {</b>
+<b class="fc"><i>1042</i>&nbsp;				}</b>
+<i>1043</i>&nbsp;
+<b class="fc"><i>1044</i>&nbsp;				return spatial_reference;</b>
+<i>1045</i>&nbsp;			}
+<i>1046</i>&nbsp;
+<b class="fc"><i>1047</i>&nbsp;			if (json_iterator.currentToken() != JsonReader.Token.START_OBJECT) {</b>
+<b class="nc"><i>1048</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1049</i>&nbsp;			}
+<i>1050</i>&nbsp;
+<i>1051</i>&nbsp;			// This is to support all cases of crs identifiers I&#39;ve seen. Some
+<i>1052</i>&nbsp;			// may be rare or are legacy formats, but all are simple to
+<i>1053</i>&nbsp;			// accomodate.
+<b class="fc"><i>1054</i>&nbsp;			boolean b_found_type = false;</b>
+<b class="fc"><i>1055</i>&nbsp;			boolean b_found_properties = false;</b>
+<b class="fc"><i>1056</i>&nbsp;			boolean b_found_properties_name = false;</b>
+<b class="fc"><i>1057</i>&nbsp;			boolean b_found_properties_href = false;</b>
+<b class="fc"><i>1058</i>&nbsp;			boolean b_found_properties_urn = false;</b>
+<b class="fc"><i>1059</i>&nbsp;			boolean b_found_properties_url = false;</b>
+<b class="fc"><i>1060</i>&nbsp;			boolean b_found_properties_code = false;</b>
+<b class="fc"><i>1061</i>&nbsp;			boolean b_found_esriwkt = false;</b>
+<b class="fc"><i>1062</i>&nbsp;			String crs_field = null;</b>
+<b class="fc"><i>1063</i>&nbsp;			String properties_field = null;</b>
+<b class="fc"><i>1064</i>&nbsp;			String crs_identifier_name = null;</b>
+<b class="fc"><i>1065</i>&nbsp;			String crs_identifier_urn = null;</b>
+<b class="fc"><i>1066</i>&nbsp;			String crs_identifier_href = null;</b>
+<b class="fc"><i>1067</i>&nbsp;			String crs_identifier_url = null;</b>
+<b class="fc"><i>1068</i>&nbsp;			String esriwkt = null;</b>
+<b class="fc"><i>1069</i>&nbsp;			int crs_identifier_code = -1;</b>
+<i>1070</i>&nbsp;			JsonReader.Token current_token;
+<i>1071</i>&nbsp;
+<b class="fc"><i>1072</i>&nbsp;			while (json_iterator.nextToken() != JsonReader.Token.END_OBJECT) {</b>
+<b class="fc"><i>1073</i>&nbsp;				crs_field = json_iterator.currentString();</b>
+<i>1074</i>&nbsp;
+<b class="fc"><i>1075</i>&nbsp;				if (crs_field.equals(&quot;type&quot;)) {</b>
+<b class="fc"><i>1076</i>&nbsp;					if (b_found_type) {</b>
+<b class="nc"><i>1077</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1078</i>&nbsp;					}
+<i>1079</i>&nbsp;
+<b class="fc"><i>1080</i>&nbsp;					b_found_type = true;</b>
+<i>1081</i>&nbsp;
+<b class="fc"><i>1082</i>&nbsp;					current_token = json_iterator.nextToken();</b>
+<i>1083</i>&nbsp;
+<b class="fc"><i>1084</i>&nbsp;					if (current_token != JsonReader.Token.VALUE_STRING) {</b>
+<b class="nc"><i>1085</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1086</i>&nbsp;					}
+<i>1087</i>&nbsp;
+<i>1088</i>&nbsp;					//type = json_iterator.currentString();
+<b class="fc"><i>1089</i>&nbsp;				} else if (crs_field.equals(&quot;properties&quot;)) {</b>
+<b class="fc"><i>1090</i>&nbsp;					if (b_found_properties) {</b>
+<b class="nc"><i>1091</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1092</i>&nbsp;					}
+<i>1093</i>&nbsp;
+<b class="fc"><i>1094</i>&nbsp;					b_found_properties = true;</b>
+<i>1095</i>&nbsp;
+<b class="fc"><i>1096</i>&nbsp;					current_token = json_iterator.nextToken();</b>
+<i>1097</i>&nbsp;
+<b class="fc"><i>1098</i>&nbsp;					if (current_token != JsonReader.Token.START_OBJECT) {</b>
+<b class="nc"><i>1099</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1100</i>&nbsp;					}
+<i>1101</i>&nbsp;
+<b class="fc"><i>1102</i>&nbsp;					while (json_iterator.nextToken() != JsonReader.Token.END_OBJECT) {</b>
+<b class="fc"><i>1103</i>&nbsp;						properties_field = json_iterator.currentString();</b>
+<i>1104</i>&nbsp;
+<b class="fc"><i>1105</i>&nbsp;						if (properties_field.equals(&quot;name&quot;)) {</b>
+<b class="fc"><i>1106</i>&nbsp;							if (b_found_properties_name) {</b>
+<b class="nc"><i>1107</i>&nbsp;								throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1108</i>&nbsp;							}
+<i>1109</i>&nbsp;
+<b class="fc"><i>1110</i>&nbsp;							b_found_properties_name = true;</b>
+<b class="fc"><i>1111</i>&nbsp;							crs_identifier_name = getCrsIdentifier_(json_iterator);</b>
+<b class="fc"><i>1112</i>&nbsp;						} else if (properties_field.equals(&quot;href&quot;)) {</b>
+<b class="fc"><i>1113</i>&nbsp;							if (b_found_properties_href) {</b>
+<b class="nc"><i>1114</i>&nbsp;								throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1115</i>&nbsp;							}
+<i>1116</i>&nbsp;
+<b class="fc"><i>1117</i>&nbsp;							b_found_properties_href = true;</b>
+<b class="fc"><i>1118</i>&nbsp;							crs_identifier_href = getCrsIdentifier_(json_iterator);</b>
+<b class="fc"><i>1119</i>&nbsp;						} else if (properties_field.equals(&quot;urn&quot;)) {</b>
+<b class="fc"><i>1120</i>&nbsp;							if (b_found_properties_urn) {</b>
+<b class="nc"><i>1121</i>&nbsp;								throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1122</i>&nbsp;							}
+<i>1123</i>&nbsp;
+<b class="fc"><i>1124</i>&nbsp;							b_found_properties_urn = true;</b>
+<b class="fc"><i>1125</i>&nbsp;							crs_identifier_urn = getCrsIdentifier_(json_iterator);</b>
+<b class="fc"><i>1126</i>&nbsp;						} else if (properties_field.equals(&quot;url&quot;)) {</b>
+<b class="fc"><i>1127</i>&nbsp;							if (b_found_properties_url) {</b>
+<b class="nc"><i>1128</i>&nbsp;								throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1129</i>&nbsp;							}
+<i>1130</i>&nbsp;
+<b class="fc"><i>1131</i>&nbsp;							b_found_properties_url = true;</b>
+<b class="fc"><i>1132</i>&nbsp;							crs_identifier_url = getCrsIdentifier_(json_iterator);</b>
+<b class="fc"><i>1133</i>&nbsp;						} else if (properties_field.equals(&quot;code&quot;)) {</b>
+<b class="nc"><i>1134</i>&nbsp;							if (b_found_properties_code) {</b>
+<b class="nc"><i>1135</i>&nbsp;								throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1136</i>&nbsp;							}
+<i>1137</i>&nbsp;
+<b class="nc"><i>1138</i>&nbsp;							b_found_properties_code = true;</b>
+<i>1139</i>&nbsp;
+<b class="nc"><i>1140</i>&nbsp;							current_token = json_iterator.nextToken();</b>
+<i>1141</i>&nbsp;
+<b class="nc"><i>1142</i>&nbsp;							if (current_token != JsonReader.Token.VALUE_NUMBER_INT) {</b>
+<b class="nc"><i>1143</i>&nbsp;								throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1144</i>&nbsp;							}
+<i>1145</i>&nbsp;
+<b class="nc"><i>1146</i>&nbsp;							crs_identifier_code = json_iterator</b>
+<b class="nc"><i>1147</i>&nbsp;									.currentIntValue();</b>
+<i>1148</i>&nbsp;						} else {
+<b class="fc"><i>1149</i>&nbsp;							json_iterator.nextToken();</b>
+<b class="fc"><i>1150</i>&nbsp;							json_iterator.skipChildren();</b>
+<i>1151</i>&nbsp;						}
+<i>1152</i>&nbsp;					}
+<b class="fc"><i>1153</i>&nbsp;				} else if (crs_field.equals(&quot;esriwkt&quot;)) {</b>
+<b class="fc"><i>1154</i>&nbsp;					if (b_found_esriwkt) {</b>
+<b class="nc"><i>1155</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1156</i>&nbsp;					}
+<i>1157</i>&nbsp;
+<b class="fc"><i>1158</i>&nbsp;					b_found_esriwkt = true;</b>
+<i>1159</i>&nbsp;
+<b class="fc"><i>1160</i>&nbsp;					current_token = json_iterator.nextToken();</b>
+<i>1161</i>&nbsp;
+<b class="fc"><i>1162</i>&nbsp;					if (current_token != JsonReader.Token.VALUE_STRING) {</b>
+<b class="nc"><i>1163</i>&nbsp;						throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1164</i>&nbsp;					}
+<i>1165</i>&nbsp;
+<b class="fc"><i>1166</i>&nbsp;					esriwkt = json_iterator.currentString();</b>
+<i>1167</i>&nbsp;				} else {
+<b class="fc"><i>1168</i>&nbsp;					json_iterator.nextToken();</b>
+<b class="fc"><i>1169</i>&nbsp;					json_iterator.skipChildren();</b>
+<i>1170</i>&nbsp;				}
+<i>1171</i>&nbsp;			}
+<i>1172</i>&nbsp;
+<b class="fc"><i>1173</i>&nbsp;			if ((!b_found_type || !b_found_properties) &amp;&amp; !b_found_esriwkt) {</b>
+<b class="nc"><i>1174</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1175</i>&nbsp;			}
+<i>1176</i>&nbsp;
+<b class="fc"><i>1177</i>&nbsp;			int wkid = -1;</b>
+<i>1178</i>&nbsp;
+<b class="fc"><i>1179</i>&nbsp;			if (b_found_properties_name) {</b>
+<b class="fc"><i>1180</i>&nbsp;				wkid = GeoJsonCrsTables.getWkidFromCrsName(crs_identifier_name); // see</b>
+<i>1181</i>&nbsp;																					// http://wiki.geojson.org/GeoJSON_draft_version_6
+<i>1182</i>&nbsp;																					// (most
+<i>1183</i>&nbsp;																					// common)
+<b class="fc"><i>1184</i>&nbsp;			} else if (b_found_properties_href) {</b>
+<b class="fc"><i>1185</i>&nbsp;				wkid = GeoJsonCrsTables.getWkidFromCrsHref(crs_identifier_href); // see</b>
+<i>1186</i>&nbsp;																					// http://wiki.geojson.org/GeoJSON_draft_version_6
+<i>1187</i>&nbsp;																					// (somewhat
+<i>1188</i>&nbsp;																					// common)
+<b class="fc"><i>1189</i>&nbsp;			} else if (b_found_properties_urn) {</b>
+<b class="fc"><i>1190</i>&nbsp;				wkid = GeoJsonCrsTables</b>
+<b class="fc"><i>1191</i>&nbsp;						.getWkidFromCrsOgcUrn(crs_identifier_urn); // see</b>
+<i>1192</i>&nbsp;																	// http://wiki.geojson.org/GeoJSON_draft_version_5
+<i>1193</i>&nbsp;																	// (rare)
+<b class="fc"><i>1194</i>&nbsp;			} else if (b_found_properties_url) {</b>
+<b class="fc"><i>1195</i>&nbsp;				wkid = GeoJsonCrsTables.getWkidFromCrsHref(crs_identifier_url); // see</b>
+<i>1196</i>&nbsp;																				// http://wiki.geojson.org/GeoJSON_draft_version_5
+<i>1197</i>&nbsp;																				// (rare)
+<b class="fc"><i>1198</i>&nbsp;			} else if (b_found_properties_code) {</b>
+<b class="nc"><i>1199</i>&nbsp;				wkid = crs_identifier_code; // see</b>
+<i>1200</i>&nbsp;											// http://wiki.geojson.org/GeoJSON_draft_version_5
+<i>1201</i>&nbsp;											// (rare)
+<b class="fc"><i>1202</i>&nbsp;			} else if (!b_found_esriwkt) {</b>
+<b class="nc"><i>1203</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1204</i>&nbsp;			}
+<i>1205</i>&nbsp;
+<b class="fc"><i>1206</i>&nbsp;			if (wkid &lt; 0 &amp;&amp; !b_found_esriwkt &amp;&amp; !b_found_properties_name) {</b>
+<b class="nc"><i>1207</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1208</i>&nbsp;			}
+<i>1209</i>&nbsp;
+<b class="fc"><i>1210</i>&nbsp;			SpatialReference spatial_reference = null;</b>
+<i>1211</i>&nbsp;
+<b class="fc"><i>1212</i>&nbsp;			if (wkid &gt; 0) {</b>
+<i>1213</i>&nbsp;				try {
+<b class="fc"><i>1214</i>&nbsp;					spatial_reference = SpatialReference.create(wkid);</b>
+<b class="nc"><i>1215</i>&nbsp;				} catch (Exception e) {</b>
+<b class="fc"><i>1216</i>&nbsp;				}</b>
+<i>1217</i>&nbsp;			}
+<i>1218</i>&nbsp;
+<b class="fc"><i>1219</i>&nbsp;			if (spatial_reference == null) {</b>
+<i>1220</i>&nbsp;				try {
+<b class="fc"><i>1221</i>&nbsp;					if (b_found_esriwkt) {// I exported crs wkt strings like</b>
+<i>1222</i>&nbsp;											// this
+<b class="fc"><i>1223</i>&nbsp;						spatial_reference = SpatialReference.create(esriwkt);</b>
+<b class="fc"><i>1224</i>&nbsp;					} else if (b_found_properties_name) {// AGOL exported crs</b>
+<i>1225</i>&nbsp;															// wkt strings like
+<i>1226</i>&nbsp;															// this where the
+<i>1227</i>&nbsp;															// crs identifier of
+<i>1228</i>&nbsp;															// the properties
+<i>1229</i>&nbsp;															// name is like
+<i>1230</i>&nbsp;															// &quot;ESRI:&lt;wkt&gt;&quot;
+<b class="fc"><i>1231</i>&nbsp;						String potential_wkt = GeoJsonCrsTables</b>
+<b class="fc"><i>1232</i>&nbsp;								.getWktFromCrsName(crs_identifier_name);</b>
+<b class="fc"><i>1233</i>&nbsp;						spatial_reference = SpatialReference</b>
+<b class="fc"><i>1234</i>&nbsp;								.create(potential_wkt);</b>
+<i>1235</i>&nbsp;					}
+<b class="nc"><i>1236</i>&nbsp;				} catch (Exception e) {</b>
+<b class="fc"><i>1237</i>&nbsp;				}</b>
+<i>1238</i>&nbsp;			}
+<i>1239</i>&nbsp;
+<b class="fc"><i>1240</i>&nbsp;			return spatial_reference;</b>
+<i>1241</i>&nbsp;		}
+<i>1242</i>&nbsp;
+<i>1243</i>&nbsp;		// see http://geojsonwg.github.io/draft-geojson/draft.html
+<i>1244</i>&nbsp;		static SpatialReference importSpatialReferenceFromCrsUrn_(
+<i>1245</i>&nbsp;				JsonReader json_iterator, ProgressTracker progress_tracker)
+<i>1246</i>&nbsp;				throws JsonGeometryException {
+<i>1247</i>&nbsp;			// According to the spec, a null crs corresponds to no spatial
+<i>1248</i>&nbsp;			// reference
+<b class="fc"><i>1249</i>&nbsp;			if (json_iterator.currentToken() == JsonReader.Token.VALUE_NULL) {</b>
+<b class="nc"><i>1250</i>&nbsp;				return null;</b>
+<i>1251</i>&nbsp;			}
+<i>1252</i>&nbsp;
+<b class="fc"><i>1253</i>&nbsp;			if (json_iterator.currentToken() != JsonReader.Token.VALUE_STRING) {</b>
+<b class="nc"><i>1254</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1255</i>&nbsp;			}
+<i>1256</i>&nbsp;
+<b class="fc"><i>1257</i>&nbsp;			String crs_identifier_urn = json_iterator.currentString();</b>
+<i>1258</i>&nbsp;
+<b class="fc"><i>1259</i>&nbsp;			int wkid = GeoJsonCrsTables.getWkidFromCrsName(crs_identifier_urn); // This</b>
+<i>1260</i>&nbsp;																				// will
+<i>1261</i>&nbsp;																				// check
+<i>1262</i>&nbsp;																				// for
+<i>1263</i>&nbsp;																				// short
+<i>1264</i>&nbsp;																				// form
+<i>1265</i>&nbsp;																				// name,
+<i>1266</i>&nbsp;																				// as
+<i>1267</i>&nbsp;																				// well
+<i>1268</i>&nbsp;																				// as
+<i>1269</i>&nbsp;																				// long
+<i>1270</i>&nbsp;																				// form
+<i>1271</i>&nbsp;																				// URNs
+<i>1272</i>&nbsp;
+<b class="fc"><i>1273</i>&nbsp;			if (wkid == -1) {</b>
+<b class="nc"><i>1274</i>&nbsp;				throw new GeometryException(&quot;not implemented&quot;);</b>
+<i>1275</i>&nbsp;			}
+<i>1276</i>&nbsp;
+<b class="fc"><i>1277</i>&nbsp;			SpatialReference spatial_reference = SpatialReference.create(wkid);</b>
+<i>1278</i>&nbsp;
+<b class="fc"><i>1279</i>&nbsp;			return spatial_reference;</b>
+<i>1280</i>&nbsp;		}
+<i>1281</i>&nbsp;
+<i>1282</i>&nbsp;		private static String getCrsIdentifier_(JsonReader json_iterator)
+<i>1283</i>&nbsp;				throws JsonGeometryException {
+<b class="fc"><i>1284</i>&nbsp;			JsonReader.Token current_token = json_iterator.nextToken();</b>
+<i>1285</i>&nbsp;
+<b class="fc"><i>1286</i>&nbsp;			if (current_token != JsonReader.Token.VALUE_STRING) {</b>
+<b class="nc"><i>1287</i>&nbsp;				throw new JsonGeometryException(&quot;parsing error&quot;);</b>
+<i>1288</i>&nbsp;			}
+<i>1289</i>&nbsp;
+<b class="fc"><i>1290</i>&nbsp;			return json_iterator.currentString();</b>
+<i>1291</i>&nbsp;		}
+<i>1292</i>&nbsp;
+<i>1293</i>&nbsp;	}
+<i>1294</i>&nbsp;
+<i>1295</i>&nbsp;	@Override
+<i>1296</i>&nbsp;	public MapOGCStructure executeOGC(int import_flags, String geoJsonString,
+<i>1297</i>&nbsp;			ProgressTracker progress_tracker) throws JsonGeometryException {
+<b class="fc"><i>1298</i>&nbsp;		return executeOGC(import_flags, JsonParserReader.createFromString(geoJsonString),</b>
+<i>1299</i>&nbsp;				progress_tracker);
+<i>1300</i>&nbsp;	}
+<i>1301</i>&nbsp;	
+<i>1302</i>&nbsp;	public MapOGCStructure executeOGC(int import_flags,
+<i>1303</i>&nbsp;			JsonReader json_iterator, ProgressTracker progress_tracker)
+<i>1304</i>&nbsp;			throws JsonGeometryException {
+<b class="fc"><i>1305</i>&nbsp;		MapOGCStructure mapOGCStructure = OperatorImportFromGeoJsonHelper.importFromGeoJson(</b>
+<i>1306</i>&nbsp;				import_flags, Geometry.Type.Unknown, json_iterator,
+<i>1307</i>&nbsp;				progress_tracker, false, 0);
+<i>1308</i>&nbsp;		
+<i>1309</i>&nbsp;		//This is to restore legacy behavior when we always return a geometry collection of one element.
+<b class="fc"><i>1310</i>&nbsp;		MapOGCStructure res = new MapOGCStructure();</b>
+<b class="fc"><i>1311</i>&nbsp;		res.m_ogcStructure = new OGCStructure();</b>
+<b class="fc"><i>1312</i>&nbsp;		res.m_ogcStructure.m_type = 0;</b>
+<b class="fc"><i>1313</i>&nbsp;		res.m_ogcStructure.m_structures = new ArrayList&lt;OGCStructure&gt;();</b>
+<b class="fc"><i>1314</i>&nbsp;		res.m_ogcStructure.m_structures.add(mapOGCStructure.m_ogcStructure);</b>
+<b class="fc"><i>1315</i>&nbsp;		res.m_spatialReference = mapOGCStructure.m_spatialReference;</b>
+<b class="fc"><i>1316</i>&nbsp;		return res;</b>
+<i>1317</i>&nbsp;	}
+<i>1318</i>&nbsp;
+<i>1319</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,2677 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MultiPathImpl</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MultiPathImpl (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MultiPathImpl</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75.7%
+  </span>
+  <span class="absValue">
+    (84/ 111)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    59.5%
+  </span>
+  <span class="absValue">
+    (766/ 1288)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;package com.esri.core.geometry;
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;import com.esri.core.geometry.MultiVertexGeometryImpl.DirtyFlags;
+<i>29</i>&nbsp;
+<b class="fc"><i>30</i>&nbsp;final class MultiPathImpl extends MultiVertexGeometryImpl {</b>
+<i>31</i>&nbsp;
+<i>32</i>&nbsp;	protected boolean m_bPolygon;
+<i>33</i>&nbsp;	protected Point m_moveToPoint;
+<i>34</i>&nbsp;	protected double m_cachedLength2D;
+<i>35</i>&nbsp;	protected double m_cachedArea2D;
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;	protected AttributeStreamOfDbl m_cachedRingAreas2D;
+<i>38</i>&nbsp;	protected boolean m_bPathStarted;
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;	// Contains starting points of the parts. The size is getPartCount() + 1.
+<i>41</i>&nbsp;	// First element is 0, last element is equal to the getPointCount().
+<i>42</i>&nbsp;	protected AttributeStreamOfInt32 m_paths;
+<i>43</i>&nbsp;	// same size as m_parts. Holds flags for each part (whether the part is
+<i>44</i>&nbsp;	// closed, etc. See PathFlags)
+<i>45</i>&nbsp;	protected AttributeStreamOfInt8 m_pathFlags;
+<i>46</i>&nbsp;	// The segment flags. Size is getPointCount(). This is not a vertex
+<i>47</i>&nbsp;	// attribute, because we may want to use indexed access later (via an index
+<i>48</i>&nbsp;	// buffer).
+<i>49</i>&nbsp;	// Can be NULL if the MultiPathImpl contains straight lines only.
+<i>50</i>&nbsp;	protected AttributeStreamOfInt8 m_segmentFlags;
+<i>51</i>&nbsp;	// An index into the m_segmentParams stream. Size is getPointCount(). Can be
+<i>52</i>&nbsp;	// NULL if the MultiPathImpl contains straight lines only.
+<i>53</i>&nbsp;	protected AttributeStreamOfInt32 m_segmentParamIndex;
+<i>54</i>&nbsp;	protected AttributeStreamOfDbl m_segmentParams;
+<i>55</i>&nbsp;	protected int m_curveParamwritePoint;
+<i>56</i>&nbsp;	private int m_currentPathIndex;
+<b class="fc"><i>57</i>&nbsp;	private int m_fill_rule = Polygon.FillRule.enumFillRuleOddEven;</b>
+<i>58</i>&nbsp;
+<b class="fc"><i>59</i>&nbsp;	static int[] _segmentParamSizes = { 0, 0, 6, 0, 8, 0 }; // None, Line,</b>
+<i>60</i>&nbsp;															// Bezier, XXX, Arc,
+<i>61</i>&nbsp;															// XXX;
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;	public boolean hasNonLinearSegments() {
+<b class="fc"><i>64</i>&nbsp;		return m_curveParamwritePoint &gt; 0;</b>
+<i>65</i>&nbsp;	}
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;	// / Cpp ///
+<i>68</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<b class="fc"><i>69</i>&nbsp;	public MultiPathImpl(boolean bPolygon) {</b>
+<b class="fc"><i>70</i>&nbsp;		m_bPolygon = bPolygon;</b>
+<i>71</i>&nbsp;
+<b class="fc"><i>72</i>&nbsp;		m_bPathStarted = false;</b>
+<b class="fc"><i>73</i>&nbsp;		m_curveParamwritePoint = 0;</b>
+<b class="fc"><i>74</i>&nbsp;		m_cachedLength2D = 0;</b>
+<b class="fc"><i>75</i>&nbsp;		m_cachedArea2D = 0;</b>
+<b class="fc"><i>76</i>&nbsp;		m_pointCount = 0;</b>
+<b class="fc"><i>77</i>&nbsp;		m_description = VertexDescriptionDesignerImpl.getDefaultDescriptor2D();</b>
+<b class="fc"><i>78</i>&nbsp;		m_cachedRingAreas2D = null;</b>
+<b class="fc"><i>79</i>&nbsp;		m_currentPathIndex = 0;</b>
+<b class="fc"><i>80</i>&nbsp;	}</b>
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<b class="fc"><i>83</i>&nbsp;	public MultiPathImpl(boolean bPolygon, VertexDescription description) {</b>
+<b class="fc"><i>84</i>&nbsp;		if (description == null)</b>
+<b class="nc"><i>85</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>86</i>&nbsp;
+<b class="fc"><i>87</i>&nbsp;		m_bPolygon = bPolygon;</b>
+<i>88</i>&nbsp;
+<b class="fc"><i>89</i>&nbsp;		m_bPathStarted = false;</b>
+<b class="fc"><i>90</i>&nbsp;		m_curveParamwritePoint = 0;</b>
+<b class="fc"><i>91</i>&nbsp;		m_cachedLength2D = 0;</b>
+<b class="fc"><i>92</i>&nbsp;		m_cachedArea2D = 0;</b>
+<b class="fc"><i>93</i>&nbsp;		m_pointCount = 0;</b>
+<b class="fc"><i>94</i>&nbsp;		m_description = description;</b>
+<b class="fc"><i>95</i>&nbsp;		m_cachedRingAreas2D = null;</b>
+<b class="fc"><i>96</i>&nbsp;		m_currentPathIndex = 0;</b>
+<b class="fc"><i>97</i>&nbsp;	}</b>
+<i>98</i>&nbsp;
+<i>99</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>100</i>&nbsp;	protected void _initPathStartPoint() {
+<b class="fc"><i>101</i>&nbsp;		_touch();</b>
+<b class="fc"><i>102</i>&nbsp;		if (m_moveToPoint == null)</b>
+<b class="fc"><i>103</i>&nbsp;			m_moveToPoint = new Point(m_description);</b>
+<i>104</i>&nbsp;		else
+<b class="fc"><i>105</i>&nbsp;			m_moveToPoint.assignVertexDescription(m_description);</b>
+<b class="fc"><i>106</i>&nbsp;	}</b>
+<i>107</i>&nbsp;
+<i>108</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>109</i>&nbsp;	/**
+<i>110</i>&nbsp;	 * Starts a new Path at the Point.
+<i>111</i>&nbsp;	 */
+<i>112</i>&nbsp;	public void startPath(double x, double y) {
+<b class="fc"><i>113</i>&nbsp;		Point2D endPoint = new Point2D();</b>
+<b class="fc"><i>114</i>&nbsp;		endPoint.x = x;</b>
+<b class="fc"><i>115</i>&nbsp;		endPoint.y = y;</b>
+<b class="fc"><i>116</i>&nbsp;		startPath(endPoint);</b>
+<b class="fc"><i>117</i>&nbsp;	}</b>
+<i>118</i>&nbsp;
+<i>119</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>120</i>&nbsp;	public void startPath(Point2D point) {
+<b class="fc"><i>121</i>&nbsp;		_initPathStartPoint();</b>
+<b class="fc"><i>122</i>&nbsp;		m_moveToPoint.setXY(point);</b>
+<b class="fc"><i>123</i>&nbsp;		m_bPathStarted = true;</b>
+<b class="fc"><i>124</i>&nbsp;	}</b>
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>127</i>&nbsp;	public void startPath(Point3D point) {
+<b class="nc"><i>128</i>&nbsp;		_initPathStartPoint();</b>
+<b class="nc"><i>129</i>&nbsp;		m_moveToPoint.setXYZ(point);</b>
+<b class="nc"><i>130</i>&nbsp;		assignVertexDescription(m_moveToPoint.getDescription());</b>
+<b class="nc"><i>131</i>&nbsp;		m_bPathStarted = true;</b>
+<b class="nc"><i>132</i>&nbsp;	}</b>
+<i>133</i>&nbsp;
+<i>134</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>135</i>&nbsp;	public void startPath(Point point) {
+<b class="fc"><i>136</i>&nbsp;		if (point.isEmpty())</b>
+<b class="nc"><i>137</i>&nbsp;			throw new IllegalArgumentException();// throw new</b>
+<i>138</i>&nbsp;													// IllegalArgumentException();
+<i>139</i>&nbsp;
+<b class="fc"><i>140</i>&nbsp;		mergeVertexDescription(point.getDescription());</b>
+<b class="fc"><i>141</i>&nbsp;		_initPathStartPoint();</b>
+<b class="fc"><i>142</i>&nbsp;		point.copyTo(m_moveToPoint);</b>
+<i>143</i>&nbsp;
+<i>144</i>&nbsp;		// TODO check MultiPathImpl.cpp comment
+<i>145</i>&nbsp;		// &quot;//the description will be merged later&quot;
+<i>146</i>&nbsp;		// assignVertexDescription(m_moveToPoint.getDescription());
+<b class="fc"><i>147</i>&nbsp;		m_bPathStarted = true;</b>
+<b class="fc"><i>148</i>&nbsp;	}</b>
+<i>149</i>&nbsp;
+<i>150</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>151</i>&nbsp;	protected void _beforeNewSegment(int resizeBy) {
+<i>152</i>&nbsp;		// Called for each new segment being added.
+<b class="fc"><i>153</i>&nbsp;		if (m_bPathStarted) {</b>
+<b class="fc"><i>154</i>&nbsp;			_initPathStartPoint();// make sure the m_movetoPoint exists and has</b>
+<i>155</i>&nbsp;									// right vertex description
+<i>156</i>&nbsp;
+<i>157</i>&nbsp;			// The new path is started. Need to grow m_parts and m_pathFlags.
+<b class="fc"><i>158</i>&nbsp;			if (m_paths == null) {</b>
+<b class="fc"><i>159</i>&nbsp;				m_paths = (AttributeStreamOfInt32) AttributeStreamBase</b>
+<b class="fc"><i>160</i>&nbsp;						.createIndexStream(2);</b>
+<b class="fc"><i>161</i>&nbsp;				m_paths.write(0, 0);</b>
+<b class="fc"><i>162</i>&nbsp;				m_pathFlags = (AttributeStreamOfInt8) AttributeStreamBase</b>
+<b class="fc"><i>163</i>&nbsp;						.createByteStream(2, (byte) 0);</b>
+<i>164</i>&nbsp;			} else {
+<i>165</i>&nbsp;				// _ASSERT(m_parts.size() &gt;= 2);
+<b class="fc"><i>166</i>&nbsp;				m_paths.resize(m_paths.size() + 1, 0);</b>
+<b class="fc"><i>167</i>&nbsp;				m_pathFlags.resize(m_pathFlags.size() + 1, 0);</b>
+<i>168</i>&nbsp;			}
+<i>169</i>&nbsp;
+<b class="fc"><i>170</i>&nbsp;			if (m_bPolygon) {</b>
+<i>171</i>&nbsp;				// Mark the path as closed
+<b class="fc"><i>172</i>&nbsp;				m_pathFlags.write(m_pathFlags.size() - 2,</b>
+<i>173</i>&nbsp;						(byte) PathFlags.enumClosed);
+<i>174</i>&nbsp;			}
+<i>175</i>&nbsp;
+<b class="fc"><i>176</i>&nbsp;			resizeBy++; // +1 for the StartPath point.</b>
+<i>177</i>&nbsp;		}
+<i>178</i>&nbsp;
+<b class="fc"><i>179</i>&nbsp;		int oldcount = m_pointCount;</b>
+<b class="fc"><i>180</i>&nbsp;		m_paths.write(m_paths.size() - 1, m_pointCount + resizeBy); // The</b>
+<i>181</i>&nbsp;																	// NotifyModified
+<i>182</i>&nbsp;																	// will
+<i>183</i>&nbsp;																	// update
+<i>184</i>&nbsp;																	// the
+<i>185</i>&nbsp;																	// m_pointCount
+<i>186</i>&nbsp;																	// with this
+<i>187</i>&nbsp;																	// value.
+<b class="fc"><i>188</i>&nbsp;		_resizeImpl(oldcount + resizeBy);</b>
+<b class="fc"><i>189</i>&nbsp;		m_pathFlags.write(m_paths.size() - 1, (byte) 0);</b>
+<i>190</i>&nbsp;
+<b class="fc"><i>191</i>&nbsp;		if (m_bPathStarted) {</b>
+<b class="fc"><i>192</i>&nbsp;			setPointByVal(oldcount, m_moveToPoint);// setPoint(oldcount,</b>
+<i>193</i>&nbsp;													// m_moveToPoint); //finally
+<i>194</i>&nbsp;													// set the start point to
+<i>195</i>&nbsp;													// the geometry
+<b class="fc"><i>196</i>&nbsp;			m_bPathStarted = false;</b>
+<i>197</i>&nbsp;		}
+<b class="fc"><i>198</i>&nbsp;	}</b>
+<i>199</i>&nbsp;
+<i>200</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>201</i>&nbsp;	protected void _finishLineTo() {
+<b class="fc"><i>202</i>&nbsp;	}</b>
+<i>203</i>&nbsp;
+<i>204</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>205</i>&nbsp;	/**
+<i>206</i>&nbsp;	 * adds a Line Segment from the last Point to the given endPoint.
+<i>207</i>&nbsp;	 */
+<i>208</i>&nbsp;	public void lineTo(double x, double y) {
+<b class="fc"><i>209</i>&nbsp;		_beforeNewSegment(1);</b>
+<b class="fc"><i>210</i>&nbsp;		setXY(m_pointCount - 1, x, y);</b>
+<b class="fc"><i>211</i>&nbsp;		_finishLineTo();</b>
+<i>212</i>&nbsp;		// Point2D endPoint = new Point2D();
+<i>213</i>&nbsp;		// endPoint.x = x; endPoint.y = y;
+<i>214</i>&nbsp;		// lineTo(endPoint);
+<b class="fc"><i>215</i>&nbsp;	}</b>
+<i>216</i>&nbsp;
+<i>217</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>218</i>&nbsp;	public void lineTo(Point2D endPoint) {
+<b class="fc"><i>219</i>&nbsp;		_beforeNewSegment(1);</b>
+<b class="fc"><i>220</i>&nbsp;		setXY(m_pointCount - 1, endPoint);</b>
+<b class="fc"><i>221</i>&nbsp;		_finishLineTo();</b>
+<b class="fc"><i>222</i>&nbsp;	}</b>
+<i>223</i>&nbsp;
+<i>224</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>225</i>&nbsp;	public void lineTo(Point3D endPoint) {
+<b class="nc"><i>226</i>&nbsp;		_beforeNewSegment(1);</b>
+<b class="nc"><i>227</i>&nbsp;		setXYZ(m_pointCount - 1, endPoint);</b>
+<b class="nc"><i>228</i>&nbsp;		_finishLineTo();</b>
+<b class="nc"><i>229</i>&nbsp;	}</b>
+<i>230</i>&nbsp;
+<i>231</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>232</i>&nbsp;	public void lineTo(Point endPoint) {
+<b class="fc"><i>233</i>&nbsp;		_beforeNewSegment(1);</b>
+<b class="fc"><i>234</i>&nbsp;		setPointByVal(m_pointCount - 1, endPoint);</b>
+<b class="fc"><i>235</i>&nbsp;		_finishLineTo();</b>
+<b class="fc"><i>236</i>&nbsp;	}</b>
+<i>237</i>&nbsp;
+<i>238</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>239</i>&nbsp;	protected void _initSegmentData(int sz) {
+<b class="nc"><i>240</i>&nbsp;		if (m_segmentParamIndex == null) {</b>
+<b class="nc"><i>241</i>&nbsp;			m_segmentFlags = (AttributeStreamOfInt8) AttributeStreamBase</b>
+<b class="nc"><i>242</i>&nbsp;					.createByteStream(m_pointCount,</b>
+<i>243</i>&nbsp;							(byte) SegmentFlags.enumLineSeg);
+<b class="nc"><i>244</i>&nbsp;			m_segmentParamIndex = (AttributeStreamOfInt32) AttributeStreamBase</b>
+<b class="nc"><i>245</i>&nbsp;					.createIndexStream(m_pointCount, -1);</b>
+<i>246</i>&nbsp;		}
+<i>247</i>&nbsp;
+<b class="nc"><i>248</i>&nbsp;		int size = m_curveParamwritePoint + sz;</b>
+<b class="nc"><i>249</i>&nbsp;		if (m_segmentParams == null) {</b>
+<b class="nc"><i>250</i>&nbsp;			m_segmentParams = (AttributeStreamOfDbl) AttributeStreamBase</b>
+<b class="nc"><i>251</i>&nbsp;					.createAttributeStreamWithPersistence(</b>
+<i>252</i>&nbsp;							VertexDescription.Persistence.enumDouble, size);
+<i>253</i>&nbsp;		} else {
+<b class="nc"><i>254</i>&nbsp;			m_segmentParams.resize(size, 0);</b>
+<i>255</i>&nbsp;		}
+<b class="nc"><i>256</i>&nbsp;	}</b>
+<i>257</i>&nbsp;
+<i>258</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>259</i>&nbsp;	protected void _finishBezierTo() {
+<i>260</i>&nbsp;		// _ASSERT(m_segmentFlags != null);
+<i>261</i>&nbsp;		// _ASSERT(m_segmentParamIndex != null);
+<i>262</i>&nbsp;
+<b class="nc"><i>263</i>&nbsp;		m_segmentFlags.write(m_pointCount - 2,</b>
+<i>264</i>&nbsp;				(byte) SegmentFlags.enumBezierSeg);
+<b class="nc"><i>265</i>&nbsp;	}</b>
+<i>266</i>&nbsp;
+<i>267</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>268</i>&nbsp;	/**
+<i>269</i>&nbsp;	 * adds a Cubic Bezier Segment to the current Path. The Bezier Segment
+<i>270</i>&nbsp;	 * connects the current last Point and the given endPoint.
+<i>271</i>&nbsp;	 */
+<i>272</i>&nbsp;	public void bezierTo(Point2D controlPoint1, Point2D controlPoint2,
+<i>273</i>&nbsp;			Point2D endPoint) {
+<b class="nc"><i>274</i>&nbsp;		_beforeNewSegment(1);</b>
+<b class="nc"><i>275</i>&nbsp;		setXY(m_pointCount - 1, endPoint);</b>
+<i>276</i>&nbsp;		double z;
+<b class="nc"><i>277</i>&nbsp;		_initSegmentData(6);</b>
+<b class="nc"><i>278</i>&nbsp;		m_pathFlags.setBits(m_pathFlags.size() - 1,</b>
+<i>279</i>&nbsp;				(byte) PathFlags.enumHasNonlinearSegments);
+<b class="nc"><i>280</i>&nbsp;		m_segmentParamIndex.write(m_pointCount - 2, m_curveParamwritePoint);</b>
+<b class="nc"><i>281</i>&nbsp;		m_curveParamwritePoint += 6;</b>
+<b class="nc"><i>282</i>&nbsp;		int curveIndex = m_curveParamwritePoint;</b>
+<b class="nc"><i>283</i>&nbsp;		m_segmentParams.write(curveIndex, controlPoint1.x);</b>
+<b class="nc"><i>284</i>&nbsp;		m_segmentParams.write(curveIndex + 1, controlPoint1.y);</b>
+<b class="nc"><i>285</i>&nbsp;		z = 0;// TODO: calculate me.</b>
+<b class="nc"><i>286</i>&nbsp;		m_segmentParams.write(curveIndex + 2, z);</b>
+<b class="nc"><i>287</i>&nbsp;		m_segmentParams.write(curveIndex + 3, controlPoint2.x);</b>
+<b class="nc"><i>288</i>&nbsp;		m_segmentParams.write(curveIndex + 4, controlPoint2.y);</b>
+<b class="nc"><i>289</i>&nbsp;		z = 0;// TODO: calculate me.</b>
+<b class="nc"><i>290</i>&nbsp;		m_segmentParams.write(curveIndex + 5, z);</b>
+<b class="nc"><i>291</i>&nbsp;		_finishBezierTo();</b>
+<b class="nc"><i>292</i>&nbsp;	}</b>
+<i>293</i>&nbsp;
+<i>294</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>295</i>&nbsp;	public void openPath(int pathIndex) {
+<b class="nc"><i>296</i>&nbsp;		_touch();</b>
+<b class="nc"><i>297</i>&nbsp;		if (m_bPolygon)</b>
+<b class="nc"><i>298</i>&nbsp;			throw GeometryException.GeometryInternalError();// do not call this</b>
+<i>299</i>&nbsp;															// method on a
+<i>300</i>&nbsp;															// polygon
+<i>301</i>&nbsp;
+<b class="nc"><i>302</i>&nbsp;		int pathCount = getPathCount();</b>
+<b class="nc"><i>303</i>&nbsp;		if (pathIndex &gt; getPathCount())</b>
+<b class="nc"><i>304</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>305</i>&nbsp;
+<b class="nc"><i>306</i>&nbsp;		if (m_pathFlags == null)</b>
+<b class="nc"><i>307</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>308</i>&nbsp;
+<b class="nc"><i>309</i>&nbsp;		m_pathFlags.clearBits(pathIndex, (byte) PathFlags.enumClosed);</b>
+<b class="nc"><i>310</i>&nbsp;	}</b>
+<i>311</i>&nbsp;
+<i>312</i>&nbsp;	public void openPathAndDuplicateStartVertex(int pathIndex) {
+<b class="nc"><i>313</i>&nbsp;		_touch();</b>
+<b class="nc"><i>314</i>&nbsp;		if (m_bPolygon)</b>
+<b class="nc"><i>315</i>&nbsp;			throw GeometryException.GeometryInternalError();// do not call this</b>
+<i>316</i>&nbsp;															// method on a
+<i>317</i>&nbsp;															// polygon
+<i>318</i>&nbsp;
+<b class="nc"><i>319</i>&nbsp;		int pathCount = getPathCount();</b>
+<b class="nc"><i>320</i>&nbsp;		if (pathIndex &gt; pathCount)</b>
+<b class="nc"><i>321</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>322</i>&nbsp;
+<b class="nc"><i>323</i>&nbsp;		if (!isClosedPath(pathIndex))</b>
+<b class="nc"><i>324</i>&nbsp;			return;// do not open if open</b>
+<i>325</i>&nbsp;
+<b class="nc"><i>326</i>&nbsp;		if (m_pathFlags == null)// if (!m_pathFlags)</b>
+<b class="nc"><i>327</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>328</i>&nbsp;
+<b class="nc"><i>329</i>&nbsp;		int oldPointCount = m_pointCount;</b>
+<b class="nc"><i>330</i>&nbsp;		int pathIndexStart = getPathStart(pathIndex);</b>
+<b class="nc"><i>331</i>&nbsp;		int pathIndexEnd = getPathEnd(pathIndex);</b>
+<b class="nc"><i>332</i>&nbsp;		_resizeImpl(m_pointCount + 1); // resize does not write into m_paths</b>
+<i>333</i>&nbsp;										// anymore!
+<b class="nc"><i>334</i>&nbsp;		_verifyAllStreams();</b>
+<b class="nc"><i>335</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="nc"><i>336</i>&nbsp;			if (m_vertexAttributes[iattr] != null)// if</b>
+<i>337</i>&nbsp;													// (m_vertexAttributes[iattr])
+<i>338</i>&nbsp;			{
+<b class="nc"><i>339</i>&nbsp;				int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="nc"><i>340</i>&nbsp;				int comp = VertexDescription.getComponentCount(semantics);</b>
+<b class="nc"><i>341</i>&nbsp;				m_vertexAttributes[iattr].insertRange(comp * pathIndexEnd,</b>
+<i>342</i>&nbsp;						m_vertexAttributes[iattr], comp * pathIndexStart, comp,
+<i>343</i>&nbsp;						true, 1, comp * oldPointCount);
+<i>344</i>&nbsp;			}
+<i>345</i>&nbsp;		}
+<i>346</i>&nbsp;
+<b class="nc"><i>347</i>&nbsp;		for (int ipath = pathCount; ipath &gt; pathIndex; ipath--) {</b>
+<b class="nc"><i>348</i>&nbsp;			int iend = m_paths.read(ipath);</b>
+<b class="nc"><i>349</i>&nbsp;			m_paths.write(ipath, iend + 1);</b>
+<i>350</i>&nbsp;		}
+<i>351</i>&nbsp;
+<b class="nc"><i>352</i>&nbsp;		m_pathFlags.clearBits(pathIndex, (byte) PathFlags.enumClosed);</b>
+<b class="nc"><i>353</i>&nbsp;	}</b>
+<i>354</i>&nbsp;
+<i>355</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>356</i>&nbsp;	// Major Changes on 16th of January
+<i>357</i>&nbsp;	public void openAllPathsAndDuplicateStartVertex() {
+<b class="nc"><i>358</i>&nbsp;		_touch();</b>
+<b class="nc"><i>359</i>&nbsp;		if (m_bPolygon)</b>
+<b class="nc"><i>360</i>&nbsp;			throw GeometryException.GeometryInternalError();// do not call this</b>
+<i>361</i>&nbsp;															// method on a
+<i>362</i>&nbsp;															// polygon
+<i>363</i>&nbsp;
+<b class="nc"><i>364</i>&nbsp;		if (m_pathFlags == null)// if (!m_pathFlags)</b>
+<b class="nc"><i>365</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>366</i>&nbsp;
+<b class="nc"><i>367</i>&nbsp;		_verifyAllStreams();</b>
+<i>368</i>&nbsp;
+<b class="nc"><i>369</i>&nbsp;		int closedPathCount = 0;</b>
+<b class="nc"><i>370</i>&nbsp;		int pathCount = getPathCount();</b>
+<b class="nc"><i>371</i>&nbsp;		for (int i = 0; i &lt; pathCount; i++) {</b>
+<b class="nc"><i>372</i>&nbsp;			if (m_pathFlags.read(i) == (byte) PathFlags.enumClosed) {</b>
+<b class="nc"><i>373</i>&nbsp;				closedPathCount++;</b>
+<i>374</i>&nbsp;			}
+<i>375</i>&nbsp;		}
+<i>376</i>&nbsp;
+<b class="nc"><i>377</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="nc"><i>378</i>&nbsp;			if (m_vertexAttributes[iattr] != null) {</b>
+<b class="nc"><i>379</i>&nbsp;				int semantics = m_description._getSemanticsImpl(iattr);// int</b>
+<i>380</i>&nbsp;																		// semantics
+<i>381</i>&nbsp;																		// =
+<i>382</i>&nbsp;																		// m_description._getSemanticsImpl(iattr);
+<b class="nc"><i>383</i>&nbsp;				int comp = VertexDescription.getComponentCount(semantics);</b>
+<b class="nc"><i>384</i>&nbsp;				int newSize = comp * (m_pointCount + closedPathCount);</b>
+<b class="nc"><i>385</i>&nbsp;				m_vertexAttributes[iattr].resize(newSize);</b>
+<i>386</i>&nbsp;
+<b class="nc"><i>387</i>&nbsp;				int offset = closedPathCount;</b>
+<b class="nc"><i>388</i>&nbsp;				int ipath = pathCount;</b>
+<b class="nc"><i>389</i>&nbsp;				for (int i = m_pointCount - 1; i &gt;= 0; i--) {</b>
+<b class="nc"><i>390</i>&nbsp;					if (i + 1 == m_paths.read(ipath)) {</b>
+<b class="nc"><i>391</i>&nbsp;						ipath--;</b>
+<b class="nc"><i>392</i>&nbsp;						if (m_pathFlags.read(ipath) == (byte) PathFlags.enumClosed) {</b>
+<b class="nc"><i>393</i>&nbsp;							int istart = m_paths.read(ipath);</b>
+<i>394</i>&nbsp;
+<b class="nc"><i>395</i>&nbsp;							for (int c = 0; c &lt; comp; c++) {</b>
+<b class="nc"><i>396</i>&nbsp;								double v = m_vertexAttributes[iattr]</b>
+<b class="nc"><i>397</i>&nbsp;										.readAsDbl(comp * istart + c);</b>
+<b class="nc"><i>398</i>&nbsp;								m_vertexAttributes[iattr].writeAsDbl(comp</b>
+<i>399</i>&nbsp;										* (offset + i) + c, v);
+<i>400</i>&nbsp;							}
+<i>401</i>&nbsp;
+<b class="nc"><i>402</i>&nbsp;							if (--offset == 0)</b>
+<b class="nc"><i>403</i>&nbsp;								break;</b>
+<i>404</i>&nbsp;						}
+<i>405</i>&nbsp;					}
+<i>406</i>&nbsp;
+<b class="nc"><i>407</i>&nbsp;					for (int c = 0; c &lt; comp; c++) {</b>
+<b class="nc"><i>408</i>&nbsp;						double v = m_vertexAttributes[iattr].readAsDbl(comp * i</b>
+<i>409</i>&nbsp;								+ c);
+<b class="nc"><i>410</i>&nbsp;						m_vertexAttributes[iattr].writeAsDbl(comp</b>
+<i>411</i>&nbsp;								* (offset + i) + c, v);
+<i>412</i>&nbsp;					}
+<i>413</i>&nbsp;				}
+<i>414</i>&nbsp;			}
+<i>415</i>&nbsp;		}
+<i>416</i>&nbsp;
+<b class="nc"><i>417</i>&nbsp;		int offset = closedPathCount;</b>
+<b class="nc"><i>418</i>&nbsp;		for (int ipath = pathCount; ipath &gt; 0; ipath--) {</b>
+<b class="nc"><i>419</i>&nbsp;			int iend = m_paths.read(ipath);</b>
+<b class="nc"><i>420</i>&nbsp;			m_paths.write(ipath, iend + offset);</b>
+<i>421</i>&nbsp;
+<b class="nc"><i>422</i>&nbsp;			if (m_pathFlags.read(ipath - 1) == (byte) PathFlags.enumClosed) {</b>
+<b class="nc"><i>423</i>&nbsp;				m_pathFlags.clearBits(ipath - 1, (byte) PathFlags.enumClosed);</b>
+<i>424</i>&nbsp;
+<b class="nc"><i>425</i>&nbsp;				if (--offset == 0) {</b>
+<b class="nc"><i>426</i>&nbsp;					break;</b>
+<i>427</i>&nbsp;				}
+<i>428</i>&nbsp;			}
+<i>429</i>&nbsp;		}
+<i>430</i>&nbsp;
+<b class="nc"><i>431</i>&nbsp;		m_pointCount += closedPathCount;</b>
+<b class="nc"><i>432</i>&nbsp;	}</b>
+<i>433</i>&nbsp;
+<i>434</i>&nbsp;	void closePathWithLine(int path_index) {
+<i>435</i>&nbsp;		// touch_();
+<b class="fc"><i>436</i>&nbsp;		throwIfEmpty();</b>
+<i>437</i>&nbsp;
+<b class="fc"><i>438</i>&nbsp;		byte pf = m_pathFlags.read(path_index);</b>
+<b class="fc"><i>439</i>&nbsp;		m_pathFlags.write(path_index, (byte) (pf | PathFlags.enumClosed));</b>
+<b class="fc"><i>440</i>&nbsp;		if (m_segmentFlags != null) {</b>
+<b class="nc"><i>441</i>&nbsp;			int vindex = getPathEnd(path_index) - 1;</b>
+<b class="nc"><i>442</i>&nbsp;			m_segmentFlags.write(vindex, (byte) SegmentFlags.enumLineSeg);</b>
+<b class="nc"><i>443</i>&nbsp;			m_segmentParamIndex.write(vindex, -1);</b>
+<i>444</i>&nbsp;		}
+<b class="fc"><i>445</i>&nbsp;	}</b>
+<i>446</i>&nbsp;
+<i>447</i>&nbsp;	void closePathWithLine() {
+<b class="fc"><i>448</i>&nbsp;		throwIfEmpty();</b>
+<b class="fc"><i>449</i>&nbsp;		m_bPathStarted = false;</b>
+<b class="fc"><i>450</i>&nbsp;		closePathWithLine(getPathCount() - 1);</b>
+<b class="fc"><i>451</i>&nbsp;	}</b>
+<i>452</i>&nbsp;
+<i>453</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>454</i>&nbsp;	/**
+<i>455</i>&nbsp;	 * Closes all open curves by adding an implicit line segment from the end
+<i>456</i>&nbsp;	 * point to the start point.
+<i>457</i>&nbsp;	 */
+<i>458</i>&nbsp;	public void closeAllPaths() {
+<b class="fc"><i>459</i>&nbsp;		_touch();</b>
+<b class="fc"><i>460</i>&nbsp;		if (m_bPolygon || isEmptyImpl())</b>
+<b class="fc"><i>461</i>&nbsp;			return;</b>
+<i>462</i>&nbsp;
+<b class="nc"><i>463</i>&nbsp;		m_bPathStarted = false;</b>
+<i>464</i>&nbsp;
+<b class="nc"><i>465</i>&nbsp;		for (int ipath = 0, npart = m_paths.size() - 1; ipath &lt; npart; ipath++) {</b>
+<b class="nc"><i>466</i>&nbsp;			if (isClosedPath(ipath))</b>
+<b class="nc"><i>467</i>&nbsp;				continue;</b>
+<i>468</i>&nbsp;
+<b class="nc"><i>469</i>&nbsp;			byte pf = m_pathFlags.read(ipath);</b>
+<b class="nc"><i>470</i>&nbsp;			m_pathFlags.write(ipath, (byte) (pf | PathFlags.enumClosed));</b>
+<i>471</i>&nbsp;			// if (m_segmentFlags)
+<i>472</i>&nbsp;			// {
+<i>473</i>&nbsp;			// m_segmentFlags.write(m_pointCount - 1,
+<i>474</i>&nbsp;			// (byte)SegmentFlags.LineSeg));
+<i>475</i>&nbsp;			// m_segmentParamIndex.write(m_pointCount - 1, -1);
+<i>476</i>&nbsp;			// }
+<i>477</i>&nbsp;		}
+<b class="nc"><i>478</i>&nbsp;	}</b>
+<i>479</i>&nbsp;
+<i>480</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>481</i>&nbsp;	/**
+<i>482</i>&nbsp;	 * Returns the size of the segment data for the given segment type.
+<i>483</i>&nbsp;	 * 
+<i>484</i>&nbsp;	 * @param flag
+<i>485</i>&nbsp;	 *            is one of the segment flags from the SegmentFlags enum.
+<i>486</i>&nbsp;	 * @return the size of the segment params as the number of doubles.
+<i>487</i>&nbsp;	 */
+<i>488</i>&nbsp;	public static int getSegmentDataSize(byte flag) {
+<b class="nc"><i>489</i>&nbsp;		return _segmentParamSizes[flag];</b>
+<i>490</i>&nbsp;	}
+<i>491</i>&nbsp;
+<i>492</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>493</i>&nbsp;	/**
+<i>494</i>&nbsp;	 * Closes last path of the MultiPathImpl with the Bezier Segment.
+<i>495</i>&nbsp;	 * 
+<i>496</i>&nbsp;	 * The start point of the Bezier is the last point of the path and the last
+<i>497</i>&nbsp;	 * point of the bezier is the first point of the path.
+<i>498</i>&nbsp;	 */
+<i>499</i>&nbsp;	public void closePathWithBezier(Point2D controlPoint1, Point2D controlPoint2) {
+<b class="nc"><i>500</i>&nbsp;		_touch();</b>
+<b class="nc"><i>501</i>&nbsp;		if (isEmptyImpl())</b>
+<b class="nc"><i>502</i>&nbsp;			throw new GeometryException(</b>
+<i>503</i>&nbsp;					&quot;Invalid call. This operation cannot be performed on an empty geometry.&quot;);
+<i>504</i>&nbsp;
+<b class="nc"><i>505</i>&nbsp;		m_bPathStarted = false;</b>
+<i>506</i>&nbsp;
+<b class="nc"><i>507</i>&nbsp;		int pathIndex = m_paths.size() - 2;</b>
+<b class="nc"><i>508</i>&nbsp;		byte pf = m_pathFlags.read(pathIndex);</b>
+<b class="nc"><i>509</i>&nbsp;		m_pathFlags</b>
+<b class="nc"><i>510</i>&nbsp;				.write(pathIndex,</b>
+<i>511</i>&nbsp;						(byte) (pf | PathFlags.enumClosed | PathFlags.enumHasNonlinearSegments));
+<b class="nc"><i>512</i>&nbsp;		_initSegmentData(6);</b>
+<i>513</i>&nbsp;
+<b class="nc"><i>514</i>&nbsp;		byte oldType = m_segmentFlags</b>
+<b class="nc"><i>515</i>&nbsp;				.read((byte) ((m_pointCount - 1) &amp; SegmentFlags.enumSegmentMask));</b>
+<b class="nc"><i>516</i>&nbsp;		m_segmentFlags.write(m_pointCount - 1,</b>
+<i>517</i>&nbsp;				(byte) (SegmentFlags.enumBezierSeg));
+<i>518</i>&nbsp;
+<b class="nc"><i>519</i>&nbsp;		int curveIndex = m_curveParamwritePoint;</b>
+<b class="nc"><i>520</i>&nbsp;		if (getSegmentDataSize(oldType) &lt; getSegmentDataSize((byte) SegmentFlags.enumBezierSeg)) {</b>
+<b class="nc"><i>521</i>&nbsp;			m_segmentParamIndex.write(m_pointCount - 1, m_curveParamwritePoint);</b>
+<b class="nc"><i>522</i>&nbsp;			m_curveParamwritePoint += 6;</b>
+<i>523</i>&nbsp;		} else {
+<i>524</i>&nbsp;			// there was a closing bezier curve or an arc here. We can reuse the
+<i>525</i>&nbsp;			// storage.
+<b class="nc"><i>526</i>&nbsp;			curveIndex = m_segmentParamIndex.read(m_pointCount - 1);</b>
+<i>527</i>&nbsp;		}
+<i>528</i>&nbsp;
+<i>529</i>&nbsp;		double z;
+<b class="nc"><i>530</i>&nbsp;		m_segmentParams.write(curveIndex, controlPoint1.x);</b>
+<b class="nc"><i>531</i>&nbsp;		m_segmentParams.write(curveIndex + 1, controlPoint1.y);</b>
+<b class="nc"><i>532</i>&nbsp;		z = 0;// TODO: calculate me.</b>
+<b class="nc"><i>533</i>&nbsp;		m_segmentParams.write(curveIndex + 2, z);</b>
+<i>534</i>&nbsp;
+<b class="nc"><i>535</i>&nbsp;		m_segmentParams.write(curveIndex + 3, controlPoint2.x);</b>
+<b class="nc"><i>536</i>&nbsp;		m_segmentParams.write(curveIndex + 4, controlPoint2.y);</b>
+<b class="nc"><i>537</i>&nbsp;		z = 0;// TODO: calculate me.</b>
+<b class="nc"><i>538</i>&nbsp;		m_segmentParams.write(curveIndex + 5, z);</b>
+<b class="nc"><i>539</i>&nbsp;	}</b>
+<i>540</i>&nbsp;
+<i>541</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>542</i>&nbsp;	/**
+<i>543</i>&nbsp;	 * Returns True if the given path is closed (represents a Ring).
+<i>544</i>&nbsp;	 */
+<i>545</i>&nbsp;	public boolean isClosedPath(int ipath) {
+<i>546</i>&nbsp;		// Should we make a function called _UpdateClosedPathFlags and call it
+<i>547</i>&nbsp;		// here?
+<b class="fc"><i>548</i>&nbsp;		return ((byte) (m_pathFlags.read(ipath) &amp; PathFlags.enumClosed)) != 0;</b>
+<i>549</i>&nbsp;	}
+<i>550</i>&nbsp;
+<i>551</i>&nbsp;	public boolean isClosedPathInXYPlane(int path_index) {
+<b class="fc"><i>552</i>&nbsp;		if (isClosedPath(path_index))</b>
+<b class="nc"><i>553</i>&nbsp;			return true;</b>
+<b class="fc"><i>554</i>&nbsp;		int istart = getPathStart(path_index);</b>
+<b class="fc"><i>555</i>&nbsp;		int iend = getPathEnd(path_index) - 1;</b>
+<b class="fc"><i>556</i>&nbsp;		if (istart &gt; iend)</b>
+<b class="nc"><i>557</i>&nbsp;			return false;</b>
+<b class="fc"><i>558</i>&nbsp;		Point2D ptS = getXY(istart);</b>
+<b class="fc"><i>559</i>&nbsp;		Point2D ptE = getXY(iend);</b>
+<b class="fc"><i>560</i>&nbsp;		return ptS.isEqual(ptE);</b>
+<i>561</i>&nbsp;	}
+<i>562</i>&nbsp;
+<i>563</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>564</i>&nbsp;	/**
+<i>565</i>&nbsp;	 * Returns True if the given path might have non-linear segments.
+<i>566</i>&nbsp;	 */
+<i>567</i>&nbsp;	public boolean hasNonLinearSegments(int ipath) {
+<i>568</i>&nbsp;		// Should we make a function called _UpdateHasNonLinearSegmentsFlags and
+<i>569</i>&nbsp;		// call it here?
+<b class="fc"><i>570</i>&nbsp;		return (m_pathFlags.read(ipath) &amp; PathFlags.enumHasNonlinearSegments) != 0;</b>
+<i>571</i>&nbsp;	}
+<i>572</i>&nbsp;
+<i>573</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>574</i>&nbsp;	public void addSegment(Segment segment, boolean bStartNewPath) {
+<b class="fc"><i>575</i>&nbsp;		mergeVertexDescription(segment.getDescription());</b>
+<b class="fc"><i>576</i>&nbsp;		if (segment.getType() == Type.Line) {</b>
+<b class="fc"><i>577</i>&nbsp;			Point point = new Point();</b>
+<b class="fc"><i>578</i>&nbsp;			if (bStartNewPath || isEmpty()) {</b>
+<b class="fc"><i>579</i>&nbsp;				segment.queryStart(point);</b>
+<b class="fc"><i>580</i>&nbsp;				startPath(point);</b>
+<i>581</i>&nbsp;			}
+<i>582</i>&nbsp;
+<b class="fc"><i>583</i>&nbsp;			segment.queryEnd(point);</b>
+<b class="fc"><i>584</i>&nbsp;			lineTo(point);</b>
+<b class="fc"><i>585</i>&nbsp;		} else {</b>
+<b class="nc"><i>586</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>587</i>&nbsp;		}
+<b class="fc"><i>588</i>&nbsp;	}</b>
+<i>589</i>&nbsp;
+<i>590</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>591</i>&nbsp;	/**
+<i>592</i>&nbsp;	 * adds a rectangular closed Path to the MultiPathImpl.
+<i>593</i>&nbsp;	 * 
+<i>594</i>&nbsp;	 * @param envSrc
+<i>595</i>&nbsp;	 *            is the source rectangle.
+<i>596</i>&nbsp;	 * @param bReverse
+<i>597</i>&nbsp;	 *            Creates reversed path.
+<i>598</i>&nbsp;	 */
+<i>599</i>&nbsp;	public void addEnvelope(Envelope2D envSrc, boolean bReverse) {
+<b class="fc"><i>600</i>&nbsp;		boolean bWasEmpty = m_pointCount == 0;</b>
+<i>601</i>&nbsp;
+<b class="fc"><i>602</i>&nbsp;		startPath(envSrc.xmin, envSrc.ymin);</b>
+<b class="fc"><i>603</i>&nbsp;		if (bReverse) {</b>
+<b class="fc"><i>604</i>&nbsp;			lineTo(envSrc.xmax, envSrc.ymin);</b>
+<b class="fc"><i>605</i>&nbsp;			lineTo(envSrc.xmax, envSrc.ymax);</b>
+<b class="fc"><i>606</i>&nbsp;			lineTo(envSrc.xmin, envSrc.ymax);</b>
+<i>607</i>&nbsp;		} else {
+<b class="fc"><i>608</i>&nbsp;			lineTo(envSrc.xmin, envSrc.ymax);</b>
+<b class="fc"><i>609</i>&nbsp;			lineTo(envSrc.xmax, envSrc.ymax);</b>
+<b class="fc"><i>610</i>&nbsp;			lineTo(envSrc.xmax, envSrc.ymin);</b>
+<i>611</i>&nbsp;		}
+<i>612</i>&nbsp;
+<b class="fc"><i>613</i>&nbsp;		closePathWithLine();</b>
+<b class="fc"><i>614</i>&nbsp;		m_bPathStarted = false;</b>
+<i>615</i>&nbsp;
+<b class="fc"><i>616</i>&nbsp;		if (bWasEmpty &amp;&amp; !bReverse) {</b>
+<b class="fc"><i>617</i>&nbsp;			_setDirtyFlag(DirtyFlags.DirtyIsEnvelope, false);// now we no(sic?)</b>
+<i>618</i>&nbsp;																// the polypath
+<i>619</i>&nbsp;																// is envelope
+<i>620</i>&nbsp;		}
+<b class="fc"><i>621</i>&nbsp;	}</b>
+<i>622</i>&nbsp;
+<i>623</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>624</i>&nbsp;	/**
+<i>625</i>&nbsp;	 * adds a rectangular closed Path to the MultiPathImpl.
+<i>626</i>&nbsp;	 * 
+<i>627</i>&nbsp;	 * @param envSrc
+<i>628</i>&nbsp;	 *            is the source rectangle.
+<i>629</i>&nbsp;	 * @param bReverse
+<i>630</i>&nbsp;	 *            Creates reversed path.
+<i>631</i>&nbsp;	 */
+<i>632</i>&nbsp;	public void addEnvelope(Envelope envSrc, boolean bReverse) {
+<b class="fc"><i>633</i>&nbsp;		if (envSrc.isEmpty())</b>
+<b class="nc"><i>634</i>&nbsp;			return;</b>
+<i>635</i>&nbsp;
+<b class="fc"><i>636</i>&nbsp;		boolean bWasEmpty = m_pointCount == 0;</b>
+<b class="fc"><i>637</i>&nbsp;		Point pt = new Point(m_description);// getDescription());</b>
+<b class="fc"><i>638</i>&nbsp;		for (int i = 0, n = 4; i &lt; n; i++) {</b>
+<b class="fc"><i>639</i>&nbsp;			int j = bReverse ? n - i - 1 : i;</b>
+<i>640</i>&nbsp;
+<b class="fc"><i>641</i>&nbsp;			envSrc.queryCornerByVal(j, pt);</b>
+<b class="fc"><i>642</i>&nbsp;			if (i == 0)</b>
+<b class="fc"><i>643</i>&nbsp;				startPath(pt);</b>
+<i>644</i>&nbsp;			else
+<b class="fc"><i>645</i>&nbsp;				lineTo(pt);</b>
+<i>646</i>&nbsp;		}
+<i>647</i>&nbsp;
+<b class="fc"><i>648</i>&nbsp;		closePathWithLine();</b>
+<b class="fc"><i>649</i>&nbsp;		m_bPathStarted = false;</b>
+<i>650</i>&nbsp;
+<b class="fc"><i>651</i>&nbsp;		if (bWasEmpty &amp;&amp; !bReverse)</b>
+<b class="fc"><i>652</i>&nbsp;			_setDirtyFlag(DirtyFlags.DirtyIsEnvelope, false);// now we know the</b>
+<i>653</i>&nbsp;																// polypath is
+<i>654</i>&nbsp;																// envelope
+<b class="fc"><i>655</i>&nbsp;	}</b>
+<i>656</i>&nbsp;
+<i>657</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>658</i>&nbsp;	public void add(MultiPathImpl src, boolean bReversePaths) {
+<b class="fc"><i>659</i>&nbsp;		for (int i = 0; i &lt; src.getPathCount(); i++)</b>
+<b class="fc"><i>660</i>&nbsp;			addPath(src, i, !bReversePaths);</b>
+<b class="fc"><i>661</i>&nbsp;	}</b>
+<i>662</i>&nbsp;
+<i>663</i>&nbsp;	public void addPath(MultiPathImpl src, int srcPathIndex, boolean bForward) {
+<b class="fc"><i>664</i>&nbsp;		insertPath(-1, src, srcPathIndex, bForward);</b>
+<b class="fc"><i>665</i>&nbsp;	}</b>
+<i>666</i>&nbsp;
+<i>667</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011 Significant changes to last for loop
+<i>668</i>&nbsp;	public void addPath(Point2D[] _points, int count, boolean bForward) {
+<b class="fc"><i>669</i>&nbsp;		insertPath(-1, _points, 0, count, bForward);</b>
+<b class="fc"><i>670</i>&nbsp;	}</b>
+<i>671</i>&nbsp;
+<i>672</i>&nbsp;	public void addSegmentsFromPath(MultiPathImpl src, int src_path_index,
+<i>673</i>&nbsp;			int src_segment_from, int src_segment_count,
+<i>674</i>&nbsp;			boolean b_start_new_path) {
+<b class="fc"><i>675</i>&nbsp;		if (!b_start_new_path &amp;&amp; getPathCount() == 0)</b>
+<b class="nc"><i>676</i>&nbsp;			b_start_new_path = true;</b>
+<i>677</i>&nbsp;
+<b class="fc"><i>678</i>&nbsp;		if (src_path_index &lt; 0)</b>
+<b class="nc"><i>679</i>&nbsp;			src_path_index = src.getPathCount() - 1;</b>
+<i>680</i>&nbsp;
+<b class="fc"><i>681</i>&nbsp;		if (src_path_index &gt;= src.getPathCount() || src_segment_from &lt; 0</b>
+<i>682</i>&nbsp;				|| src_segment_count &lt; 0
+<b class="fc"><i>683</i>&nbsp;				|| src_segment_count &gt; src.getSegmentCount(src_path_index))</b>
+<b class="nc"><i>684</i>&nbsp;			throw new GeometryException(&quot;index out of bounds&quot;);</b>
+<i>685</i>&nbsp;
+<b class="fc"><i>686</i>&nbsp;		if (src_segment_count == 0)</b>
+<b class="nc"><i>687</i>&nbsp;			return;</b>
+<i>688</i>&nbsp;
+<b class="fc"><i>689</i>&nbsp;		boolean bIncludesClosingSegment = src.isClosedPath(src_path_index)</b>
+<i>690</i>&nbsp;				&amp;&amp; src_segment_from + src_segment_count == src
+<b class="nc"><i>691</i>&nbsp;						.getSegmentCount(src_path_index);</b>
+<i>692</i>&nbsp;
+<b class="fc"><i>693</i>&nbsp;		if (bIncludesClosingSegment &amp;&amp; src_segment_count == 1)</b>
+<b class="nc"><i>694</i>&nbsp;			return;// cannot add a closing segment alone.</b>
+<i>695</i>&nbsp;
+<b class="fc"><i>696</i>&nbsp;		m_bPathStarted = false;</b>
+<i>697</i>&nbsp;
+<b class="fc"><i>698</i>&nbsp;		mergeVertexDescription(src.getDescription());</b>
+<b class="fc"><i>699</i>&nbsp;		int src_point_count = src_segment_count;</b>
+<b class="fc"><i>700</i>&nbsp;		int srcFromPoint = src.getPathStart(src_path_index) + src_segment_from</b>
+<i>701</i>&nbsp;				+ 1;
+<b class="fc"><i>702</i>&nbsp;		if (b_start_new_path)// adding a new path.</b>
+<i>703</i>&nbsp;		{
+<b class="fc"><i>704</i>&nbsp;			src_point_count++;// add start point.</b>
+<b class="fc"><i>705</i>&nbsp;			srcFromPoint--;</b>
+<i>706</i>&nbsp;		}
+<i>707</i>&nbsp;
+<b class="fc"><i>708</i>&nbsp;		if (bIncludesClosingSegment) {</b>
+<b class="nc"><i>709</i>&nbsp;			src_point_count--;</b>
+<i>710</i>&nbsp;		}
+<i>711</i>&nbsp;
+<b class="fc"><i>712</i>&nbsp;		int oldPointCount = m_pointCount;</b>
+<b class="fc"><i>713</i>&nbsp;		_resizeImpl(m_pointCount + src_point_count);</b>
+<b class="fc"><i>714</i>&nbsp;		_verifyAllStreams();</b>
+<i>715</i>&nbsp;
+<b class="fc"><i>716</i>&nbsp;		if (b_start_new_path) {</b>
+<b class="fc"><i>717</i>&nbsp;			if (src_point_count == 0)</b>
+<b class="nc"><i>718</i>&nbsp;				return;// happens when adding a single closing segment to the</b>
+<i>719</i>&nbsp;						// new path
+<i>720</i>&nbsp;
+<b class="fc"><i>721</i>&nbsp;			m_paths.add(m_pointCount);</b>
+<i>722</i>&nbsp;
+<b class="fc"><i>723</i>&nbsp;			byte flags = src.m_pathFlags.read(src_path_index);</b>
+<b class="fc"><i>724</i>&nbsp;			flags &amp;= ~(byte) PathFlags.enumCalcMask;// remove calculated flags</b>
+<i>725</i>&nbsp;
+<b class="fc"><i>726</i>&nbsp;			if (m_bPolygon)</b>
+<b class="nc"><i>727</i>&nbsp;				flags |= (byte) PathFlags.enumClosed;</b>
+<i>728</i>&nbsp;
+<b class="fc"><i>729</i>&nbsp;			m_pathFlags.write(m_pathFlags.size() - 1, flags);</b>
+<b class="fc"><i>730</i>&nbsp;			m_pathFlags.add((byte) 0);</b>
+<b class="fc"><i>731</i>&nbsp;		} else {</b>
+<b class="fc"><i>732</i>&nbsp;			m_paths.write(m_pathFlags.size() - 1, m_pointCount);</b>
+<i>733</i>&nbsp;		}
+<i>734</i>&nbsp;
+<i>735</i>&nbsp;		// Index_type absoluteIndex = pathStart + before_point_index;
+<i>736</i>&nbsp;
+<b class="fc"><i>737</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>738</i>&nbsp;			int semantics = m_description.getSemantics(iattr);</b>
+<b class="fc"><i>739</i>&nbsp;			int comp = VertexDescription.getComponentCount(semantics);</b>
+<i>740</i>&nbsp;
+<b class="fc"><i>741</i>&nbsp;			int isrcAttr = src.m_description.getAttributeIndex(semantics);</b>
+<b class="fc"><i>742</i>&nbsp;			if (isrcAttr &lt; 0 || src.m_vertexAttributes[isrcAttr] == null) {// The</b>
+<i>743</i>&nbsp;																			// source
+<i>744</i>&nbsp;																			// does
+<i>745</i>&nbsp;																			// not
+<i>746</i>&nbsp;																			// have
+<i>747</i>&nbsp;																			// the
+<i>748</i>&nbsp;																			// attribute.
+<i>749</i>&nbsp;																			// insert
+<i>750</i>&nbsp;																			// default
+<i>751</i>&nbsp;																			// value
+<b class="nc"><i>752</i>&nbsp;				double v = VertexDescription.getDefaultValue(semantics);</b>
+<b class="nc"><i>753</i>&nbsp;				m_vertexAttributes[iattr].insertRange(comp * oldPointCount, v,</b>
+<i>754</i>&nbsp;						src_point_count * comp, comp * oldPointCount);
+<b class="nc"><i>755</i>&nbsp;				continue;</b>
+<i>756</i>&nbsp;			}
+<i>757</i>&nbsp;
+<i>758</i>&nbsp;			// add vertices to the given stream
+<b class="fc"><i>759</i>&nbsp;			boolean b_forward = true;</b>
+<b class="fc"><i>760</i>&nbsp;			m_vertexAttributes[iattr].insertRange(comp * oldPointCount,</b>
+<i>761</i>&nbsp;					src.m_vertexAttributes[isrcAttr], comp * srcFromPoint,
+<i>762</i>&nbsp;					src_point_count * comp, b_forward, comp, comp
+<i>763</i>&nbsp;							* oldPointCount);
+<i>764</i>&nbsp;		}
+<i>765</i>&nbsp;
+<b class="fc"><i>766</i>&nbsp;		if (hasNonLinearSegments()) {</b>
+<i>767</i>&nbsp;			// TODO: implement me. For example as a while loop over all curves.
+<i>768</i>&nbsp;			// Replace, calling ReplaceSegment
+<b class="nc"><i>769</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>770</i>&nbsp;			// m_segment_flags-&gt;write_range((get_path_start(path_index) +
+<i>771</i>&nbsp;			// before_point_index + src_point_count), (oldPointCount -
+<i>772</i>&nbsp;			// get_path_start(path_index) - before_point_index),
+<i>773</i>&nbsp;			// m_segment_flags, (get_path_start(path_index) +
+<i>774</i>&nbsp;			// before_point_index), true, 1);
+<i>775</i>&nbsp;			// m_segment_param_index-&gt;write_range((get_path_start(path_index) +
+<i>776</i>&nbsp;			// before_point_index + src_point_count), (oldPointCount -
+<i>777</i>&nbsp;			// get_path_start(path_index) - before_point_index),
+<i>778</i>&nbsp;			// m_segment_param_index, (get_path_start(path_index) +
+<i>779</i>&nbsp;			// before_point_index), true, 1);
+<i>780</i>&nbsp;			// for (Index_type i = get_path_start(path_index) +
+<i>781</i>&nbsp;			// before_point_index, n = get_path_start(path_index) +
+<i>782</i>&nbsp;			// before_point_index + src_point_count; i &lt; n; i++)
+<i>783</i>&nbsp;			// {
+<i>784</i>&nbsp;			// m_segment_flags-&gt;write(i, (int8_t)enum_value1(Segment_flags,
+<i>785</i>&nbsp;			// enum_line_seg));
+<i>786</i>&nbsp;			// m_segment_param_index-&gt;write(i, -1);
+<i>787</i>&nbsp;			// }
+<i>788</i>&nbsp;		}
+<i>789</i>&nbsp;
+<b class="fc"><i>790</i>&nbsp;		if (src.hasNonLinearSegments(src_path_index)) {</b>
+<i>791</i>&nbsp;			// TODO: implement me. For example as a while loop over all curves.
+<i>792</i>&nbsp;			// Replace, calling ReplaceSegment
+<b class="nc"><i>793</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>794</i>&nbsp;		}
+<i>795</i>&nbsp;
+<b class="fc"><i>796</i>&nbsp;		notifyModified(DirtyFlags.DirtyCoordinates);</b>
+<b class="fc"><i>797</i>&nbsp;	}</b>
+<i>798</i>&nbsp;
+<i>799</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>800</i>&nbsp;	public void reverseAllPaths() {
+<b class="fc"><i>801</i>&nbsp;		for (int i = 0, n = getPathCount(); i &lt; n; i++) {</b>
+<b class="fc"><i>802</i>&nbsp;			reversePath(i);</b>
+<i>803</i>&nbsp;		}
+<b class="fc"><i>804</i>&nbsp;	}</b>
+<i>805</i>&nbsp;
+<i>806</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>807</i>&nbsp;	public void reversePath(int pathIndex) {
+<b class="fc"><i>808</i>&nbsp;		_verifyAllStreams();</b>
+<b class="fc"><i>809</i>&nbsp;		int pathCount = getPathCount();</b>
+<b class="fc"><i>810</i>&nbsp;		if (pathIndex &gt;= pathCount)</b>
+<b class="nc"><i>811</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>812</i>&nbsp;
+<b class="fc"><i>813</i>&nbsp;		int reversedPathStart = getPathStart(pathIndex);</b>
+<b class="fc"><i>814</i>&nbsp;		int reversedPathSize = getPathSize(pathIndex);</b>
+<b class="fc"><i>815</i>&nbsp;		int offset = isClosedPath(pathIndex) ? 1 : 0;</b>
+<i>816</i>&nbsp;
+<i>817</i>&nbsp;		// TODO: a bug for the non linear segments here.
+<i>818</i>&nbsp;		// There could be an issue here if someone explicity closes the path
+<i>819</i>&nbsp;		// with the same start/end point.
+<b class="fc"><i>820</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>821</i>&nbsp;			if (m_vertexAttributes[iattr] != null) {</b>
+<b class="fc"><i>822</i>&nbsp;				int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="fc"><i>823</i>&nbsp;				int comp = VertexDescription.getComponentCount(semantics);</b>
+<b class="fc"><i>824</i>&nbsp;				m_vertexAttributes[iattr].reverseRange(comp</b>
+<i>825</i>&nbsp;						* (reversedPathStart + offset), comp
+<i>826</i>&nbsp;						* (reversedPathSize - offset), comp);
+<i>827</i>&nbsp;			}
+<i>828</i>&nbsp;		}
+<i>829</i>&nbsp;
+<b class="fc"><i>830</i>&nbsp;		notifyModified(DirtyFlags.DirtyCoordinates);</b>
+<b class="fc"><i>831</i>&nbsp;	}</b>
+<i>832</i>&nbsp;
+<i>833</i>&nbsp;	// Reviewed vs. Native Jan 11, 2011
+<i>834</i>&nbsp;	// TODO: Nonlinearsegments
+<i>835</i>&nbsp;	public void removePath(int pathIndex) {
+<b class="fc"><i>836</i>&nbsp;		_verifyAllStreams();</b>
+<b class="fc"><i>837</i>&nbsp;		int pathCount = getPathCount();</b>
+<i>838</i>&nbsp;
+<b class="fc"><i>839</i>&nbsp;		if (pathIndex &lt; 0)</b>
+<b class="nc"><i>840</i>&nbsp;			pathIndex = pathCount - 1;</b>
+<i>841</i>&nbsp;
+<b class="fc"><i>842</i>&nbsp;		if (pathIndex &gt;= pathCount)</b>
+<b class="nc"><i>843</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>844</i>&nbsp;
+<b class="fc"><i>845</i>&nbsp;		boolean bDirtyRingAreas2D = _hasDirtyFlag(DirtyFlags.DirtyRingAreas2D);</b>
+<i>846</i>&nbsp;
+<b class="fc"><i>847</i>&nbsp;		int removedPathStart = getPathStart(pathIndex);</b>
+<b class="fc"><i>848</i>&nbsp;		int removedPathSize = getPathSize(pathIndex);</b>
+<i>849</i>&nbsp;
+<i>850</i>&nbsp;		// Remove the attribute values for the path
+<b class="fc"><i>851</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>852</i>&nbsp;			if (m_vertexAttributes[iattr] != null) {</b>
+<b class="fc"><i>853</i>&nbsp;				int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="fc"><i>854</i>&nbsp;				int comp = VertexDescription.getComponentCount(semantics);</b>
+<b class="fc"><i>855</i>&nbsp;				m_vertexAttributes[iattr].eraseRange(comp * removedPathStart,</b>
+<i>856</i>&nbsp;						comp * removedPathSize, comp * m_pointCount);
+<i>857</i>&nbsp;			}
+<i>858</i>&nbsp;		}
+<i>859</i>&nbsp;
+<i>860</i>&nbsp;		// Change the start of each path after the removed path
+<b class="fc"><i>861</i>&nbsp;		for (int i = pathIndex + 1; i &lt;= pathCount; i++) {</b>
+<b class="fc"><i>862</i>&nbsp;			int istart = m_paths.read(i);</b>
+<b class="fc"><i>863</i>&nbsp;			m_paths.write(i - 1, istart - removedPathSize);</b>
+<i>864</i>&nbsp;		}
+<i>865</i>&nbsp;
+<b class="fc"><i>866</i>&nbsp;		if (m_pathFlags == null) {</b>
+<b class="nc"><i>867</i>&nbsp;			for (int i = pathIndex + 1; i &lt;= pathCount; i++) {</b>
+<b class="nc"><i>868</i>&nbsp;				byte flags = m_pathFlags.read(i);</b>
+<b class="nc"><i>869</i>&nbsp;				m_pathFlags.write(i - 1, flags);</b>
+<i>870</i>&nbsp;			}
+<i>871</i>&nbsp;		}
+<i>872</i>&nbsp;
+<b class="fc"><i>873</i>&nbsp;		m_paths.resize(pathCount);</b>
+<b class="fc"><i>874</i>&nbsp;		m_pathFlags.resize(pathCount);</b>
+<b class="fc"><i>875</i>&nbsp;		m_pointCount -= removedPathSize;</b>
+<b class="fc"><i>876</i>&nbsp;		m_reservedPointCount -= removedPathSize;</b>
+<i>877</i>&nbsp;
+<b class="fc"><i>878</i>&nbsp;		notifyModified(DirtyFlags.DirtyCoordinates);</b>
+<b class="fc"><i>879</i>&nbsp;	}</b>
+<i>880</i>&nbsp;
+<i>881</i>&nbsp;	// TODO: Nonlinearsegments
+<i>882</i>&nbsp;	public void insertPath(int pathIndex, MultiPathImpl src, int srcPathIndex,
+<i>883</i>&nbsp;			boolean bForward) {
+<b class="fc"><i>884</i>&nbsp;		if (src == this)</b>
+<b class="nc"><i>885</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>886</i>&nbsp;
+<b class="fc"><i>887</i>&nbsp;		if (srcPathIndex &gt;= src.getPathCount())</b>
+<b class="nc"><i>888</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>889</i>&nbsp;
+<b class="fc"><i>890</i>&nbsp;		int oldPathCount = getPathCount();</b>
+<b class="fc"><i>891</i>&nbsp;		if (pathIndex &gt; oldPathCount)</b>
+<b class="nc"><i>892</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>893</i>&nbsp;
+<b class="fc"><i>894</i>&nbsp;		if (pathIndex &lt; 0)</b>
+<b class="fc"><i>895</i>&nbsp;			pathIndex = oldPathCount;</b>
+<i>896</i>&nbsp;
+<b class="fc"><i>897</i>&nbsp;		if (srcPathIndex &lt; 0)</b>
+<b class="nc"><i>898</i>&nbsp;			srcPathIndex = src.getPathCount() - 1;</b>
+<i>899</i>&nbsp;
+<b class="fc"><i>900</i>&nbsp;		m_bPathStarted = false;</b>
+<i>901</i>&nbsp;
+<b class="fc"><i>902</i>&nbsp;		mergeVertexDescription(src.m_description);// merge attributes from the</b>
+<i>903</i>&nbsp;													// source
+<i>904</i>&nbsp;
+<b class="fc"><i>905</i>&nbsp;		src._verifyAllStreams();// the source need to be correct.</b>
+<i>906</i>&nbsp;
+<b class="fc"><i>907</i>&nbsp;		int srcPathIndexStart = src.getPathStart(srcPathIndex);</b>
+<b class="fc"><i>908</i>&nbsp;		int srcPathSize = src.getPathSize(srcPathIndex);</b>
+<b class="fc"><i>909</i>&nbsp;		int oldPointCount = m_pointCount;</b>
+<b class="fc"><i>910</i>&nbsp;		int offset = src.isClosedPath(srcPathIndex) &amp;&amp; !bForward ? 1 : 0;</b>
+<i>911</i>&nbsp;
+<b class="fc"><i>912</i>&nbsp;		_resizeImpl(m_pointCount + srcPathSize);</b>
+<b class="fc"><i>913</i>&nbsp;		_verifyAllStreams();</b>
+<b class="fc"><i>914</i>&nbsp;		int pathIndexStart = pathIndex &lt; oldPathCount ? getPathStart(pathIndex)</b>
+<i>915</i>&nbsp;				: oldPointCount;
+<i>916</i>&nbsp;
+<i>917</i>&nbsp;		// Copy all attribute values.
+<b class="fc"><i>918</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>919</i>&nbsp;			int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="fc"><i>920</i>&nbsp;			int isrcAttr = src.m_description.getAttributeIndex(semantics);</b>
+<i>921</i>&nbsp;
+<b class="fc"><i>922</i>&nbsp;			int comp = VertexDescription.getComponentCount(semantics);</b>
+<i>923</i>&nbsp;
+<b class="fc"><i>924</i>&nbsp;			if (isrcAttr &gt;= 0 &amp;&amp; src.m_vertexAttributes[isrcAttr] != null) {</b>
+<b class="fc"><i>925</i>&nbsp;				if (offset != 0)</b>
+<b class="fc"><i>926</i>&nbsp;					m_vertexAttributes[iattr].insertRange(</b>
+<i>927</i>&nbsp;							pathIndexStart * comp,
+<i>928</i>&nbsp;							src.m_vertexAttributes[isrcAttr], comp
+<i>929</i>&nbsp;									* srcPathIndexStart, comp, true, comp, comp
+<i>930</i>&nbsp;									* oldPointCount);
+<b class="fc"><i>931</i>&nbsp;				m_vertexAttributes[iattr].insertRange((pathIndexStart + offset)</b>
+<i>932</i>&nbsp;						* comp, src.m_vertexAttributes[isrcAttr], comp
+<i>933</i>&nbsp;						* (srcPathIndexStart + offset), comp
+<i>934</i>&nbsp;						* (srcPathSize - offset), bForward, comp, comp
+<i>935</i>&nbsp;						* (oldPointCount + offset));
+<i>936</i>&nbsp;			} else {
+<i>937</i>&nbsp;				// Need to make room for the attributes, so we copy default
+<i>938</i>&nbsp;				// values in
+<i>939</i>&nbsp;
+<b class="nc"><i>940</i>&nbsp;				double v = VertexDescription.getDefaultValue(semantics);</b>
+<b class="nc"><i>941</i>&nbsp;				m_vertexAttributes[iattr].insertRange(pathIndexStart * comp, v,</b>
+<i>942</i>&nbsp;						comp * srcPathSize, comp * oldPointCount);
+<i>943</i>&nbsp;			}
+<i>944</i>&nbsp;		}
+<i>945</i>&nbsp;
+<b class="fc"><i>946</i>&nbsp;		int newPointCount = oldPointCount + srcPathSize;</b>
+<b class="fc"><i>947</i>&nbsp;		m_paths.add(newPointCount);</b>
+<i>948</i>&nbsp;
+<b class="fc"><i>949</i>&nbsp;		for (int ipath = oldPathCount; ipath &gt;= pathIndex + 1; ipath--) {</b>
+<b class="fc"><i>950</i>&nbsp;			int iend = m_paths.read(ipath - 1);</b>
+<b class="fc"><i>951</i>&nbsp;			m_paths.write(ipath, iend + srcPathSize);</b>
+<i>952</i>&nbsp;		}
+<i>953</i>&nbsp;
+<i>954</i>&nbsp;		// ========================== todo: NonLinearSegments =================
+<b class="fc"><i>955</i>&nbsp;		if (src.hasNonLinearSegments(srcPathIndex)) {</b>
+<i>956</i>&nbsp;
+<i>957</i>&nbsp;		}
+<i>958</i>&nbsp;
+<b class="fc"><i>959</i>&nbsp;		m_pathFlags.add((byte) 0);</b>
+<i>960</i>&nbsp;
+<i>961</i>&nbsp;		// _ASSERT(m_pathFlags.size() == m_paths.size());
+<i>962</i>&nbsp;
+<b class="fc"><i>963</i>&nbsp;		for (int ipath = oldPathCount - 1; ipath &gt;= pathIndex + 1; ipath--) {</b>
+<b class="fc"><i>964</i>&nbsp;			byte flags = m_pathFlags.read(ipath);</b>
+<b class="fc"><i>965</i>&nbsp;			flags &amp;= ~(byte) PathFlags.enumCalcMask;// remove calculated flags</b>
+<b class="fc"><i>966</i>&nbsp;			m_pathFlags.write(ipath + 1, flags);</b>
+<i>967</i>&nbsp;		}
+<i>968</i>&nbsp;
+<b class="fc"><i>969</i>&nbsp;		AttributeStreamOfInt8 srcPathFlags = src.getPathFlagsStreamRef();</b>
+<b class="fc"><i>970</i>&nbsp;		byte flags = srcPathFlags.read(srcPathIndex);</b>
+<b class="fc"><i>971</i>&nbsp;		flags &amp;= ~(byte) PathFlags.enumCalcMask;// remove calculated flags</b>
+<i>972</i>&nbsp;
+<b class="fc"><i>973</i>&nbsp;		if (m_bPolygon)</b>
+<b class="fc"><i>974</i>&nbsp;			flags |= (byte) PathFlags.enumClosed;</b>
+<i>975</i>&nbsp;
+<b class="fc"><i>976</i>&nbsp;		m_pathFlags.write(pathIndex, flags);</b>
+<b class="fc"><i>977</i>&nbsp;	}</b>
+<i>978</i>&nbsp;
+<i>979</i>&nbsp;	public void insertPath(int pathIndex, Point2D[] points, int pointsOffset,
+<i>980</i>&nbsp;			int count, boolean bForward) {
+<b class="fc"><i>981</i>&nbsp;		int oldPathCount = getPathCount();</b>
+<b class="fc"><i>982</i>&nbsp;		if (pathIndex &gt; oldPathCount)</b>
+<b class="nc"><i>983</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>984</i>&nbsp;
+<b class="fc"><i>985</i>&nbsp;		if (pathIndex &lt; 0)</b>
+<b class="fc"><i>986</i>&nbsp;			pathIndex = oldPathCount;</b>
+<i>987</i>&nbsp;
+<b class="fc"><i>988</i>&nbsp;		m_bPathStarted = false;</b>
+<i>989</i>&nbsp;
+<b class="fc"><i>990</i>&nbsp;		int oldPointCount = m_pointCount;</b>
+<i>991</i>&nbsp;
+<i>992</i>&nbsp;		// Copy all attribute values.
+<b class="fc"><i>993</i>&nbsp;		if (points != null) {</b>
+<b class="nc"><i>994</i>&nbsp;			_resizeImpl(m_pointCount + count);</b>
+<b class="nc"><i>995</i>&nbsp;			_verifyAllStreams();</b>
+<i>996</i>&nbsp;
+<b class="nc"><i>997</i>&nbsp;			int pathStart = pathIndex &lt; oldPathCount ? getPathStart(pathIndex)</b>
+<i>998</i>&nbsp;					: oldPointCount;
+<i>999</i>&nbsp;
+<b class="nc"><i>1000</i>&nbsp;			for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="nc"><i>1001</i>&nbsp;				int semantics = m_description._getSemanticsImpl(iattr);</b>
+<i>1002</i>&nbsp;
+<b class="nc"><i>1003</i>&nbsp;				if (semantics == VertexDescription.Semantics.POSITION) {</b>
+<i>1004</i>&nbsp;					// copy range to make place for new vertices
+<b class="nc"><i>1005</i>&nbsp;					m_vertexAttributes[iattr].writeRange(</b>
+<i>1006</i>&nbsp;							2 * (pathStart + count),
+<i>1007</i>&nbsp;							2 * (oldPointCount - pathIndex),
+<i>1008</i>&nbsp;							m_vertexAttributes[iattr], 2 * pathStart, true, 2);
+<i>1009</i>&nbsp;
+<b class="nc"><i>1010</i>&nbsp;					AttributeStreamOfDbl position = (AttributeStreamOfDbl) (AttributeStreamBase) getAttributeStreamRef(semantics);</b>
+<i>1011</i>&nbsp;
+<b class="nc"><i>1012</i>&nbsp;					int j = pathStart;</b>
+<b class="nc"><i>1013</i>&nbsp;					for (int i = 0; i &lt; count; i++, j++) {</b>
+<b class="nc"><i>1014</i>&nbsp;						int index = (bForward ? pointsOffset + i : pointsOffset</b>
+<i>1015</i>&nbsp;								+ count - i - 1);
+<b class="nc"><i>1016</i>&nbsp;						position.write(2 * j, points[index].x);</b>
+<b class="nc"><i>1017</i>&nbsp;						position.write(2 * j + 1, points[index].y);</b>
+<i>1018</i>&nbsp;					}
+<b class="nc"><i>1019</i>&nbsp;				} else {</b>
+<i>1020</i>&nbsp;					// Need to make room for the attributes, so we copy default
+<i>1021</i>&nbsp;					// values in
+<i>1022</i>&nbsp;
+<b class="nc"><i>1023</i>&nbsp;					int comp = VertexDescription.getComponentCount(semantics);</b>
+<b class="nc"><i>1024</i>&nbsp;					double v = VertexDescription.getDefaultValue(semantics);</b>
+<b class="nc"><i>1025</i>&nbsp;					m_vertexAttributes[iattr].insertRange(pathStart * comp, v,</b>
+<i>1026</i>&nbsp;							comp * count, comp * oldPointCount);
+<i>1027</i>&nbsp;				}
+<i>1028</i>&nbsp;			}
+<b class="nc"><i>1029</i>&nbsp;		} else {</b>
+<b class="fc"><i>1030</i>&nbsp;			_verifyAllStreams();</b>
+<i>1031</i>&nbsp;		}
+<i>1032</i>&nbsp;
+<b class="fc"><i>1033</i>&nbsp;		m_paths.add(m_pointCount);</b>
+<i>1034</i>&nbsp;
+<b class="fc"><i>1035</i>&nbsp;		for (int ipath = oldPathCount; ipath &gt;= pathIndex + 1; ipath--) {</b>
+<b class="nc"><i>1036</i>&nbsp;			int iend = m_paths.read(ipath - 1);</b>
+<b class="nc"><i>1037</i>&nbsp;			m_paths.write(ipath, iend + count);</b>
+<i>1038</i>&nbsp;		}
+<i>1039</i>&nbsp;
+<b class="fc"><i>1040</i>&nbsp;		m_pathFlags.add((byte) 0);</b>
+<i>1041</i>&nbsp;
+<i>1042</i>&nbsp;		// _ASSERT(m_pathFlags.size() == m_paths.size());
+<i>1043</i>&nbsp;
+<b class="fc"><i>1044</i>&nbsp;		for (int ipath = oldPathCount - 1; ipath &gt;= pathIndex + 1; ipath--) {</b>
+<b class="nc"><i>1045</i>&nbsp;			byte flags = m_pathFlags.read(ipath);</b>
+<b class="nc"><i>1046</i>&nbsp;			flags &amp;= ~(byte) PathFlags.enumCalcMask;// remove calculated flags</b>
+<b class="nc"><i>1047</i>&nbsp;			m_pathFlags.write(ipath + 1, flags);</b>
+<i>1048</i>&nbsp;		}
+<i>1049</i>&nbsp;
+<b class="fc"><i>1050</i>&nbsp;		if (m_bPolygon)</b>
+<b class="fc"><i>1051</i>&nbsp;			m_pathFlags.write(pathIndex, (byte) PathFlags.enumClosed);</b>
+<b class="fc"><i>1052</i>&nbsp;	}</b>
+<i>1053</i>&nbsp;
+<i>1054</i>&nbsp;	public void insertPoints(int pathIndex, int beforePointIndex,
+<i>1055</i>&nbsp;			MultiPathImpl src, int srcPathIndex, int srcPointIndexFrom,
+<i>1056</i>&nbsp;			int srcPointCount, boolean bForward) {
+<b class="fc"><i>1057</i>&nbsp;		if (pathIndex &lt; 0)</b>
+<b class="nc"><i>1058</i>&nbsp;			pathIndex = getPathCount();</b>
+<i>1059</i>&nbsp;
+<b class="fc"><i>1060</i>&nbsp;		if (srcPathIndex &lt; 0)</b>
+<b class="nc"><i>1061</i>&nbsp;			srcPathIndex = src.getPathCount() - 1;</b>
+<i>1062</i>&nbsp;
+<b class="fc"><i>1063</i>&nbsp;		if (pathIndex &gt; getPathCount() || beforePointIndex &gt;= 0</b>
+<b class="fc"><i>1064</i>&nbsp;				&amp;&amp; beforePointIndex &gt; getPathSize(pathIndex)</b>
+<b class="fc"><i>1065</i>&nbsp;				|| srcPathIndex &gt;= src.getPathCount()</b>
+<b class="fc"><i>1066</i>&nbsp;				|| srcPointCount &gt; src.getPathSize(srcPathIndex))</b>
+<b class="nc"><i>1067</i>&nbsp;			throw new GeometryException(&quot;index out of bounds&quot;);</b>
+<i>1068</i>&nbsp;
+<b class="fc"><i>1069</i>&nbsp;		if (srcPointCount == 0)</b>
+<b class="nc"><i>1070</i>&nbsp;			return;</b>
+<i>1071</i>&nbsp;
+<b class="fc"><i>1072</i>&nbsp;		mergeVertexDescription(src.m_description);</b>
+<i>1073</i>&nbsp;
+<b class="fc"><i>1074</i>&nbsp;		if (pathIndex == getPathCount())// adding a new path.</b>
+<i>1075</i>&nbsp;		{
+<b class="nc"><i>1076</i>&nbsp;			m_paths.add(m_pointCount);</b>
+<i>1077</i>&nbsp;
+<b class="nc"><i>1078</i>&nbsp;			byte flags = src.m_pathFlags.read(srcPathIndex);</b>
+<b class="nc"><i>1079</i>&nbsp;			flags &amp;= ~(byte) PathFlags.enumCalcMask;// remove calculated flags</b>
+<i>1080</i>&nbsp;
+<b class="nc"><i>1081</i>&nbsp;			if (!m_bPolygon)</b>
+<b class="nc"><i>1082</i>&nbsp;				m_pathFlags.add(flags);</b>
+<i>1083</i>&nbsp;			else
+<b class="nc"><i>1084</i>&nbsp;				m_pathFlags.add((byte) (flags | PathFlags.enumClosed));</b>
+<i>1085</i>&nbsp;		}
+<i>1086</i>&nbsp;
+<b class="fc"><i>1087</i>&nbsp;		if (beforePointIndex &lt; 0)</b>
+<b class="nc"><i>1088</i>&nbsp;			beforePointIndex = getPathSize(pathIndex);</b>
+<i>1089</i>&nbsp;
+<b class="fc"><i>1090</i>&nbsp;		int oldPointCount = m_pointCount;</b>
+<b class="fc"><i>1091</i>&nbsp;		_resizeImpl(m_pointCount + srcPointCount);</b>
+<b class="fc"><i>1092</i>&nbsp;		_verifyAllStreams();</b>
+<b class="fc"><i>1093</i>&nbsp;		src._verifyAllStreams();</b>
+<i>1094</i>&nbsp;
+<b class="fc"><i>1095</i>&nbsp;		int pathStart = getPathStart(pathIndex);</b>
+<b class="fc"><i>1096</i>&nbsp;		int absoluteIndex = pathStart + beforePointIndex;</b>
+<i>1097</i>&nbsp;
+<b class="fc"><i>1098</i>&nbsp;		if (srcPointCount &lt; 0)</b>
+<b class="nc"><i>1099</i>&nbsp;			srcPointCount = src.getPathSize(srcPathIndex);</b>
+<i>1100</i>&nbsp;
+<b class="fc"><i>1101</i>&nbsp;		int srcPathStart = src.getPathStart(srcPathIndex);</b>
+<b class="fc"><i>1102</i>&nbsp;		int srcAbsoluteIndex = srcPathStart + srcPointCount;</b>
+<i>1103</i>&nbsp;
+<b class="fc"><i>1104</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>1105</i>&nbsp;			int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="fc"><i>1106</i>&nbsp;			int comp = VertexDescription.getComponentCount(semantics);</b>
+<i>1107</i>&nbsp;
+<b class="fc"><i>1108</i>&nbsp;			int isrcAttr = src.m_description.getAttributeIndex(semantics);</b>
+<b class="fc"><i>1109</i>&nbsp;			if (isrcAttr &lt; 0 || src.m_vertexAttributes[isrcAttr] == null) // The</b>
+<i>1110</i>&nbsp;																			// source
+<i>1111</i>&nbsp;																			// does
+<i>1112</i>&nbsp;																			// not
+<i>1113</i>&nbsp;																			// have
+<i>1114</i>&nbsp;																			// the
+<i>1115</i>&nbsp;																			// attribute.
+<i>1116</i>&nbsp;			{
+<b class="nc"><i>1117</i>&nbsp;				double v = VertexDescription.getDefaultValue(semantics);</b>
+<b class="nc"><i>1118</i>&nbsp;				m_vertexAttributes[iattr].insertRange(comp * absoluteIndex, v,</b>
+<i>1119</i>&nbsp;						srcAbsoluteIndex * comp, comp * oldPointCount);
+<b class="nc"><i>1120</i>&nbsp;				continue;</b>
+<i>1121</i>&nbsp;			}
+<i>1122</i>&nbsp;
+<i>1123</i>&nbsp;			// add vertices to the given stream
+<b class="fc"><i>1124</i>&nbsp;			m_vertexAttributes[iattr].insertRange(comp</b>
+<i>1125</i>&nbsp;					* (pathStart + beforePointIndex),
+<i>1126</i>&nbsp;					src.m_vertexAttributes[isrcAttr], comp
+<i>1127</i>&nbsp;							* (srcPathStart + srcPointIndexFrom), srcPointCount
+<i>1128</i>&nbsp;							* comp, bForward, comp, comp * oldPointCount);
+<i>1129</i>&nbsp;		}
+<i>1130</i>&nbsp;
+<b class="fc"><i>1131</i>&nbsp;		if (hasNonLinearSegments()) {// TODO: probably a bug here when a new</b>
+<i>1132</i>&nbsp;										// path is added.
+<b class="nc"><i>1133</i>&nbsp;			m_segmentFlags.writeRange((getPathStart(pathIndex)</b>
+<i>1134</i>&nbsp;					+ beforePointIndex + srcPointCount), (oldPointCount
+<b class="nc"><i>1135</i>&nbsp;					- getPathStart(pathIndex) - beforePointIndex),</b>
+<i>1136</i>&nbsp;					m_segmentFlags,
+<b class="nc"><i>1137</i>&nbsp;					(getPathStart(pathIndex) + beforePointIndex), true, 1);</b>
+<b class="nc"><i>1138</i>&nbsp;			m_segmentParamIndex.writeRange((getPathStart(pathIndex)</b>
+<i>1139</i>&nbsp;					+ beforePointIndex + srcPointCount), (oldPointCount
+<b class="nc"><i>1140</i>&nbsp;					- getPathStart(pathIndex) - beforePointIndex),</b>
+<i>1141</i>&nbsp;					m_segmentParamIndex,
+<b class="nc"><i>1142</i>&nbsp;					(getPathStart(pathIndex) + beforePointIndex), true, 1);</b>
+<b class="nc"><i>1143</i>&nbsp;			for (int i = getPathStart(pathIndex) + beforePointIndex, n = getPathStart(pathIndex)</b>
+<b class="nc"><i>1144</i>&nbsp;					+ beforePointIndex + srcPointCount; i &lt; n; i++) {</b>
+<b class="nc"><i>1145</i>&nbsp;				m_segmentFlags.write(i, (byte) SegmentFlags.enumLineSeg);</b>
+<b class="nc"><i>1146</i>&nbsp;				m_segmentParamIndex.write(i, -1);</b>
+<i>1147</i>&nbsp;			}
+<i>1148</i>&nbsp;		}
+<i>1149</i>&nbsp;
+<b class="fc"><i>1150</i>&nbsp;		if (src.hasNonLinearSegments(srcPathIndex)) {</b>
+<i>1151</i>&nbsp;			// TODO: implement me. For example as a while loop over all curves.
+<i>1152</i>&nbsp;			// Replace, calling ReplaceSegment
+<b class="nc"><i>1153</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>1154</i>&nbsp;		}
+<i>1155</i>&nbsp;
+<b class="fc"><i>1156</i>&nbsp;		for (int ipath = pathIndex + 1, npaths = getPathCount(); ipath &lt;= npaths; ipath++) {</b>
+<b class="fc"><i>1157</i>&nbsp;			int num = m_paths.read(ipath);</b>
+<b class="fc"><i>1158</i>&nbsp;			m_paths.write(ipath, num + srcPointCount);</b>
+<i>1159</i>&nbsp;		}
+<b class="fc"><i>1160</i>&nbsp;	}</b>
+<i>1161</i>&nbsp;
+<i>1162</i>&nbsp;	public void insertPoints(int pathIndex, int beforePointIndex,
+<i>1163</i>&nbsp;			Point2D[] src, int srcPointIndexFrom, int srcPointCount,
+<i>1164</i>&nbsp;			boolean bForward) {
+<b class="nc"><i>1165</i>&nbsp;		if (pathIndex &lt; 0)</b>
+<b class="nc"><i>1166</i>&nbsp;			pathIndex = getPathCount();</b>
+<i>1167</i>&nbsp;
+<b class="nc"><i>1168</i>&nbsp;		if (pathIndex &gt; getPathCount()</b>
+<b class="nc"><i>1169</i>&nbsp;				|| beforePointIndex &gt; getPathSize(pathIndex)</b>
+<i>1170</i>&nbsp;				|| srcPointIndexFrom &lt; 0 || srcPointCount &gt; src.length)
+<b class="nc"><i>1171</i>&nbsp;			throw new GeometryException(&quot;index out of bounds&quot;);</b>
+<i>1172</i>&nbsp;
+<b class="nc"><i>1173</i>&nbsp;		if (srcPointCount == 0)</b>
+<b class="nc"><i>1174</i>&nbsp;			return;</b>
+<i>1175</i>&nbsp;
+<b class="nc"><i>1176</i>&nbsp;		if (pathIndex == getPathCount())// adding a new path.</b>
+<i>1177</i>&nbsp;		{
+<b class="nc"><i>1178</i>&nbsp;			m_paths.add(m_pointCount);</b>
+<i>1179</i>&nbsp;
+<b class="nc"><i>1180</i>&nbsp;			if (!m_bPolygon)</b>
+<b class="nc"><i>1181</i>&nbsp;				m_pathFlags.add((byte) 0);</b>
+<i>1182</i>&nbsp;			else
+<b class="nc"><i>1183</i>&nbsp;				m_pathFlags.add((byte) PathFlags.enumClosed);</b>
+<i>1184</i>&nbsp;		}
+<i>1185</i>&nbsp;
+<b class="nc"><i>1186</i>&nbsp;		if (beforePointIndex &lt; 0)</b>
+<b class="nc"><i>1187</i>&nbsp;			beforePointIndex = getPathSize(pathIndex);</b>
+<i>1188</i>&nbsp;
+<b class="nc"><i>1189</i>&nbsp;		_verifyAllStreams();</b>
+<b class="nc"><i>1190</i>&nbsp;		int oldPointCount = m_pointCount;</b>
+<b class="nc"><i>1191</i>&nbsp;		_resizeImpl(m_pointCount + srcPointCount);</b>
+<b class="nc"><i>1192</i>&nbsp;		_verifyAllStreams();</b>
+<b class="nc"><i>1193</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="nc"><i>1194</i>&nbsp;			int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="nc"><i>1195</i>&nbsp;			int comp = VertexDescription.getComponentCount(semantics);</b>
+<i>1196</i>&nbsp;			// copy range to make place for new vertices
+<b class="nc"><i>1197</i>&nbsp;			m_vertexAttributes[iattr]</b>
+<b class="nc"><i>1198</i>&nbsp;					.writeRange(</b>
+<i>1199</i>&nbsp;							comp
+<b class="nc"><i>1200</i>&nbsp;									* (getPathStart(pathIndex)</b>
+<i>1201</i>&nbsp;											+ beforePointIndex + srcPointCount),
+<b class="nc"><i>1202</i>&nbsp;							(oldPointCount - getPathStart(pathIndex) - beforePointIndex)</b>
+<i>1203</i>&nbsp;									* comp,
+<i>1204</i>&nbsp;							m_vertexAttributes[iattr],
+<b class="nc"><i>1205</i>&nbsp;							comp * (getPathStart(pathIndex) + beforePointIndex),</b>
+<i>1206</i>&nbsp;							true, comp);
+<i>1207</i>&nbsp;
+<b class="nc"><i>1208</i>&nbsp;			if (iattr == 0) {</b>
+<i>1209</i>&nbsp;				// add vertices to the given stream
+<b class="nc"><i>1210</i>&nbsp;				((AttributeStreamOfDbl) (AttributeStreamBase) m_vertexAttributes[iattr])</b>
+<b class="nc"><i>1211</i>&nbsp;						.writeRange(comp</b>
+<b class="nc"><i>1212</i>&nbsp;								* (getPathStart(pathIndex) + beforePointIndex),</b>
+<i>1213</i>&nbsp;								srcPointCount, src, srcPointIndexFrom, bForward);
+<i>1214</i>&nbsp;			} else {
+<b class="nc"><i>1215</i>&nbsp;				double v = VertexDescription.getDefaultValue(semantics);</b>
+<b class="nc"><i>1216</i>&nbsp;				m_vertexAttributes[iattr].setRange(v,</b>
+<b class="nc"><i>1217</i>&nbsp;						(getPathStart(pathIndex) + beforePointIndex) * comp,</b>
+<i>1218</i>&nbsp;						srcPointCount * comp);
+<i>1219</i>&nbsp;			}
+<i>1220</i>&nbsp;		}
+<i>1221</i>&nbsp;
+<b class="nc"><i>1222</i>&nbsp;		if (hasNonLinearSegments()) {</b>
+<b class="nc"><i>1223</i>&nbsp;			m_segmentFlags.writeRange((getPathStart(pathIndex)</b>
+<i>1224</i>&nbsp;					+ beforePointIndex + srcPointCount), (oldPointCount
+<b class="nc"><i>1225</i>&nbsp;					- getPathStart(pathIndex) - beforePointIndex),</b>
+<i>1226</i>&nbsp;					m_segmentFlags,
+<b class="nc"><i>1227</i>&nbsp;					(getPathStart(pathIndex) + beforePointIndex), true, 1);</b>
+<b class="nc"><i>1228</i>&nbsp;			m_segmentParamIndex.writeRange((getPathStart(pathIndex)</b>
+<i>1229</i>&nbsp;					+ beforePointIndex + srcPointCount), (oldPointCount
+<b class="nc"><i>1230</i>&nbsp;					- getPathStart(pathIndex) - beforePointIndex),</b>
+<i>1231</i>&nbsp;					m_segmentParamIndex,
+<b class="nc"><i>1232</i>&nbsp;					(getPathStart(pathIndex) + beforePointIndex), true, 1);</b>
+<b class="nc"><i>1233</i>&nbsp;			m_segmentFlags.setRange((byte) SegmentFlags.enumLineSeg,</b>
+<b class="nc"><i>1234</i>&nbsp;					getPathStart(pathIndex) + beforePointIndex, srcPointCount);</b>
+<b class="nc"><i>1235</i>&nbsp;			m_segmentParamIndex.setRange(-1, getPathStart(pathIndex)</b>
+<i>1236</i>&nbsp;					+ beforePointIndex, srcPointCount);
+<i>1237</i>&nbsp;		}
+<i>1238</i>&nbsp;
+<b class="nc"><i>1239</i>&nbsp;		for (int ipath = pathIndex + 1, npaths = getPathCount(); ipath &lt;= npaths; ipath++) {</b>
+<b class="nc"><i>1240</i>&nbsp;			m_paths.write(ipath, m_paths.read(ipath) + srcPointCount);</b>
+<i>1241</i>&nbsp;		}
+<b class="nc"><i>1242</i>&nbsp;	}</b>
+<i>1243</i>&nbsp;
+<i>1244</i>&nbsp;	public void insertPoint(int pathIndex, int beforePointIndex, Point2D pt) {
+<b class="fc"><i>1245</i>&nbsp;		int pathCount = getPathCount();</b>
+<i>1246</i>&nbsp;
+<b class="fc"><i>1247</i>&nbsp;		if (pathIndex &lt; 0)</b>
+<b class="nc"><i>1248</i>&nbsp;			pathIndex = getPathCount();</b>
+<i>1249</i>&nbsp;
+<b class="fc"><i>1250</i>&nbsp;		if (pathIndex &gt;= pathCount || beforePointIndex &gt; getPathSize(pathIndex))</b>
+<b class="nc"><i>1251</i>&nbsp;			throw new GeometryException(&quot;index out of bounds&quot;);</b>
+<i>1252</i>&nbsp;
+<b class="fc"><i>1253</i>&nbsp;		if (pathIndex == getPathCount())// adding a new path.</b>
+<i>1254</i>&nbsp;		{
+<b class="nc"><i>1255</i>&nbsp;			m_paths.add(m_pointCount);</b>
+<i>1256</i>&nbsp;
+<b class="nc"><i>1257</i>&nbsp;			if (!m_bPolygon)</b>
+<b class="nc"><i>1258</i>&nbsp;				m_pathFlags.add((byte) 0);</b>
+<i>1259</i>&nbsp;			else
+<b class="nc"><i>1260</i>&nbsp;				m_pathFlags.add((byte) PathFlags.enumClosed);</b>
+<i>1261</i>&nbsp;		}
+<i>1262</i>&nbsp;
+<b class="fc"><i>1263</i>&nbsp;		if (beforePointIndex &lt; 0)</b>
+<b class="fc"><i>1264</i>&nbsp;			beforePointIndex = getPathSize(pathIndex);</b>
+<i>1265</i>&nbsp;
+<b class="fc"><i>1266</i>&nbsp;		int oldPointCount = m_pointCount;</b>
+<b class="fc"><i>1267</i>&nbsp;		_resizeImpl(m_pointCount + 1);</b>
+<b class="fc"><i>1268</i>&nbsp;		_verifyAllStreams();</b>
+<i>1269</i>&nbsp;
+<b class="fc"><i>1270</i>&nbsp;		int pathStart = getPathStart(pathIndex);</b>
+<i>1271</i>&nbsp;
+<b class="fc"><i>1272</i>&nbsp;		((AttributeStreamOfDbl) (AttributeStreamBase) m_vertexAttributes[0])</b>
+<b class="fc"><i>1273</i>&nbsp;				.insert(2 * (pathStart + beforePointIndex), pt,</b>
+<i>1274</i>&nbsp;						2 * oldPointCount);
+<i>1275</i>&nbsp;
+<b class="fc"><i>1276</i>&nbsp;		for (int iattr = 1, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="nc"><i>1277</i>&nbsp;			int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="nc"><i>1278</i>&nbsp;			int comp = VertexDescription.getComponentCount(semantics);</b>
+<i>1279</i>&nbsp;
+<i>1280</i>&nbsp;			// Need to make room for the attribute, so we copy a default value
+<i>1281</i>&nbsp;			// in
+<b class="nc"><i>1282</i>&nbsp;			double v = VertexDescription.getDefaultValue(semantics);</b>
+<b class="nc"><i>1283</i>&nbsp;			m_vertexAttributes[iattr].insertRange(comp</b>
+<i>1284</i>&nbsp;					* (pathStart + beforePointIndex), v, comp, comp
+<i>1285</i>&nbsp;					* oldPointCount);
+<i>1286</i>&nbsp;		}
+<i>1287</i>&nbsp;
+<b class="fc"><i>1288</i>&nbsp;		for (int ipath = pathIndex + 1, npaths = pathCount; ipath &lt;= npaths; ipath++) {</b>
+<b class="fc"><i>1289</i>&nbsp;			m_paths.write(ipath, m_paths.read(ipath) + 1);</b>
+<i>1290</i>&nbsp;		}
+<b class="fc"><i>1291</i>&nbsp;	}</b>
+<i>1292</i>&nbsp;
+<i>1293</i>&nbsp;	public void insertPoint(int pathIndex, int beforePointIndex, Point pt) {
+<b class="fc"><i>1294</i>&nbsp;		int pathCount = getPathCount();</b>
+<i>1295</i>&nbsp;
+<b class="fc"><i>1296</i>&nbsp;		if (pathIndex &lt; 0)</b>
+<b class="nc"><i>1297</i>&nbsp;			pathIndex = getPathCount();</b>
+<i>1298</i>&nbsp;
+<b class="fc"><i>1299</i>&nbsp;		if (pathIndex &gt;= pathCount || beforePointIndex &gt; getPathSize(pathIndex))</b>
+<b class="nc"><i>1300</i>&nbsp;			throw new GeometryException(&quot;index out of bounds&quot;);</b>
+<i>1301</i>&nbsp;
+<b class="fc"><i>1302</i>&nbsp;		if (pathIndex == getPathCount())// adding a new path.</b>
+<i>1303</i>&nbsp;		{
+<b class="nc"><i>1304</i>&nbsp;			m_paths.add(m_pointCount);</b>
+<i>1305</i>&nbsp;
+<b class="nc"><i>1306</i>&nbsp;			if (!m_bPolygon)</b>
+<b class="nc"><i>1307</i>&nbsp;				m_pathFlags.add((byte) 0);</b>
+<i>1308</i>&nbsp;			else
+<b class="nc"><i>1309</i>&nbsp;				m_pathFlags.add((byte) PathFlags.enumClosed);</b>
+<i>1310</i>&nbsp;		}
+<i>1311</i>&nbsp;
+<b class="fc"><i>1312</i>&nbsp;		if (beforePointIndex &lt; 0)</b>
+<b class="fc"><i>1313</i>&nbsp;			beforePointIndex = getPathSize(pathIndex);</b>
+<i>1314</i>&nbsp;
+<b class="fc"><i>1315</i>&nbsp;		mergeVertexDescription(pt.getDescription());</b>
+<b class="fc"><i>1316</i>&nbsp;		int oldPointCount = m_pointCount;</b>
+<b class="fc"><i>1317</i>&nbsp;		_resizeImpl(m_pointCount + 1);</b>
+<b class="fc"><i>1318</i>&nbsp;		_verifyAllStreams();</b>
+<i>1319</i>&nbsp;
+<b class="fc"><i>1320</i>&nbsp;		int pathStart = getPathStart(pathIndex);</b>
+<i>1321</i>&nbsp;
+<b class="fc"><i>1322</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>1323</i>&nbsp;			int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="fc"><i>1324</i>&nbsp;			int comp = VertexDescription.getComponentCount(semantics);</b>
+<i>1325</i>&nbsp;
+<b class="fc"><i>1326</i>&nbsp;			if (pt.hasAttribute(semantics)) {</b>
+<b class="fc"><i>1327</i>&nbsp;				m_vertexAttributes[iattr].insertAttributes(comp</b>
+<i>1328</i>&nbsp;						* (pathStart + beforePointIndex), pt, semantics, comp
+<i>1329</i>&nbsp;						* oldPointCount);
+<i>1330</i>&nbsp;			} else {
+<i>1331</i>&nbsp;				// Need to make room for the attribute, so we copy a default
+<i>1332</i>&nbsp;				// value in
+<b class="nc"><i>1333</i>&nbsp;				double v = VertexDescription.getDefaultValue(semantics);</b>
+<b class="nc"><i>1334</i>&nbsp;				m_vertexAttributes[iattr].insertRange(comp</b>
+<i>1335</i>&nbsp;						* (pathStart + beforePointIndex), v, comp, comp
+<i>1336</i>&nbsp;						* oldPointCount);
+<i>1337</i>&nbsp;			}
+<i>1338</i>&nbsp;		}
+<i>1339</i>&nbsp;
+<b class="fc"><i>1340</i>&nbsp;		for (int ipath = pathIndex + 1, npaths = pathCount; ipath &lt;= npaths; ipath++) {</b>
+<b class="fc"><i>1341</i>&nbsp;			m_paths.write(ipath, m_paths.read(ipath) + 1);</b>
+<i>1342</i>&nbsp;		}
+<i>1343</i>&nbsp;
+<b class="fc"><i>1344</i>&nbsp;		notifyModified(DirtyFlags.DirtyCoordinates);</b>
+<b class="fc"><i>1345</i>&nbsp;	}</b>
+<i>1346</i>&nbsp;
+<i>1347</i>&nbsp;	public void removePoint(int pathIndex, int pointIndex) {
+<b class="fc"><i>1348</i>&nbsp;		int pathCount = getPathCount();</b>
+<i>1349</i>&nbsp;
+<b class="fc"><i>1350</i>&nbsp;		if (pathIndex &lt; 0)</b>
+<b class="nc"><i>1351</i>&nbsp;			pathIndex = pathCount - 1;</b>
+<i>1352</i>&nbsp;
+<b class="fc"><i>1353</i>&nbsp;		if (pathIndex &gt;= pathCount || pointIndex &gt;= getPathSize(pathIndex))</b>
+<b class="nc"><i>1354</i>&nbsp;			throw new GeometryException(&quot;index out of bounds&quot;);</b>
+<i>1355</i>&nbsp;
+<b class="fc"><i>1356</i>&nbsp;		_verifyAllStreams();</b>
+<i>1357</i>&nbsp;
+<b class="fc"><i>1358</i>&nbsp;		int pathStart = getPathStart(pathIndex);</b>
+<i>1359</i>&nbsp;
+<b class="fc"><i>1360</i>&nbsp;		if (pointIndex &lt; 0)</b>
+<b class="nc"><i>1361</i>&nbsp;			pointIndex = getPathSize(pathIndex) - 1;</b>
+<i>1362</i>&nbsp;
+<b class="fc"><i>1363</i>&nbsp;		int absoluteIndex = pathStart + pointIndex;</b>
+<i>1364</i>&nbsp;
+<i>1365</i>&nbsp;		// Remove the attribute values for the path
+<b class="fc"><i>1366</i>&nbsp;		for (int iattr = 0, nattr = m_description.getAttributeCount(); iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>1367</i>&nbsp;			if (m_vertexAttributes[iattr] != null) {</b>
+<b class="fc"><i>1368</i>&nbsp;				int semantics = m_description._getSemanticsImpl(iattr);</b>
+<b class="fc"><i>1369</i>&nbsp;				int comp = VertexDescription.getComponentCount(semantics);</b>
+<b class="fc"><i>1370</i>&nbsp;				m_vertexAttributes[iattr].eraseRange(comp * absoluteIndex,</b>
+<i>1371</i>&nbsp;						comp, comp * m_pointCount);
+<i>1372</i>&nbsp;			}
+<i>1373</i>&nbsp;		}
+<i>1374</i>&nbsp;
+<b class="fc"><i>1375</i>&nbsp;		for (int ipath = pathCount; ipath &gt;= pathIndex + 1; ipath--) {</b>
+<b class="fc"><i>1376</i>&nbsp;			int iend = m_paths.read(ipath);</b>
+<b class="fc"><i>1377</i>&nbsp;			m_paths.write(ipath, iend - 1);</b>
+<i>1378</i>&nbsp;		}
+<i>1379</i>&nbsp;
+<b class="fc"><i>1380</i>&nbsp;		m_pointCount--;</b>
+<b class="fc"><i>1381</i>&nbsp;		m_reservedPointCount--;</b>
+<b class="fc"><i>1382</i>&nbsp;		notifyModified(DirtyFlags.DirtyCoordinates);</b>
+<b class="fc"><i>1383</i>&nbsp;	}</b>
+<i>1384</i>&nbsp;
+<i>1385</i>&nbsp;	public double calculatePathLength2D(int pathIndex) /* const */
+<i>1386</i>&nbsp;	{
+<b class="nc"><i>1387</i>&nbsp;		SegmentIteratorImpl segIter = querySegmentIteratorAtVertex(getPathStart(pathIndex));</b>
+<i>1388</i>&nbsp;
+<b class="nc"><i>1389</i>&nbsp;		MathUtils.KahanSummator len = new MathUtils.KahanSummator(0);</b>
+<b class="nc"><i>1390</i>&nbsp;		while (segIter.hasNextSegment()) {</b>
+<b class="nc"><i>1391</i>&nbsp;			len.add(segIter.nextSegment().calculateLength2D());</b>
+<i>1392</i>&nbsp;		}
+<i>1393</i>&nbsp;
+<b class="nc"><i>1394</i>&nbsp;		return len.getResult();</b>
+<i>1395</i>&nbsp;	}
+<i>1396</i>&nbsp;
+<i>1397</i>&nbsp;	double calculateSubLength2D(int from_path_index, int from_point_index,
+<i>1398</i>&nbsp;			int to_path_index, int to_point_index) {
+<b class="fc"><i>1399</i>&nbsp;		int absolute_from_index = getPathStart(from_path_index)</b>
+<i>1400</i>&nbsp;				+ from_point_index;
+<b class="fc"><i>1401</i>&nbsp;		int absolute_to_index = getPathStart(to_path_index) + to_point_index;</b>
+<i>1402</i>&nbsp;
+<b class="fc"><i>1403</i>&nbsp;		if (absolute_to_index &lt; absolute_from_index || absolute_from_index &lt; 0</b>
+<b class="fc"><i>1404</i>&nbsp;				|| absolute_to_index &gt; getPointCount() - 1)</b>
+<b class="nc"><i>1405</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>1406</i>&nbsp;
+<b class="fc"><i>1407</i>&nbsp;		SegmentIteratorImpl seg_iter = querySegmentIterator();</b>
+<i>1408</i>&nbsp;
+<b class="fc"><i>1409</i>&nbsp;		double sub_length = 0.0;</b>
+<i>1410</i>&nbsp;
+<b class="fc"><i>1411</i>&nbsp;		seg_iter.resetToVertex(absolute_from_index);</b>
+<i>1412</i>&nbsp;
+<i>1413</i>&nbsp;		do {
+<b class="fc"><i>1414</i>&nbsp;			while (seg_iter.hasNextSegment()) {</b>
+<b class="fc"><i>1415</i>&nbsp;				Segment segment = seg_iter.nextSegment();</b>
+<i>1416</i>&nbsp;
+<b class="fc"><i>1417</i>&nbsp;				if (seg_iter.getStartPointIndex() == absolute_to_index)</b>
+<b class="fc"><i>1418</i>&nbsp;					break;</b>
+<i>1419</i>&nbsp;
+<b class="fc"><i>1420</i>&nbsp;				double segment_length = segment.calculateLength2D();</b>
+<b class="fc"><i>1421</i>&nbsp;				sub_length += segment_length;</b>
+<b class="fc"><i>1422</i>&nbsp;			}</b>
+<i>1423</i>&nbsp;
+<b class="fc"><i>1424</i>&nbsp;			if (seg_iter.getStartPointIndex() == absolute_to_index)</b>
+<b class="fc"><i>1425</i>&nbsp;				break;</b>
+<i>1426</i>&nbsp;
+<b class="fc"><i>1427</i>&nbsp;		} while (seg_iter.nextPath());</b>
+<i>1428</i>&nbsp;
+<b class="fc"><i>1429</i>&nbsp;		return sub_length;</b>
+<i>1430</i>&nbsp;	}
+<i>1431</i>&nbsp;
+<i>1432</i>&nbsp;	double calculateSubLength2D(int path_index, int from_point_index,
+<i>1433</i>&nbsp;			int to_point_index) {
+<b class="fc"><i>1434</i>&nbsp;		int absolute_from_index = getPathStart(path_index) + from_point_index;</b>
+<b class="fc"><i>1435</i>&nbsp;		int absolute_to_index = getPathStart(path_index) + to_point_index;</b>
+<i>1436</i>&nbsp;
+<b class="fc"><i>1437</i>&nbsp;		if (absolute_from_index &lt; 0 || absolute_to_index &gt; getPointCount() - 1)</b>
+<b class="nc"><i>1438</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>1439</i>&nbsp;
+<b class="fc"><i>1440</i>&nbsp;		SegmentIteratorImpl seg_iter = querySegmentIterator();</b>
+<i>1441</i>&nbsp;
+<b class="fc"><i>1442</i>&nbsp;		if (absolute_from_index &gt; absolute_to_index) {</b>
+<b class="fc"><i>1443</i>&nbsp;			if (!isClosedPath(path_index))</b>
+<b class="nc"><i>1444</i>&nbsp;				throw new IllegalArgumentException(</b>
+<i>1445</i>&nbsp;						&quot;cannot iterate across an open path&quot;);
+<i>1446</i>&nbsp;
+<b class="fc"><i>1447</i>&nbsp;			seg_iter.setCirculator(true);</b>
+<i>1448</i>&nbsp;		}
+<i>1449</i>&nbsp;
+<b class="fc"><i>1450</i>&nbsp;		double prev_length = 0.0;</b>
+<b class="fc"><i>1451</i>&nbsp;		double sub_length = 0.0;</b>
+<i>1452</i>&nbsp;
+<b class="fc"><i>1453</i>&nbsp;		seg_iter.resetToVertex(absolute_from_index);</b>
+<i>1454</i>&nbsp;
+<i>1455</i>&nbsp;		do {
+<b class="fc"><i>1456</i>&nbsp;			assert (seg_iter.hasNextSegment());</b>
+<b class="fc"><i>1457</i>&nbsp;			sub_length += prev_length;</b>
+<b class="fc"><i>1458</i>&nbsp;			Segment segment = seg_iter.nextSegment();</b>
+<b class="fc"><i>1459</i>&nbsp;			prev_length = segment.calculateLength2D();</b>
+<i>1460</i>&nbsp;
+<b class="fc"><i>1461</i>&nbsp;		} while (seg_iter.getStartPointIndex() != absolute_to_index);</b>
+<i>1462</i>&nbsp;
+<b class="fc"><i>1463</i>&nbsp;		return sub_length;</b>
+<i>1464</i>&nbsp;	}
+<i>1465</i>&nbsp;
+<i>1466</i>&nbsp;	@Override
+<i>1467</i>&nbsp;	public Geometry getBoundary() {
+<b class="fc"><i>1468</i>&nbsp;		return Boundary.calculate(this, null);</b>
+<i>1469</i>&nbsp;	}
+<i>1470</i>&nbsp;
+<i>1471</i>&nbsp;	// TODO: Add code fore interpolation type (none and angular)
+<i>1472</i>&nbsp;	void interpolateAttributes(int from_path_index, int from_point_index,
+<i>1473</i>&nbsp;			int to_path_index, int to_point_index) {
+<b class="fc"><i>1474</i>&nbsp;		for (int ipath = from_path_index; ipath &lt; to_path_index - 1; ipath++) {</b>
+<b class="fc"><i>1475</i>&nbsp;			if (isClosedPath(ipath))</b>
+<b class="nc"><i>1476</i>&nbsp;				throw new IllegalArgumentException(</b>
+<i>1477</i>&nbsp;						&quot;cannot interpolate across closed paths&quot;);
+<i>1478</i>&nbsp;		}
+<i>1479</i>&nbsp;
+<b class="fc"><i>1480</i>&nbsp;		int nattr = m_description.getAttributeCount();</b>
+<i>1481</i>&nbsp;
+<b class="fc"><i>1482</i>&nbsp;		if (nattr == 1)</b>
+<b class="nc"><i>1483</i>&nbsp;			return; // only has position</b>
+<i>1484</i>&nbsp;
+<b class="fc"><i>1485</i>&nbsp;		double sub_length = calculateSubLength2D(from_path_index,</b>
+<i>1486</i>&nbsp;				from_point_index, to_path_index, to_point_index);
+<i>1487</i>&nbsp;
+<b class="fc"><i>1488</i>&nbsp;		if (sub_length == 0.0)</b>
+<b class="nc"><i>1489</i>&nbsp;			return;</b>
+<i>1490</i>&nbsp;
+<b class="fc"><i>1491</i>&nbsp;		for (int iattr = 1; iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>1492</i>&nbsp;			int semantics = m_description.getSemantics(iattr);</b>
+<i>1493</i>&nbsp;
+<b class="fc"><i>1494</i>&nbsp;			int interpolation = VertexDescription.getInterpolation(semantics);</b>
+<b class="fc"><i>1495</i>&nbsp;			if (interpolation == VertexDescription.Interpolation.ANGULAR)</b>
+<b class="nc"><i>1496</i>&nbsp;				continue;</b>
+<i>1497</i>&nbsp;
+<b class="fc"><i>1498</i>&nbsp;			int components = VertexDescription.getComponentCount(semantics);</b>
+<i>1499</i>&nbsp;
+<b class="fc"><i>1500</i>&nbsp;			for (int ordinate = 0; ordinate &lt; components; ordinate++)</b>
+<b class="fc"><i>1501</i>&nbsp;				interpolateAttributes_(semantics, from_path_index,</b>
+<i>1502</i>&nbsp;						from_point_index, to_path_index, to_point_index,
+<i>1503</i>&nbsp;						sub_length, ordinate);
+<i>1504</i>&nbsp;		}
+<b class="fc"><i>1505</i>&nbsp;	}</b>
+<i>1506</i>&nbsp;
+<i>1507</i>&nbsp;	// TODO: Add code for interpolation type (none and angular)
+<i>1508</i>&nbsp;	void interpolateAttributesForSemantics(int semantics, int from_path_index,
+<i>1509</i>&nbsp;			int from_point_index, int to_path_index, int to_point_index) {
+<b class="fc"><i>1510</i>&nbsp;		if (semantics == VertexDescription.Semantics.POSITION)</b>
+<b class="nc"><i>1511</i>&nbsp;			return;</b>
+<i>1512</i>&nbsp;
+<b class="fc"><i>1513</i>&nbsp;		if (!hasAttribute(semantics))</b>
+<b class="nc"><i>1514</i>&nbsp;			throw new IllegalArgumentException(</b>
+<i>1515</i>&nbsp;					&quot;does not have the given attribute&quot;);
+<i>1516</i>&nbsp;
+<b class="fc"><i>1517</i>&nbsp;		int interpolation = VertexDescription.getInterpolation(semantics);</b>
+<b class="fc"><i>1518</i>&nbsp;		if (interpolation == VertexDescription.Interpolation.ANGULAR)</b>
+<b class="nc"><i>1519</i>&nbsp;			throw new IllegalArgumentException(</b>
+<i>1520</i>&nbsp;					&quot;not implemented for the given semantics&quot;);
+<i>1521</i>&nbsp;
+<b class="fc"><i>1522</i>&nbsp;		for (int ipath = from_path_index; ipath &lt; to_path_index - 1; ipath++) {</b>
+<b class="fc"><i>1523</i>&nbsp;			if (isClosedPath(ipath))</b>
+<b class="nc"><i>1524</i>&nbsp;				throw new IllegalArgumentException(</b>
+<i>1525</i>&nbsp;						&quot;cannot interpolate across closed paths&quot;);
+<i>1526</i>&nbsp;		}
+<i>1527</i>&nbsp;
+<b class="fc"><i>1528</i>&nbsp;		double sub_length = calculateSubLength2D(from_path_index,</b>
+<i>1529</i>&nbsp;				from_point_index, to_path_index, to_point_index);
+<i>1530</i>&nbsp;
+<b class="fc"><i>1531</i>&nbsp;		if (sub_length == 0.0)</b>
+<b class="fc"><i>1532</i>&nbsp;			return;</b>
+<i>1533</i>&nbsp;
+<b class="fc"><i>1534</i>&nbsp;		int components = VertexDescription.getComponentCount(semantics);</b>
+<i>1535</i>&nbsp;
+<b class="fc"><i>1536</i>&nbsp;		for (int ordinate = 0; ordinate &lt; components; ordinate++)</b>
+<b class="fc"><i>1537</i>&nbsp;			interpolateAttributes_(semantics, from_path_index,</b>
+<i>1538</i>&nbsp;					from_point_index, to_path_index, to_point_index,
+<i>1539</i>&nbsp;					sub_length, ordinate);
+<b class="fc"><i>1540</i>&nbsp;	}</b>
+<i>1541</i>&nbsp;
+<i>1542</i>&nbsp;	void interpolateAttributes(int path_index, int from_point_index,
+<i>1543</i>&nbsp;			int to_point_index) {
+<b class="fc"><i>1544</i>&nbsp;		int nattr = m_description.getAttributeCount();</b>
+<i>1545</i>&nbsp;
+<b class="fc"><i>1546</i>&nbsp;		if (nattr == 1)</b>
+<b class="nc"><i>1547</i>&nbsp;			return; // only has position</b>
+<i>1548</i>&nbsp;
+<b class="fc"><i>1549</i>&nbsp;		double sub_length = calculateSubLength2D(path_index, from_point_index,</b>
+<i>1550</i>&nbsp;				to_point_index);
+<i>1551</i>&nbsp;
+<b class="fc"><i>1552</i>&nbsp;		if (sub_length == 0.0)</b>
+<b class="nc"><i>1553</i>&nbsp;			return;</b>
+<i>1554</i>&nbsp;
+<b class="fc"><i>1555</i>&nbsp;		for (int iattr = 1; iattr &lt; nattr; iattr++) {</b>
+<b class="fc"><i>1556</i>&nbsp;			int semantics = m_description.getSemantics(iattr);</b>
+<i>1557</i>&nbsp;
+<b class="fc"><i>1558</i>&nbsp;			int interpolation = VertexDescription.getInterpolation(semantics);</b>
+<b class="fc"><i>1559</i>&nbsp;			if (interpolation == VertexDescription.Interpolation.ANGULAR)</b>
+<b class="nc"><i>1560</i>&nbsp;				continue;</b>
+<i>1561</i>&nbsp;
+<b class="fc"><i>1562</i>&nbsp;			int components = VertexDescription.getComponentCount(semantics);</b>
+<i>1563</i>&nbsp;
+<b class="fc"><i>1564</i>&nbsp;			for (int ordinate = 0; ordinate &lt; components; ordinate++)</b>
+<b class="fc"><i>1565</i>&nbsp;				interpolateAttributes_(semantics, path_index, from_point_index,</b>
+<i>1566</i>&nbsp;						to_point_index, sub_length, ordinate);
+<i>1567</i>&nbsp;		}
+<b class="fc"><i>1568</i>&nbsp;	}</b>
+<i>1569</i>&nbsp;
+<i>1570</i>&nbsp;	void interpolateAttributesForSemantics(int semantics, int path_index,
+<i>1571</i>&nbsp;			int from_point_index, int to_point_index) {
+<b class="fc"><i>1572</i>&nbsp;		if (semantics == VertexDescription.Semantics.POSITION)</b>
+<b class="nc"><i>1573</i>&nbsp;			return;</b>
+<i>1574</i>&nbsp;
+<b class="fc"><i>1575</i>&nbsp;		if (!hasAttribute(semantics))</b>
+<b class="nc"><i>1576</i>&nbsp;			throw new IllegalArgumentException(</b>
+<i>1577</i>&nbsp;					&quot;does not have the given attribute&quot;);
+<i>1578</i>&nbsp;
+<b class="fc"><i>1579</i>&nbsp;		int interpolation = VertexDescription.getInterpolation(semantics);</b>
+<b class="fc"><i>1580</i>&nbsp;		if (interpolation == VertexDescription.Interpolation.ANGULAR)</b>
+<b class="nc"><i>1581</i>&nbsp;			throw new IllegalArgumentException(</b>
+<i>1582</i>&nbsp;					&quot;not implemented for the given semantics&quot;);
+<i>1583</i>&nbsp;
+<b class="fc"><i>1584</i>&nbsp;		double sub_length = calculateSubLength2D(path_index, from_point_index,</b>
+<i>1585</i>&nbsp;				to_point_index);
+<i>1586</i>&nbsp;
+<b class="fc"><i>1587</i>&nbsp;		if (sub_length == 0.0)</b>
+<b class="nc"><i>1588</i>&nbsp;			return;</b>
+<i>1589</i>&nbsp;
+<b class="fc"><i>1590</i>&nbsp;		int components = VertexDescription.getComponentCount(semantics);</b>
+<i>1591</i>&nbsp;
+<b class="fc"><i>1592</i>&nbsp;		for (int ordinate = 0; ordinate &lt; components; ordinate++)</b>
+<b class="fc"><i>1593</i>&nbsp;			interpolateAttributes_(semantics, path_index, from_point_index,</b>
+<i>1594</i>&nbsp;					to_point_index, sub_length, ordinate);
+<b class="fc"><i>1595</i>&nbsp;	}</b>
+<i>1596</i>&nbsp;
+<i>1597</i>&nbsp;	// TODO: Add code fore interpolation type (none and angular)
+<i>1598</i>&nbsp;	void interpolateAttributes_(int semantics, int from_path_index,
+<i>1599</i>&nbsp;			int from_point_index, int to_path_index, int to_point_index,
+<i>1600</i>&nbsp;			double sub_length, int ordinate) {
+<b class="fc"><i>1601</i>&nbsp;		SegmentIteratorImpl seg_iter = querySegmentIterator();</b>
+<i>1602</i>&nbsp;
+<b class="fc"><i>1603</i>&nbsp;		int absolute_from_index = getPathStart(from_path_index)</b>
+<i>1604</i>&nbsp;				+ from_point_index;
+<b class="fc"><i>1605</i>&nbsp;		int absolute_to_index = getPathStart(to_path_index) + to_point_index;</b>
+<i>1606</i>&nbsp;
+<b class="fc"><i>1607</i>&nbsp;		double from_attribute = getAttributeAsDbl(semantics,</b>
+<i>1608</i>&nbsp;				absolute_from_index, ordinate);
+<b class="fc"><i>1609</i>&nbsp;		double to_attribute = getAttributeAsDbl(semantics, absolute_to_index,</b>
+<i>1610</i>&nbsp;				ordinate);
+<b class="fc"><i>1611</i>&nbsp;		double interpolated_attribute = from_attribute;</b>
+<b class="fc"><i>1612</i>&nbsp;		double cumulative_length = 0.0;</b>
+<i>1613</i>&nbsp;
+<b class="fc"><i>1614</i>&nbsp;		seg_iter.resetToVertex(absolute_from_index);</b>
+<i>1615</i>&nbsp;
+<i>1616</i>&nbsp;		do {
+<b class="fc"><i>1617</i>&nbsp;			if (seg_iter.hasNextSegment()) {</b>
+<b class="fc"><i>1618</i>&nbsp;				seg_iter.nextSegment();</b>
+<i>1619</i>&nbsp;
+<b class="fc"><i>1620</i>&nbsp;				if (seg_iter.getStartPointIndex() == absolute_to_index)</b>
+<b class="fc"><i>1621</i>&nbsp;					return;</b>
+<i>1622</i>&nbsp;
+<b class="fc"><i>1623</i>&nbsp;				setAttribute(semantics, seg_iter.getStartPointIndex(),</b>
+<i>1624</i>&nbsp;						ordinate, interpolated_attribute);
+<i>1625</i>&nbsp;
+<b class="fc"><i>1626</i>&nbsp;				seg_iter.previousSegment();</b>
+<i>1627</i>&nbsp;
+<i>1628</i>&nbsp;				do {
+<b class="fc"><i>1629</i>&nbsp;					Segment segment = seg_iter.nextSegment();</b>
+<i>1630</i>&nbsp;
+<b class="fc"><i>1631</i>&nbsp;					if (seg_iter.getEndPointIndex() == absolute_to_index)</b>
+<b class="fc"><i>1632</i>&nbsp;						return;</b>
+<i>1633</i>&nbsp;
+<b class="fc"><i>1634</i>&nbsp;					double segment_length = segment.calculateLength2D();</b>
+<b class="fc"><i>1635</i>&nbsp;					cumulative_length += segment_length;</b>
+<b class="fc"><i>1636</i>&nbsp;					double t = cumulative_length / sub_length;</b>
+<b class="fc"><i>1637</i>&nbsp;					interpolated_attribute = MathUtils.lerp(from_attribute,  to_attribute, t);</b>
+<i>1638</i>&nbsp;
+<b class="fc"><i>1639</i>&nbsp;					if (!seg_iter.isClosingSegment())</b>
+<b class="fc"><i>1640</i>&nbsp;						setAttribute(semantics, seg_iter.getEndPointIndex(),</b>
+<i>1641</i>&nbsp;								ordinate, interpolated_attribute);
+<i>1642</i>&nbsp;
+<b class="fc"><i>1643</i>&nbsp;				} while (seg_iter.hasNextSegment());</b>
+<i>1644</i>&nbsp;			}
+<i>1645</i>&nbsp;
+<b class="fc"><i>1646</i>&nbsp;		} while (seg_iter.nextPath());</b>
+<b class="nc"><i>1647</i>&nbsp;	}</b>
+<i>1648</i>&nbsp;
+<i>1649</i>&nbsp;	void interpolateAttributes_(int semantics, int path_index,
+<i>1650</i>&nbsp;			int from_point_index, int to_point_index, double sub_length,
+<i>1651</i>&nbsp;			int ordinate) {
+<b class="fc"><i>1652</i>&nbsp;		assert (m_bPolygon);</b>
+<b class="fc"><i>1653</i>&nbsp;		SegmentIteratorImpl seg_iter = querySegmentIterator();</b>
+<i>1654</i>&nbsp;
+<b class="fc"><i>1655</i>&nbsp;		int absolute_from_index = getPathStart(path_index) + from_point_index;</b>
+<b class="fc"><i>1656</i>&nbsp;		int absolute_to_index = getPathStart(path_index) + to_point_index;</b>
+<i>1657</i>&nbsp;
+<b class="fc"><i>1658</i>&nbsp;		if (absolute_to_index == absolute_from_index)</b>
+<b class="nc"><i>1659</i>&nbsp;			return;</b>
+<i>1660</i>&nbsp;
+<b class="fc"><i>1661</i>&nbsp;		double from_attribute = getAttributeAsDbl(semantics,</b>
+<i>1662</i>&nbsp;				absolute_from_index, ordinate);
+<b class="fc"><i>1663</i>&nbsp;		double to_attribute = getAttributeAsDbl(semantics, absolute_to_index,</b>
+<i>1664</i>&nbsp;				ordinate);
+<b class="fc"><i>1665</i>&nbsp;		double cumulative_length = 0.0;</b>
+<i>1666</i>&nbsp;
+<b class="fc"><i>1667</i>&nbsp;		seg_iter.resetToVertex(absolute_from_index);</b>
+<b class="fc"><i>1668</i>&nbsp;		seg_iter.setCirculator(true);</b>
+<i>1669</i>&nbsp;
+<b class="fc"><i>1670</i>&nbsp;		double prev_interpolated_attribute = from_attribute;</b>
+<i>1671</i>&nbsp;
+<i>1672</i>&nbsp;		do {
+<b class="fc"><i>1673</i>&nbsp;			Segment segment = seg_iter.nextSegment();</b>
+<b class="fc"><i>1674</i>&nbsp;			setAttribute(semantics, seg_iter.getStartPointIndex(), ordinate,</b>
+<i>1675</i>&nbsp;					prev_interpolated_attribute);
+<i>1676</i>&nbsp;
+<b class="fc"><i>1677</i>&nbsp;			double segment_length = segment.calculateLength2D();</b>
+<b class="fc"><i>1678</i>&nbsp;			cumulative_length += segment_length;</b>
+<b class="fc"><i>1679</i>&nbsp;			double t = cumulative_length / sub_length;</b>
+<b class="fc"><i>1680</i>&nbsp;			prev_interpolated_attribute = MathUtils.lerp(from_attribute, to_attribute, t);</b>
+<i>1681</i>&nbsp;
+<b class="fc"><i>1682</i>&nbsp;		} while (seg_iter.getEndPointIndex() != absolute_to_index);</b>
+<b class="fc"><i>1683</i>&nbsp;	}</b>
+<i>1684</i>&nbsp;
+<i>1685</i>&nbsp;	@Override
+<i>1686</i>&nbsp;	public void setEmpty() {
+<b class="fc"><i>1687</i>&nbsp;		m_curveParamwritePoint = 0;</b>
+<b class="fc"><i>1688</i>&nbsp;		m_bPathStarted = false;</b>
+<b class="fc"><i>1689</i>&nbsp;		m_paths = null;</b>
+<b class="fc"><i>1690</i>&nbsp;		m_pathFlags = null;</b>
+<b class="fc"><i>1691</i>&nbsp;		m_segmentParamIndex = null;</b>
+<b class="fc"><i>1692</i>&nbsp;		m_segmentFlags = null;</b>
+<b class="fc"><i>1693</i>&nbsp;		m_segmentParams = null;</b>
+<b class="fc"><i>1694</i>&nbsp;		_setEmptyImpl();</b>
+<b class="fc"><i>1695</i>&nbsp;	}</b>
+<i>1696</i>&nbsp;
+<i>1697</i>&nbsp;	@Override
+<i>1698</i>&nbsp;	public void applyTransformation(Transformation2D transform) {
+<b class="fc"><i>1699</i>&nbsp;		applyTransformation(transform, -1);</b>
+<b class="fc"><i>1700</i>&nbsp;	}</b>
+<i>1701</i>&nbsp;
+<i>1702</i>&nbsp;	public void applyTransformation(Transformation2D transform, int pathIndex) {
+<b class="fc"><i>1703</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>1704</i>&nbsp;			return;</b>
+<i>1705</i>&nbsp;
+<b class="fc"><i>1706</i>&nbsp;		if (transform.isIdentity())</b>
+<b class="fc"><i>1707</i>&nbsp;			return;</b>
+<i>1708</i>&nbsp;
+<b class="fc"><i>1709</i>&nbsp;		_verifyAllStreams();</b>
+<b class="fc"><i>1710</i>&nbsp;		AttributeStreamOfDbl points = (AttributeStreamOfDbl) m_vertexAttributes[0];</b>
+<b class="fc"><i>1711</i>&nbsp;		Point2D ptStart = new Point2D();</b>
+<b class="fc"><i>1712</i>&nbsp;		Point2D ptControl = new Point2D();</b>
+<i>1713</i>&nbsp;
+<i>1714</i>&nbsp;		boolean bHasNonLinear;
+<i>1715</i>&nbsp;		int fistIdx;
+<i>1716</i>&nbsp;		int lastIdx;
+<b class="fc"><i>1717</i>&nbsp;		if (pathIndex &lt; 0) {</b>
+<b class="fc"><i>1718</i>&nbsp;			bHasNonLinear = hasNonLinearSegments();</b>
+<b class="fc"><i>1719</i>&nbsp;			fistIdx = 0;</b>
+<b class="fc"><i>1720</i>&nbsp;			lastIdx = m_pointCount;</b>
+<i>1721</i>&nbsp;		} else {
+<b class="fc"><i>1722</i>&nbsp;			bHasNonLinear = hasNonLinearSegments(pathIndex);</b>
+<b class="fc"><i>1723</i>&nbsp;			fistIdx = getPathStart(pathIndex);</b>
+<b class="fc"><i>1724</i>&nbsp;			lastIdx = getPathEnd(pathIndex);</b>
+<i>1725</i>&nbsp;		}
+<i>1726</i>&nbsp;
+<b class="fc"><i>1727</i>&nbsp;		for (int ipoint = fistIdx; ipoint &lt; lastIdx; ipoint++) {</b>
+<b class="fc"><i>1728</i>&nbsp;			ptStart.x = points.read(ipoint * 2);</b>
+<b class="fc"><i>1729</i>&nbsp;			ptStart.y = points.read(ipoint * 2 + 1);</b>
+<i>1730</i>&nbsp;
+<b class="fc"><i>1731</i>&nbsp;			if (bHasNonLinear) {</b>
+<b class="nc"><i>1732</i>&nbsp;				int segIndex = m_segmentParamIndex.read(ipoint);</b>
+<b class="nc"><i>1733</i>&nbsp;				if (segIndex &gt;= 0) {</b>
+<b class="nc"><i>1734</i>&nbsp;					int segmentType = (int) m_segmentFlags.read(ipoint);</b>
+<b class="nc"><i>1735</i>&nbsp;					int type = segmentType &amp; SegmentFlags.enumSegmentMask;</b>
+<b class="nc"><i>1736</i>&nbsp;					switch (type) {</b>
+<i>1737</i>&nbsp;					case SegmentFlags.enumBezierSeg: {
+<b class="nc"><i>1738</i>&nbsp;						ptControl.x = m_segmentParams.read(segIndex);</b>
+<b class="nc"><i>1739</i>&nbsp;						ptControl.y = m_segmentParams.read(segIndex + 1);</b>
+<b class="nc"><i>1740</i>&nbsp;						transform.transform(ptControl, ptControl);</b>
+<b class="nc"><i>1741</i>&nbsp;						m_segmentParams.write(segIndex, ptControl.x);</b>
+<b class="nc"><i>1742</i>&nbsp;						m_segmentParams.write(segIndex + 1, ptControl.y);</b>
+<i>1743</i>&nbsp;
+<b class="nc"><i>1744</i>&nbsp;						ptControl.x = m_segmentParams.read(segIndex + 3);</b>
+<b class="nc"><i>1745</i>&nbsp;						ptControl.y = m_segmentParams.read(segIndex + 4);</b>
+<b class="nc"><i>1746</i>&nbsp;						transform.transform(ptControl, ptControl);</b>
+<b class="nc"><i>1747</i>&nbsp;						m_segmentParams.write(segIndex + 3, ptControl.x);</b>
+<b class="nc"><i>1748</i>&nbsp;						m_segmentParams.write(segIndex + 4, ptControl.y);</b>
+<i>1749</i>&nbsp;					}
+<b class="nc"><i>1750</i>&nbsp;						break;</b>
+<i>1751</i>&nbsp;					case SegmentFlags.enumArcSeg:
+<b class="nc"><i>1752</i>&nbsp;						throw GeometryException.GeometryInternalError();</b>
+<i>1753</i>&nbsp;
+<i>1754</i>&nbsp;					}
+<i>1755</i>&nbsp;				}
+<i>1756</i>&nbsp;			}
+<i>1757</i>&nbsp;
+<b class="fc"><i>1758</i>&nbsp;			transform.transform(ptStart, ptStart);</b>
+<b class="fc"><i>1759</i>&nbsp;			points.write(ipoint * 2, ptStart.x);</b>
+<b class="fc"><i>1760</i>&nbsp;			points.write(ipoint * 2 + 1, ptStart.y);</b>
+<i>1761</i>&nbsp;		}
+<i>1762</i>&nbsp;
+<b class="fc"><i>1763</i>&nbsp;		notifyModified(DirtyFlags.DirtyCoordinates);</b>
+<i>1764</i>&nbsp;		// REFACTOR: reset the exact envelope only and transform the loose
+<i>1765</i>&nbsp;		// envelope
+<b class="fc"><i>1766</i>&nbsp;	}</b>
+<i>1767</i>&nbsp;
+<i>1768</i>&nbsp;	@Override
+<i>1769</i>&nbsp;	public void applyTransformation(Transformation3D transform) {
+<b class="nc"><i>1770</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>1771</i>&nbsp;			return;</b>
+<i>1772</i>&nbsp;
+<b class="nc"><i>1773</i>&nbsp;		addAttribute(VertexDescription.Semantics.Z);</b>
+<b class="nc"><i>1774</i>&nbsp;		_verifyAllStreams();</b>
+<b class="nc"><i>1775</i>&nbsp;		AttributeStreamOfDbl points = (AttributeStreamOfDbl) m_vertexAttributes[0];</b>
+<b class="nc"><i>1776</i>&nbsp;		AttributeStreamOfDbl zs = (AttributeStreamOfDbl) m_vertexAttributes[1];</b>
+<b class="nc"><i>1777</i>&nbsp;		Point3D ptStart = new Point3D();</b>
+<b class="nc"><i>1778</i>&nbsp;		Point3D ptControl = new Point3D();</b>
+<b class="nc"><i>1779</i>&nbsp;		boolean bHasNonLinear = hasNonLinearSegments();</b>
+<b class="nc"><i>1780</i>&nbsp;		for (int ipoint = 0; ipoint &lt; m_pointCount; ipoint++) {</b>
+<b class="nc"><i>1781</i>&nbsp;			ptStart.x = points.read(ipoint * 2);</b>
+<b class="nc"><i>1782</i>&nbsp;			ptStart.y = points.read(ipoint * 2 + 1);</b>
+<b class="nc"><i>1783</i>&nbsp;			ptStart.z = zs.read(ipoint);</b>
+<i>1784</i>&nbsp;
+<b class="nc"><i>1785</i>&nbsp;			if (bHasNonLinear) {</b>
+<b class="nc"><i>1786</i>&nbsp;				int segIndex = m_segmentParamIndex.read(ipoint);</b>
+<b class="nc"><i>1787</i>&nbsp;				if (segIndex &gt;= 0) {</b>
+<b class="nc"><i>1788</i>&nbsp;					int segmentType = (int) m_segmentFlags.read(ipoint);</b>
+<b class="nc"><i>1789</i>&nbsp;					int type = segmentType &amp; (int) SegmentFlags.enumSegmentMask;</b>
+<b class="nc"><i>1790</i>&nbsp;					switch (type) {</b>
+<i>1791</i>&nbsp;					case SegmentFlags.enumBezierSeg: {
+<b class="nc"><i>1792</i>&nbsp;						ptControl.x = m_segmentParams.read(segIndex);</b>
+<b class="nc"><i>1793</i>&nbsp;						ptControl.y = m_segmentParams.read(segIndex + 1);</b>
+<b class="nc"><i>1794</i>&nbsp;						ptControl.z = m_segmentParams.read(segIndex + 2);</b>
+<b class="nc"><i>1795</i>&nbsp;						ptControl = transform.transform(ptControl);</b>
+<b class="nc"><i>1796</i>&nbsp;						m_segmentParams.write(segIndex, ptControl.x);</b>
+<b class="nc"><i>1797</i>&nbsp;						m_segmentParams.write(segIndex + 1, ptControl.y);</b>
+<b class="nc"><i>1798</i>&nbsp;						m_segmentParams.write(segIndex + 1, ptControl.z);</b>
+<i>1799</i>&nbsp;
+<b class="nc"><i>1800</i>&nbsp;						ptControl.x = m_segmentParams.read(segIndex + 3);</b>
+<b class="nc"><i>1801</i>&nbsp;						ptControl.y = m_segmentParams.read(segIndex + 4);</b>
+<b class="nc"><i>1802</i>&nbsp;						ptControl.z = m_segmentParams.read(segIndex + 5);</b>
+<b class="nc"><i>1803</i>&nbsp;						ptControl = transform.transform(ptControl);</b>
+<b class="nc"><i>1804</i>&nbsp;						m_segmentParams.write(segIndex + 3, ptControl.x);</b>
+<b class="nc"><i>1805</i>&nbsp;						m_segmentParams.write(segIndex + 4, ptControl.y);</b>
+<b class="nc"><i>1806</i>&nbsp;						m_segmentParams.write(segIndex + 5, ptControl.z);</b>
+<i>1807</i>&nbsp;					}
+<b class="nc"><i>1808</i>&nbsp;						break;</b>
+<i>1809</i>&nbsp;					case SegmentFlags.enumArcSeg:
+<b class="nc"><i>1810</i>&nbsp;						throw GeometryException.GeometryInternalError();</b>
+<i>1811</i>&nbsp;
+<i>1812</i>&nbsp;					}
+<i>1813</i>&nbsp;				}
+<i>1814</i>&nbsp;			}
+<i>1815</i>&nbsp;
+<b class="nc"><i>1816</i>&nbsp;			ptStart = transform.transform(ptStart);</b>
+<b class="nc"><i>1817</i>&nbsp;			points.write(ipoint * 2, ptStart.x);</b>
+<b class="nc"><i>1818</i>&nbsp;			points.write(ipoint * 2 + 1, ptStart.y);</b>
+<b class="nc"><i>1819</i>&nbsp;			zs.write(ipoint, ptStart.z);</b>
+<i>1820</i>&nbsp;		}
+<i>1821</i>&nbsp;
+<i>1822</i>&nbsp;		// REFACTOR: reset the exact envelope only and transform the loose
+<i>1823</i>&nbsp;		// envelope
+<i>1824</i>&nbsp;
+<b class="nc"><i>1825</i>&nbsp;		notifyModified(DirtyFlags.DirtyCoordinates);</b>
+<b class="nc"><i>1826</i>&nbsp;	}</b>
+<i>1827</i>&nbsp;
+<i>1828</i>&nbsp;	@Override
+<i>1829</i>&nbsp;	protected void _verifyStreamsImpl() {
+<b class="fc"><i>1830</i>&nbsp;		if (m_paths == null) {</b>
+<b class="fc"><i>1831</i>&nbsp;			m_paths = (AttributeStreamOfInt32) AttributeStreamBase</b>
+<b class="fc"><i>1832</i>&nbsp;					.createIndexStream(1, 0);</b>
+<b class="fc"><i>1833</i>&nbsp;			m_pathFlags = (AttributeStreamOfInt8) AttributeStreamBase</b>
+<b class="fc"><i>1834</i>&nbsp;					.createByteStream(1, (byte) 0);</b>
+<i>1835</i>&nbsp;		}
+<i>1836</i>&nbsp;
+<b class="fc"><i>1837</i>&nbsp;		if (m_segmentFlags != null) {</b>
+<b class="nc"><i>1838</i>&nbsp;			m_segmentFlags.resize(m_reservedPointCount,</b>
+<i>1839</i>&nbsp;					(byte) SegmentFlags.enumLineSeg);
+<b class="nc"><i>1840</i>&nbsp;			m_segmentParamIndex.resize(m_reservedPointCount, -1);</b>
+<i>1841</i>&nbsp;		}
+<b class="fc"><i>1842</i>&nbsp;	}</b>
+<i>1843</i>&nbsp;
+<i>1844</i>&nbsp;	@Override
+<i>1845</i>&nbsp;	void _copyToImpl(MultiVertexGeometryImpl dst) {
+<b class="fc"><i>1846</i>&nbsp;		MultiPathImpl dstPoly = (MultiPathImpl) dst;</b>
+<b class="fc"><i>1847</i>&nbsp;		dstPoly.m_bPathStarted = false;</b>
+<b class="fc"><i>1848</i>&nbsp;		dstPoly.m_curveParamwritePoint = m_curveParamwritePoint;</b>
+<b class="fc"><i>1849</i>&nbsp;		dstPoly.m_fill_rule = m_fill_rule;</b>
+<i>1850</i>&nbsp;		
+<b class="fc"><i>1851</i>&nbsp;		if (m_paths != null)</b>
+<b class="fc"><i>1852</i>&nbsp;			dstPoly.m_paths = new AttributeStreamOfInt32(m_paths);</b>
+<i>1853</i>&nbsp;		else
+<b class="nc"><i>1854</i>&nbsp;			dstPoly.m_paths = null;</b>
+<i>1855</i>&nbsp;
+<b class="fc"><i>1856</i>&nbsp;		if (m_pathFlags != null)</b>
+<b class="fc"><i>1857</i>&nbsp;			dstPoly.m_pathFlags = new AttributeStreamOfInt8(m_pathFlags);</b>
+<i>1858</i>&nbsp;		else
+<b class="nc"><i>1859</i>&nbsp;			dstPoly.m_pathFlags = null;</b>
+<i>1860</i>&nbsp;
+<b class="fc"><i>1861</i>&nbsp;		if (m_segmentParamIndex != null)</b>
+<b class="nc"><i>1862</i>&nbsp;			dstPoly.m_segmentParamIndex = new AttributeStreamOfInt32(</b>
+<i>1863</i>&nbsp;					m_segmentParamIndex);
+<i>1864</i>&nbsp;		else
+<b class="fc"><i>1865</i>&nbsp;			dstPoly.m_segmentParamIndex = null;</b>
+<i>1866</i>&nbsp;
+<b class="fc"><i>1867</i>&nbsp;		if (m_segmentFlags != null)</b>
+<b class="nc"><i>1868</i>&nbsp;			dstPoly.m_segmentFlags = new AttributeStreamOfInt8(m_segmentFlags);</b>
+<i>1869</i>&nbsp;		else
+<b class="fc"><i>1870</i>&nbsp;			dstPoly.m_segmentFlags = null;</b>
+<i>1871</i>&nbsp;
+<b class="fc"><i>1872</i>&nbsp;		if (m_segmentParams != null)</b>
+<b class="nc"><i>1873</i>&nbsp;			dstPoly.m_segmentParams = new AttributeStreamOfDbl(m_segmentParams);</b>
+<i>1874</i>&nbsp;		else
+<b class="fc"><i>1875</i>&nbsp;			dstPoly.m_segmentParams = null;</b>
+<i>1876</i>&nbsp;
+<b class="fc"><i>1877</i>&nbsp;		dstPoly.m_cachedLength2D = m_cachedLength2D;</b>
+<b class="fc"><i>1878</i>&nbsp;		dstPoly.m_cachedArea2D = m_cachedArea2D;</b>
+<i>1879</i>&nbsp;
+<b class="fc"><i>1880</i>&nbsp;		if (!_hasDirtyFlag(DirtyFlags.DirtyRingAreas2D)) {</b>
+<b class="fc"><i>1881</i>&nbsp;			dstPoly.m_cachedRingAreas2D = (AttributeStreamOfDbl) m_cachedRingAreas2D;</b>
+<i>1882</i>&nbsp;		} else
+<b class="fc"><i>1883</i>&nbsp;			dstPoly.m_cachedRingAreas2D = null;</b>
+<i>1884</i>&nbsp;
+<b class="fc"><i>1885</i>&nbsp;	}</b>
+<i>1886</i>&nbsp;
+<i>1887</i>&nbsp;	@Override
+<i>1888</i>&nbsp;	public double calculateLength2D() {
+<b class="fc"><i>1889</i>&nbsp;		if (!_hasDirtyFlag(DirtyFlags.DirtyLength2D)) {</b>
+<b class="fc"><i>1890</i>&nbsp;			return m_cachedLength2D;</b>
+<i>1891</i>&nbsp;		}
+<i>1892</i>&nbsp;
+<b class="fc"><i>1893</i>&nbsp;		SegmentIteratorImpl segIter = querySegmentIterator();</b>
+<b class="fc"><i>1894</i>&nbsp;		MathUtils.KahanSummator len = new MathUtils.KahanSummator(0);</b>
+<b class="fc"><i>1895</i>&nbsp;		while (segIter.nextPath()) {</b>
+<b class="fc"><i>1896</i>&nbsp;			while (segIter.hasNextSegment()) {</b>
+<b class="fc"><i>1897</i>&nbsp;				len.add(segIter.nextSegment().calculateLength2D());</b>
+<i>1898</i>&nbsp;			}
+<i>1899</i>&nbsp;		}
+<i>1900</i>&nbsp;
+<b class="fc"><i>1901</i>&nbsp;		m_cachedLength2D = len.getResult();</b>
+<b class="fc"><i>1902</i>&nbsp;		_setDirtyFlag(DirtyFlags.DirtyLength2D, false);</b>
+<i>1903</i>&nbsp;
+<b class="fc"><i>1904</i>&nbsp;		return len.getResult();</b>
+<i>1905</i>&nbsp;	}
+<i>1906</i>&nbsp;
+<i>1907</i>&nbsp;	@Override
+<i>1908</i>&nbsp;	public boolean equals(Object other) {
+<b class="fc"><i>1909</i>&nbsp;		if (other == this)</b>
+<b class="nc"><i>1910</i>&nbsp;			return true;</b>
+<i>1911</i>&nbsp;
+<b class="fc"><i>1912</i>&nbsp;		if (!(other instanceof MultiPathImpl))</b>
+<b class="nc"><i>1913</i>&nbsp;			return false;</b>
+<i>1914</i>&nbsp;
+<b class="fc"><i>1915</i>&nbsp;		if (!super.equals(other))</b>
+<b class="fc"><i>1916</i>&nbsp;			return false;</b>
+<i>1917</i>&nbsp;
+<b class="fc"><i>1918</i>&nbsp;		MultiPathImpl otherMultiPath = (MultiPathImpl) other;</b>
+<i>1919</i>&nbsp;
+<b class="fc"><i>1920</i>&nbsp;		int pathCount = getPathCount();</b>
+<b class="fc"><i>1921</i>&nbsp;		int pathCountOther = otherMultiPath.getPathCount();</b>
+<i>1922</i>&nbsp;
+<b class="fc"><i>1923</i>&nbsp;		if (pathCount != pathCountOther)</b>
+<b class="nc"><i>1924</i>&nbsp;			return false;</b>
+<i>1925</i>&nbsp;
+<b class="fc"><i>1926</i>&nbsp;		if (pathCount &gt; 0 &amp;&amp; m_paths != null</b>
+<b class="fc"><i>1927</i>&nbsp;				&amp;&amp; !m_paths.equals(otherMultiPath.m_paths, 0, pathCount + 1))</b>
+<b class="nc"><i>1928</i>&nbsp;			return false;</b>
+<i>1929</i>&nbsp;
+<b class="fc"><i>1930</i>&nbsp;		if (m_fill_rule != otherMultiPath.m_fill_rule)</b>
+<b class="nc"><i>1931</i>&nbsp;			return false;</b>
+<i>1932</i>&nbsp;
+<i>1933</i>&nbsp;		{
+<i>1934</i>&nbsp;			// Note: OGC flags do not participate in the equals operation by
+<i>1935</i>&nbsp;			// design.
+<i>1936</i>&nbsp;			// Because for the polygon pathFlags will have all enum_closed set,
+<i>1937</i>&nbsp;			// we do not need to compare this stream. Only for polyline.
+<i>1938</i>&nbsp;			// Polyline does not have OGC flags set.
+<b class="fc"><i>1939</i>&nbsp;			if (!m_bPolygon) {</b>
+<b class="fc"><i>1940</i>&nbsp;				if (m_pathFlags != null</b>
+<b class="fc"><i>1941</i>&nbsp;						&amp;&amp; !m_pathFlags.equals(otherMultiPath.m_pathFlags, 0,</b>
+<i>1942</i>&nbsp;								pathCount))
+<b class="nc"><i>1943</i>&nbsp;					return false;</b>
+<i>1944</i>&nbsp;			}
+<i>1945</i>&nbsp;		}
+<i>1946</i>&nbsp;	      
+<b class="fc"><i>1947</i>&nbsp;		return super.equals(other);</b>
+<i>1948</i>&nbsp;	}
+<i>1949</i>&nbsp;
+<i>1950</i>&nbsp;	/**
+<i>1951</i>&nbsp;	 * Returns a SegmentIterator that set to a specific vertex of the
+<i>1952</i>&nbsp;	 * MultiPathImpl. The call to NextSegment will return the segment that
+<i>1953</i>&nbsp;	 * starts at the vertex. Call to PreviousSegment will return the segment
+<i>1954</i>&nbsp;	 * that starts at the previous vertex.
+<i>1955</i>&nbsp;	 */
+<i>1956</i>&nbsp;	public SegmentIteratorImpl querySegmentIteratorAtVertex(int startVertexIndex) {
+<b class="nc"><i>1957</i>&nbsp;		if (startVertexIndex &lt; 0 || startVertexIndex &gt;= getPointCount())</b>
+<b class="nc"><i>1958</i>&nbsp;			throw new IndexOutOfBoundsException();</b>
+<i>1959</i>&nbsp;
+<b class="nc"><i>1960</i>&nbsp;		SegmentIteratorImpl iter = new SegmentIteratorImpl(this,</b>
+<i>1961</i>&nbsp;				startVertexIndex);
+<b class="nc"><i>1962</i>&nbsp;		return iter;</b>
+<i>1963</i>&nbsp;	}
+<i>1964</i>&nbsp;
+<i>1965</i>&nbsp;	// void QuerySegmentIterator(int fromVertex, SegmentIterator iterator);
+<i>1966</i>&nbsp;	public SegmentIteratorImpl querySegmentIterator() {
+<b class="fc"><i>1967</i>&nbsp;		return new SegmentIteratorImpl(this);</b>
+<i>1968</i>&nbsp;	}
+<i>1969</i>&nbsp;
+<i>1970</i>&nbsp;	@Override
+<i>1971</i>&nbsp;	public void _updateXYImpl(boolean bExact) {
+<b class="fc"><i>1972</i>&nbsp;		super._updateXYImpl(bExact);</b>
+<b class="fc"><i>1973</i>&nbsp;		boolean bHasCurves = hasNonLinearSegments();</b>
+<b class="fc"><i>1974</i>&nbsp;		if (bHasCurves) {</b>
+<b class="nc"><i>1975</i>&nbsp;			SegmentIteratorImpl segIter = querySegmentIterator();</b>
+<b class="nc"><i>1976</i>&nbsp;			while (segIter.nextPath()) {</b>
+<b class="nc"><i>1977</i>&nbsp;				while (segIter.hasNextSegment()) {</b>
+<b class="nc"><i>1978</i>&nbsp;					Segment curve = segIter.nextCurve();</b>
+<b class="nc"><i>1979</i>&nbsp;					if (curve != null) {</b>
+<b class="nc"><i>1980</i>&nbsp;						Envelope2D env2D = new Envelope2D();</b>
+<b class="nc"><i>1981</i>&nbsp;						curve.queryEnvelope2D(env2D);</b>
+<b class="nc"><i>1982</i>&nbsp;						m_envelope.merge(env2D);</b>
+<i>1983</i>&nbsp;					} else
+<i>1984</i>&nbsp;						break;
+<b class="nc"><i>1985</i>&nbsp;				}</b>
+<i>1986</i>&nbsp;			}
+<i>1987</i>&nbsp;		}
+<b class="fc"><i>1988</i>&nbsp;	}</b>
+<i>1989</i>&nbsp;
+<i>1990</i>&nbsp;	@Override
+<i>1991</i>&nbsp;	void calculateEnvelope2D(Envelope2D env, boolean bExact) {
+<b class="nc"><i>1992</i>&nbsp;		super.calculateEnvelope2D(env, bExact);</b>
+<b class="nc"><i>1993</i>&nbsp;		boolean bHasCurves = hasNonLinearSegments();</b>
+<b class="nc"><i>1994</i>&nbsp;		if (bHasCurves) {</b>
+<b class="nc"><i>1995</i>&nbsp;			SegmentIteratorImpl segIter = querySegmentIterator();</b>
+<b class="nc"><i>1996</i>&nbsp;			while (segIter.nextPath()) {</b>
+<b class="nc"><i>1997</i>&nbsp;				while (segIter.hasNextSegment()) {</b>
+<b class="nc"><i>1998</i>&nbsp;					Segment curve = segIter.nextCurve();</b>
+<b class="nc"><i>1999</i>&nbsp;					if (curve != null) {</b>
+<b class="nc"><i>2000</i>&nbsp;						Envelope2D env2D = new Envelope2D();</b>
+<b class="nc"><i>2001</i>&nbsp;						curve.queryEnvelope2D(env2D);</b>
+<b class="nc"><i>2002</i>&nbsp;						env.merge(env2D);</b>
+<i>2003</i>&nbsp;					} else
+<i>2004</i>&nbsp;						break;
+<b class="nc"><i>2005</i>&nbsp;				}</b>
+<i>2006</i>&nbsp;			}
+<i>2007</i>&nbsp;		}
+<b class="nc"><i>2008</i>&nbsp;	}</b>
+<i>2009</i>&nbsp;
+<i>2010</i>&nbsp;	@Override
+<i>2011</i>&nbsp;	public void _notifyModifiedAllImpl() {
+<b class="fc"><i>2012</i>&nbsp;		if (m_paths == null || m_paths.size() == 0)// if (m_paths == null ||</b>
+<i>2013</i>&nbsp;													// !m_paths.size())
+<b class="fc"><i>2014</i>&nbsp;			m_pointCount = 0;</b>
+<i>2015</i>&nbsp;		else
+<b class="fc"><i>2016</i>&nbsp;			m_pointCount = m_paths.read(m_paths.size() - 1);</b>
+<b class="fc"><i>2017</i>&nbsp;	}</b>
+<i>2018</i>&nbsp;
+<i>2019</i>&nbsp;	@Override
+<i>2020</i>&nbsp;	public double calculateArea2D() {
+<b class="fc"><i>2021</i>&nbsp;		if (!m_bPolygon)</b>
+<b class="fc"><i>2022</i>&nbsp;			return 0.0;</b>
+<i>2023</i>&nbsp;
+<b class="fc"><i>2024</i>&nbsp;		_updateRingAreas2D();</b>
+<i>2025</i>&nbsp;
+<b class="fc"><i>2026</i>&nbsp;		return m_cachedArea2D;</b>
+<i>2027</i>&nbsp;	}
+<i>2028</i>&nbsp;
+<i>2029</i>&nbsp;	/**
+<i>2030</i>&nbsp;	 * Returns True if the ring is an exterior ring. Valid only for simple
+<i>2031</i>&nbsp;	 * polygons.
+<i>2032</i>&nbsp;	 */
+<i>2033</i>&nbsp;	public boolean isExteriorRing(int ringIndex) {
+<b class="fc"><i>2034</i>&nbsp;		if (!m_bPolygon)</b>
+<b class="nc"><i>2035</i>&nbsp;			return false;</b>
+<i>2036</i>&nbsp;
+<b class="fc"><i>2037</i>&nbsp;		if (!_hasDirtyFlag(DirtyFlags.DirtyOGCFlags))</b>
+<b class="fc"><i>2038</i>&nbsp;			return (m_pathFlags.read(ringIndex) &amp; (byte) PathFlags.enumOGCStartPolygon) != 0;</b>
+<i>2039</i>&nbsp;
+<b class="fc"><i>2040</i>&nbsp;		_updateRingAreas2D();</b>
+<b class="fc"><i>2041</i>&nbsp;		return m_cachedRingAreas2D.read(ringIndex) &gt; 0;</b>
+<i>2042</i>&nbsp;		// Should we make a function called _UpdateHasNonLinearSegmentsFlags and
+<i>2043</i>&nbsp;		// call it here?
+<i>2044</i>&nbsp;	}
+<i>2045</i>&nbsp;
+<i>2046</i>&nbsp;	public double calculateRingArea2D(int pathIndex) {
+<b class="fc"><i>2047</i>&nbsp;		if (!m_bPolygon)</b>
+<b class="nc"><i>2048</i>&nbsp;			return 0.0;</b>
+<i>2049</i>&nbsp;
+<b class="fc"><i>2050</i>&nbsp;		_updateRingAreas2D();</b>
+<i>2051</i>&nbsp;
+<b class="fc"><i>2052</i>&nbsp;		return m_cachedRingAreas2D.read(pathIndex);</b>
+<i>2053</i>&nbsp;	}
+<i>2054</i>&nbsp;
+<i>2055</i>&nbsp;	public void _updateRingAreas2D() {
+<b class="fc"><i>2056</i>&nbsp;		if (_hasDirtyFlag(DirtyFlags.DirtyRingAreas2D)) {</b>
+<b class="fc"><i>2057</i>&nbsp;			int pathCount = getPathCount();</b>
+<i>2058</i>&nbsp;
+<b class="fc"><i>2059</i>&nbsp;			if (m_cachedRingAreas2D == null)</b>
+<b class="fc"><i>2060</i>&nbsp;				m_cachedRingAreas2D = new AttributeStreamOfDbl(pathCount);</b>
+<b class="fc"><i>2061</i>&nbsp;			else if (m_cachedRingAreas2D.size() != pathCount)</b>
+<b class="nc"><i>2062</i>&nbsp;				m_cachedRingAreas2D.resize(pathCount);</b>
+<i>2063</i>&nbsp;
+<b class="fc"><i>2064</i>&nbsp;			MathUtils.KahanSummator totalArea = new MathUtils.KahanSummator(0);</b>
+<b class="fc"><i>2065</i>&nbsp;			MathUtils.KahanSummator pathArea = new MathUtils.KahanSummator(0);</b>
+<b class="fc"><i>2066</i>&nbsp;			Point2D pt = new Point2D();</b>
+<b class="fc"><i>2067</i>&nbsp;			int ipath = 0;</b>
+<b class="fc"><i>2068</i>&nbsp;			SegmentIteratorImpl segIter = querySegmentIterator();</b>
+<b class="fc"><i>2069</i>&nbsp;			while (segIter.nextPath()) {</b>
+<b class="fc"><i>2070</i>&nbsp;				pathArea.reset();</b>
+<b class="fc"><i>2071</i>&nbsp;				getXY(getPathStart(segIter.getPathIndex()), pt);// get the area</b>
+<i>2072</i>&nbsp;																// calculation
+<i>2073</i>&nbsp;																// origin to be
+<i>2074</i>&nbsp;																// the origin of
+<i>2075</i>&nbsp;																// the ring.
+<b class="fc"><i>2076</i>&nbsp;				while (segIter.hasNextSegment()) {</b>
+<b class="fc"><i>2077</i>&nbsp;					pathArea.add(segIter.nextSegment()._calculateArea2DHelper(</b>
+<i>2078</i>&nbsp;							pt.x, pt.y));
+<i>2079</i>&nbsp;				}
+<i>2080</i>&nbsp;
+<b class="fc"><i>2081</i>&nbsp;				totalArea.add(pathArea.getResult());</b>
+<i>2082</i>&nbsp;
+<b class="fc"><i>2083</i>&nbsp;				int i = ipath++;</b>
+<b class="fc"><i>2084</i>&nbsp;				m_cachedRingAreas2D.write(i, pathArea.getResult());</b>
+<b class="fc"><i>2085</i>&nbsp;			}</b>
+<i>2086</i>&nbsp;
+<b class="fc"><i>2087</i>&nbsp;			m_cachedArea2D = totalArea.getResult();</b>
+<b class="fc"><i>2088</i>&nbsp;			_setDirtyFlag(DirtyFlags.DirtyRingAreas2D, false);</b>
+<i>2089</i>&nbsp;		}
+<b class="fc"><i>2090</i>&nbsp;	}</b>
+<i>2091</i>&nbsp;
+<i>2092</i>&nbsp;	int getOGCPolygonCount() {
+<b class="fc"><i>2093</i>&nbsp;		if (!m_bPolygon)</b>
+<b class="nc"><i>2094</i>&nbsp;			return 0;</b>
+<i>2095</i>&nbsp;
+<b class="fc"><i>2096</i>&nbsp;		_updateOGCFlags();</b>
+<i>2097</i>&nbsp;
+<b class="fc"><i>2098</i>&nbsp;		int polygonCount = 0;</b>
+<b class="fc"><i>2099</i>&nbsp;		int partCount = getPathCount();</b>
+<b class="fc"><i>2100</i>&nbsp;		for (int ipart = 0; ipart &lt; partCount; ipart++) {</b>
+<b class="fc"><i>2101</i>&nbsp;			if (((int) m_pathFlags.read(ipart) &amp; (int) PathFlags.enumOGCStartPolygon) != 0)</b>
+<b class="fc"><i>2102</i>&nbsp;				polygonCount++;</b>
+<i>2103</i>&nbsp;		}
+<i>2104</i>&nbsp;
+<b class="fc"><i>2105</i>&nbsp;		return polygonCount;</b>
+<i>2106</i>&nbsp;	}
+<i>2107</i>&nbsp;
+<i>2108</i>&nbsp;	protected void _updateOGCFlags() {
+<b class="fc"><i>2109</i>&nbsp;		if (_hasDirtyFlag(DirtyFlags.DirtyOGCFlags)) {</b>
+<b class="fc"><i>2110</i>&nbsp;			_updateRingAreas2D();</b>
+<i>2111</i>&nbsp;
+<b class="fc"><i>2112</i>&nbsp;			int pathCount = getPathCount();</b>
+<b class="fc"><i>2113</i>&nbsp;			if (pathCount &gt; 0 &amp;&amp; (m_pathFlags == null || m_pathFlags.size() &lt; pathCount))</b>
+<b class="nc"><i>2114</i>&nbsp;				m_pathFlags = (AttributeStreamOfInt8) AttributeStreamBase</b>
+<b class="nc"><i>2115</i>&nbsp;						.createByteStream(pathCount + 1);</b>
+<i>2116</i>&nbsp;
+<b class="fc"><i>2117</i>&nbsp;			int firstSign = 1;</b>
+<b class="fc"><i>2118</i>&nbsp;			for (int ipath = 0; ipath &lt; pathCount; ipath++) {</b>
+<b class="fc"><i>2119</i>&nbsp;				double area = m_cachedRingAreas2D.read(ipath);</b>
+<b class="fc"><i>2120</i>&nbsp;				if (ipath == 0)</b>
+<b class="fc"><i>2121</i>&nbsp;					firstSign = area &gt; 0 ? 1 : -1;</b>
+<b class="fc"><i>2122</i>&nbsp;				if (area * firstSign &gt; 0.0)</b>
+<b class="fc"><i>2123</i>&nbsp;					m_pathFlags.setBits(ipath,</b>
+<i>2124</i>&nbsp;							(byte) PathFlags.enumOGCStartPolygon);
+<i>2125</i>&nbsp;				else
+<b class="fc"><i>2126</i>&nbsp;					m_pathFlags.clearBits(ipath,</b>
+<i>2127</i>&nbsp;							(byte) PathFlags.enumOGCStartPolygon);
+<i>2128</i>&nbsp;			}
+<b class="fc"><i>2129</i>&nbsp;			_setDirtyFlag(DirtyFlags.DirtyOGCFlags, false);</b>
+<i>2130</i>&nbsp;		}
+<b class="fc"><i>2131</i>&nbsp;	}</b>
+<i>2132</i>&nbsp;
+<i>2133</i>&nbsp;	public int getPathIndexFromPointIndex(int pointIndex) {
+<b class="fc"><i>2134</i>&nbsp;		int positionHint = m_currentPathIndex;// in case of multithreading</b>
+<i>2135</i>&nbsp;												// thiswould simply produce an
+<i>2136</i>&nbsp;												// invalid value
+<b class="fc"><i>2137</i>&nbsp;		int pathCount = getPathCount();</b>
+<i>2138</i>&nbsp;
+<i>2139</i>&nbsp;		// Try using the hint position first to get the path index.
+<b class="fc"><i>2140</i>&nbsp;		if (positionHint &gt;= 0 &amp;&amp; positionHint &lt; pathCount) {</b>
+<b class="fc"><i>2141</i>&nbsp;			if (pointIndex &lt; getPathEnd(positionHint)) {</b>
+<b class="fc"><i>2142</i>&nbsp;				if (pointIndex &gt;= getPathStart(positionHint))</b>
+<b class="fc"><i>2143</i>&nbsp;					return positionHint;</b>
+<b class="fc"><i>2144</i>&nbsp;				positionHint--;</b>
+<i>2145</i>&nbsp;			} else {
+<b class="fc"><i>2146</i>&nbsp;				positionHint++;</b>
+<i>2147</i>&nbsp;			}
+<i>2148</i>&nbsp;
+<b class="fc"><i>2149</i>&nbsp;			if (positionHint &gt;= 0 &amp;&amp; positionHint &lt; pathCount) {</b>
+<b class="fc"><i>2150</i>&nbsp;				if (pointIndex &gt;= getPathStart(positionHint)</b>
+<b class="fc"><i>2151</i>&nbsp;						&amp;&amp; pointIndex &lt; getPathEnd(positionHint)) {</b>
+<b class="fc"><i>2152</i>&nbsp;					m_currentPathIndex = positionHint;</b>
+<b class="fc"><i>2153</i>&nbsp;					return positionHint;</b>
+<i>2154</i>&nbsp;				}
+<i>2155</i>&nbsp;			}
+<i>2156</i>&nbsp;		}
+<i>2157</i>&nbsp;
+<b class="fc"><i>2158</i>&nbsp;		if (pathCount &lt; 5) {// TODO: time the performance to choose when to use</b>
+<i>2159</i>&nbsp;							// linear search.
+<b class="fc"><i>2160</i>&nbsp;			for (int i = 0; i &lt; pathCount; i++) {</b>
+<b class="fc"><i>2161</i>&nbsp;				if (pointIndex &lt; getPathEnd(i)) {</b>
+<b class="fc"><i>2162</i>&nbsp;					m_currentPathIndex = i;</b>
+<b class="fc"><i>2163</i>&nbsp;					return i;</b>
+<i>2164</i>&nbsp;				}
+<i>2165</i>&nbsp;			}
+<b class="nc"><i>2166</i>&nbsp;			throw new GeometryException(&quot;corrupted geometry&quot;);</b>
+<i>2167</i>&nbsp;		}
+<i>2168</i>&nbsp;
+<i>2169</i>&nbsp;		// Do binary search:
+<b class="fc"><i>2170</i>&nbsp;		int minPathIndex = 0;</b>
+<b class="fc"><i>2171</i>&nbsp;		int maxPathIndex = pathCount - 1;</b>
+<b class="fc"><i>2172</i>&nbsp;		while (maxPathIndex &gt; minPathIndex) {</b>
+<b class="fc"><i>2173</i>&nbsp;			int mid = minPathIndex + ((maxPathIndex - minPathIndex) &gt;&gt; 1);</b>
+<b class="fc"><i>2174</i>&nbsp;			int pathStart = getPathStart(mid);</b>
+<b class="fc"><i>2175</i>&nbsp;			if (pointIndex &lt; pathStart)</b>
+<b class="fc"><i>2176</i>&nbsp;				maxPathIndex = mid - 1;</b>
+<i>2177</i>&nbsp;			else {
+<b class="fc"><i>2178</i>&nbsp;				int pathEnd = getPathEnd(mid);</b>
+<b class="fc"><i>2179</i>&nbsp;				if (pointIndex &gt;= pathEnd)</b>
+<b class="fc"><i>2180</i>&nbsp;					minPathIndex = mid + 1;</b>
+<i>2181</i>&nbsp;				else {
+<b class="fc"><i>2182</i>&nbsp;					m_currentPathIndex = mid;</b>
+<b class="fc"><i>2183</i>&nbsp;					return mid;</b>
+<i>2184</i>&nbsp;				}
+<i>2185</i>&nbsp;			}
+<b class="fc"><i>2186</i>&nbsp;		}</b>
+<i>2187</i>&nbsp;
+<b class="fc"><i>2188</i>&nbsp;		m_currentPathIndex = minPathIndex;</b>
+<b class="fc"><i>2189</i>&nbsp;		return minPathIndex;</b>
+<i>2190</i>&nbsp;	}
+<i>2191</i>&nbsp;
+<i>2192</i>&nbsp;	int getHighestPointIndex(int path_index) {
+<b class="fc"><i>2193</i>&nbsp;		assert (path_index &gt;= 0 &amp;&amp; path_index &lt; getPathCount());</b>
+<i>2194</i>&nbsp;
+<b class="fc"><i>2195</i>&nbsp;		AttributeStreamOfDbl position = (AttributeStreamOfDbl) (getAttributeStreamRef(VertexDescription.Semantics.POSITION));</b>
+<b class="fc"><i>2196</i>&nbsp;		AttributeStreamOfInt32 paths = (AttributeStreamOfInt32) (getPathStreamRef());</b>
+<i>2197</i>&nbsp;
+<b class="fc"><i>2198</i>&nbsp;		int path_end = getPathEnd(path_index);</b>
+<b class="fc"><i>2199</i>&nbsp;		int path_start = getPathStart(path_index);</b>
+<b class="fc"><i>2200</i>&nbsp;		int max_index = -1;</b>
+<b class="fc"><i>2201</i>&nbsp;		Point2D max_point = new Point2D(), pt = new Point2D();</b>
+<b class="fc"><i>2202</i>&nbsp;		max_point.y = NumberUtils.negativeInf();</b>
+<b class="fc"><i>2203</i>&nbsp;		max_point.x = NumberUtils.negativeInf();</b>
+<i>2204</i>&nbsp;
+<b class="fc"><i>2205</i>&nbsp;		for (int i = path_start + 0; i &lt; path_end; i++) {</b>
+<b class="fc"><i>2206</i>&nbsp;			position.read(2 * i, pt);</b>
+<b class="fc"><i>2207</i>&nbsp;			if (max_point.compare(pt) == -1) {</b>
+<b class="fc"><i>2208</i>&nbsp;				max_index = i;</b>
+<b class="fc"><i>2209</i>&nbsp;				max_point.setCoords(pt);</b>
+<i>2210</i>&nbsp;			}
+<i>2211</i>&nbsp;		}
+<i>2212</i>&nbsp;
+<b class="fc"><i>2213</i>&nbsp;		return max_index;</b>
+<i>2214</i>&nbsp;	}
+<i>2215</i>&nbsp;
+<i>2216</i>&nbsp;	/**
+<i>2217</i>&nbsp;	 * Returns total segment count in the MultiPathImpl.
+<i>2218</i>&nbsp;	 */
+<i>2219</i>&nbsp;	public int getSegmentCount() {
+<b class="fc"><i>2220</i>&nbsp;		int segCount = getPointCount();</b>
+<b class="fc"><i>2221</i>&nbsp;		if (!m_bPolygon) {</b>
+<b class="fc"><i>2222</i>&nbsp;			segCount -= getPathCount();</b>
+<b class="fc"><i>2223</i>&nbsp;			for (int i = 0, n = getPathCount(); i &lt; n; i++)</b>
+<b class="fc"><i>2224</i>&nbsp;				if (isClosedPath(i))</b>
+<b class="nc"><i>2225</i>&nbsp;					segCount++;</b>
+<i>2226</i>&nbsp;		}
+<i>2227</i>&nbsp;
+<b class="fc"><i>2228</i>&nbsp;		return segCount;</b>
+<i>2229</i>&nbsp;	}
+<i>2230</i>&nbsp;
+<i>2231</i>&nbsp;	public int getSegmentCount(int path_index) {
+<b class="fc"><i>2232</i>&nbsp;		int segCount = getPathSize(path_index);</b>
+<b class="fc"><i>2233</i>&nbsp;		if (!isClosedPath(path_index))</b>
+<b class="fc"><i>2234</i>&nbsp;			segCount--;</b>
+<b class="fc"><i>2235</i>&nbsp;		return segCount;</b>
+<i>2236</i>&nbsp;	}
+<i>2237</i>&nbsp;
+<i>2238</i>&nbsp;	// HEADER defintions
+<i>2239</i>&nbsp;	@Override
+<i>2240</i>&nbsp;	public Geometry createInstance() {
+<b class="nc"><i>2241</i>&nbsp;		return new MultiPathImpl(m_bPolygon, getDescription());</b>
+<i>2242</i>&nbsp;	}
+<i>2243</i>&nbsp;
+<i>2244</i>&nbsp;	@Override
+<i>2245</i>&nbsp;	public int getDimension() {
+<b class="nc"><i>2246</i>&nbsp;		return m_bPolygon ? 2 : 1;</b>
+<i>2247</i>&nbsp;	}
+<i>2248</i>&nbsp;
+<i>2249</i>&nbsp;	@Override
+<i>2250</i>&nbsp;	public Geometry.Type getType() {
+<b class="fc"><i>2251</i>&nbsp;		return m_bPolygon ? Type.Polygon : Type.Polyline;</b>
+<i>2252</i>&nbsp;	}
+<i>2253</i>&nbsp;
+<i>2254</i>&nbsp;	/**
+<i>2255</i>&nbsp;	 * Returns True if the class is envelope. THis is not an exact method. Only
+<i>2256</i>&nbsp;	 * addEnvelope makes this true.
+<i>2257</i>&nbsp;	 */
+<i>2258</i>&nbsp;	public boolean isEnvelope() {
+<b class="nc"><i>2259</i>&nbsp;		return !_hasDirtyFlag(DirtyFlags.DirtyIsEnvelope);</b>
+<i>2260</i>&nbsp;	}
+<i>2261</i>&nbsp;
+<i>2262</i>&nbsp;	/**
+<i>2263</i>&nbsp;	 * Returns a reference to the AttributeStream of MultiPathImpl parts
+<i>2264</i>&nbsp;	 * (Paths).
+<i>2265</i>&nbsp;	 * 
+<i>2266</i>&nbsp;	 * For the non empty MultiPathImpl, that stream contains start points of the
+<i>2267</i>&nbsp;	 * MultiPathImpl curves. In addition, the last element is the total point
+<i>2268</i>&nbsp;	 * count. The number of vertices in a given part is parts[i + 1] - parts[i].
+<i>2269</i>&nbsp;	 */
+<i>2270</i>&nbsp;	public AttributeStreamOfInt32 getPathStreamRef() {
+<b class="fc"><i>2271</i>&nbsp;		throwIfEmpty();</b>
+<b class="fc"><i>2272</i>&nbsp;		return m_paths;</b>
+<i>2273</i>&nbsp;	}
+<i>2274</i>&nbsp;
+<i>2275</i>&nbsp;	/**
+<i>2276</i>&nbsp;	 * sets a reference to an AttributeStream of MultiPathImpl paths (Paths).
+<i>2277</i>&nbsp;	 */
+<i>2278</i>&nbsp;	public void setPathStreamRef(AttributeStreamOfInt32 paths) {
+<b class="fc"><i>2279</i>&nbsp;		m_paths = paths;</b>
+<b class="fc"><i>2280</i>&nbsp;		notifyModified(DirtyFlags.DirtyAll);</b>
+<b class="fc"><i>2281</i>&nbsp;	}</b>
+<i>2282</i>&nbsp;
+<i>2283</i>&nbsp;	/**
+<i>2284</i>&nbsp;	 * Returns a reference to the AttributeStream of Segment flags (SegmentFlags
+<i>2285</i>&nbsp;	 * flags). Can be NULL when no non-linear segments are present.
+<i>2286</i>&nbsp;	 * 
+<i>2287</i>&nbsp;	 * Segment flags indicate what kind of segment originates (starts) on the
+<i>2288</i>&nbsp;	 * given point. The last vertices of open Path parts has enumNone flag.
+<i>2289</i>&nbsp;	 */
+<i>2290</i>&nbsp;	public AttributeStreamOfInt8 getSegmentFlagsStreamRef() {
+<b class="fc"><i>2291</i>&nbsp;		throwIfEmpty();</b>
+<b class="fc"><i>2292</i>&nbsp;		return m_segmentFlags;</b>
+<i>2293</i>&nbsp;	}
+<i>2294</i>&nbsp;
+<i>2295</i>&nbsp;	/**
+<i>2296</i>&nbsp;	 * Returns a reference to the AttributeStream of Path flags (PathFlags
+<i>2297</i>&nbsp;	 * flags).
+<i>2298</i>&nbsp;	 * 
+<i>2299</i>&nbsp;	 * Each start point of a path has a flag set to indicate if the Path is open
+<i>2300</i>&nbsp;	 * or closed.
+<i>2301</i>&nbsp;	 */
+<i>2302</i>&nbsp;	public AttributeStreamOfInt8 getPathFlagsStreamRef() {
+<b class="fc"><i>2303</i>&nbsp;		throwIfEmpty();</b>
+<b class="fc"><i>2304</i>&nbsp;		return m_pathFlags;</b>
+<i>2305</i>&nbsp;	}
+<i>2306</i>&nbsp;
+<i>2307</i>&nbsp;	/**
+<i>2308</i>&nbsp;	 * sets a reference to an AttributeStream of Path flags (PathFlags flags).
+<i>2309</i>&nbsp;	 */
+<i>2310</i>&nbsp;	public void setPathFlagsStreamRef(AttributeStreamOfInt8 pathFlags) {
+<b class="fc"><i>2311</i>&nbsp;		m_pathFlags = pathFlags;</b>
+<b class="fc"><i>2312</i>&nbsp;		notifyModified(DirtyFlags.DirtyAll);</b>
+<b class="fc"><i>2313</i>&nbsp;	}</b>
+<i>2314</i>&nbsp;
+<i>2315</i>&nbsp;	public AttributeStreamOfInt32 getSegmentIndexStreamRef() {
+<b class="nc"><i>2316</i>&nbsp;		throwIfEmpty();</b>
+<b class="nc"><i>2317</i>&nbsp;		return m_segmentParamIndex;</b>
+<i>2318</i>&nbsp;	}
+<i>2319</i>&nbsp;
+<i>2320</i>&nbsp;	public AttributeStreamOfDbl getSegmentDataStreamRef() {
+<b class="nc"><i>2321</i>&nbsp;		throwIfEmpty();</b>
+<b class="nc"><i>2322</i>&nbsp;		return m_segmentParams;</b>
+<i>2323</i>&nbsp;	}
+<i>2324</i>&nbsp;
+<i>2325</i>&nbsp;	public int getPathCount() {
+<b class="fc"><i>2326</i>&nbsp;		return (m_paths != null) ? m_paths.size() - 1 : 0;</b>
+<i>2327</i>&nbsp;	}
+<i>2328</i>&nbsp;
+<i>2329</i>&nbsp;	public int getPathEnd(int partIndex) {
+<b class="fc"><i>2330</i>&nbsp;		return m_paths.read(partIndex + 1);</b>
+<i>2331</i>&nbsp;	}
+<i>2332</i>&nbsp;
+<i>2333</i>&nbsp;	public int getPathSize(int partIndex) {
+<b class="fc"><i>2334</i>&nbsp;		return m_paths.read(partIndex + 1) - m_paths.read(partIndex);</b>
+<i>2335</i>&nbsp;	}
+<i>2336</i>&nbsp;
+<i>2337</i>&nbsp;	public int getPathStart(int partIndex) {
+<b class="fc"><i>2338</i>&nbsp;		return m_paths.read(partIndex);</b>
+<i>2339</i>&nbsp;	}
+<i>2340</i>&nbsp;
+<i>2341</i>&nbsp;	@Override
+<i>2342</i>&nbsp;	public Object _getImpl() {
+<b class="fc"><i>2343</i>&nbsp;		return this;</b>
+<i>2344</i>&nbsp;	}
+<i>2345</i>&nbsp;
+<i>2346</i>&nbsp;	public void setDirtyOGCFlags(boolean bYesNo) {
+<b class="fc"><i>2347</i>&nbsp;		_setDirtyFlag(DirtyFlags.DirtyOGCFlags, bYesNo);</b>
+<b class="fc"><i>2348</i>&nbsp;	}</b>
+<i>2349</i>&nbsp;
+<i>2350</i>&nbsp;	public boolean hasDirtyOGCStartFlags() {
+<b class="nc"><i>2351</i>&nbsp;		return _hasDirtyFlag(DirtyFlags.DirtyOGCFlags);</b>
+<i>2352</i>&nbsp;	}
+<i>2353</i>&nbsp;
+<i>2354</i>&nbsp;	public void setDirtyRingAreas2D(boolean bYesNo) {
+<b class="nc"><i>2355</i>&nbsp;		_setDirtyFlag(DirtyFlags.DirtyRingAreas2D, bYesNo);</b>
+<b class="nc"><i>2356</i>&nbsp;	}</b>
+<i>2357</i>&nbsp;
+<i>2358</i>&nbsp;	public boolean hasDirtyRingAreas2D() {
+<b class="nc"><i>2359</i>&nbsp;		return _hasDirtyFlag(DirtyFlags.DirtyRingAreas2D);</b>
+<i>2360</i>&nbsp;	}
+<i>2361</i>&nbsp;
+<i>2362</i>&nbsp;	public void setRingAreasStreamRef(AttributeStreamOfDbl ringAreas) {
+<b class="nc"><i>2363</i>&nbsp;		m_cachedRingAreas2D = ringAreas;</b>
+<b class="nc"><i>2364</i>&nbsp;		_setDirtyFlag(DirtyFlags.DirtyRingAreas2D, false);</b>
+<b class="nc"><i>2365</i>&nbsp;	}</b>
+<i>2366</i>&nbsp;
+<i>2367</i>&nbsp;	// HEADER defintions
+<i>2368</i>&nbsp;
+<i>2369</i>&nbsp;	// // TODO check this against current implementation in native
+<i>2370</i>&nbsp;	// public void notifyModified(int flags)
+<i>2371</i>&nbsp;	// {
+<i>2372</i>&nbsp;	// if(flags == DirtyFlags.DirtyAll)
+<i>2373</i>&nbsp;	// {
+<i>2374</i>&nbsp;	// m_reservedPointCount = -1;
+<i>2375</i>&nbsp;	// _notifyModifiedAllImpl();
+<i>2376</i>&nbsp;	// }
+<i>2377</i>&nbsp;	// m_flagsMask |= flags;
+<i>2378</i>&nbsp;	// _clearAccelerators();
+<i>2379</i>&nbsp;	//
+<i>2380</i>&nbsp;	//
+<i>2381</i>&nbsp;	// // ROHIT&#39;s implementation
+<i>2382</i>&nbsp;	// // if (m_paths == null || 0 == m_paths.size())
+<i>2383</i>&nbsp;	// // m_pointCount = 0;
+<i>2384</i>&nbsp;	// // else
+<i>2385</i>&nbsp;	// // m_pointCount = m_paths.read(m_paths.size() - 1);
+<i>2386</i>&nbsp;	// //
+<i>2387</i>&nbsp;	// // super.notifyModified(flags);
+<i>2388</i>&nbsp;	// }
+<i>2389</i>&nbsp;
+<i>2390</i>&nbsp;	@Override
+<i>2391</i>&nbsp;	public boolean _buildRasterizedGeometryAccelerator(double toleranceXY,
+<i>2392</i>&nbsp;			GeometryAccelerationDegree accelDegree) {
+<b class="fc"><i>2393</i>&nbsp;		if (m_accelerators == null)// (!m_accelerators)</b>
+<i>2394</i>&nbsp;		{
+<b class="fc"><i>2395</i>&nbsp;			m_accelerators = new GeometryAccelerators();</b>
+<i>2396</i>&nbsp;		}
+<i>2397</i>&nbsp;
+<b class="fc"><i>2398</i>&nbsp;		int rasterSize = RasterizedGeometry2D</b>
+<b class="fc"><i>2399</i>&nbsp;				.rasterSizeFromAccelerationDegree(accelDegree);</b>
+<b class="fc"><i>2400</i>&nbsp;		RasterizedGeometry2D rgeom = m_accelerators.getRasterizedGeometry();</b>
+<b class="fc"><i>2401</i>&nbsp;		if (rgeom != null) {</b>
+<b class="nc"><i>2402</i>&nbsp;			if (rgeom.getToleranceXY() &lt; toleranceXY</b>
+<b class="nc"><i>2403</i>&nbsp;					|| rasterSize &gt; rgeom.getRasterSize()) {</b>
+<b class="nc"><i>2404</i>&nbsp;				m_accelerators._setRasterizedGeometry(null);</b>
+<i>2405</i>&nbsp;			} else
+<b class="nc"><i>2406</i>&nbsp;				return true;</b>
+<i>2407</i>&nbsp;		}
+<i>2408</i>&nbsp;
+<b class="fc"><i>2409</i>&nbsp;		rgeom = RasterizedGeometry2D.create(this, toleranceXY, rasterSize);</b>
+<b class="fc"><i>2410</i>&nbsp;		m_accelerators._setRasterizedGeometry(rgeom);</b>
+<i>2411</i>&nbsp;		//rgeom.dbgSaveToBitmap(&quot;c:/temp/ddd.bmp&quot;);
+<b class="fc"><i>2412</i>&nbsp;		return true;</b>
+<i>2413</i>&nbsp;	}
+<i>2414</i>&nbsp;
+<i>2415</i>&nbsp;	@Override
+<i>2416</i>&nbsp;	public int hashCode() {
+<b class="fc"><i>2417</i>&nbsp;		int hashCode = super.hashCode();</b>
+<i>2418</i>&nbsp;
+<b class="fc"><i>2419</i>&nbsp;		if (!isEmptyImpl()) {</b>
+<b class="nc"><i>2420</i>&nbsp;			int pathCount = getPathCount();</b>
+<i>2421</i>&nbsp;
+<b class="nc"><i>2422</i>&nbsp;			if (m_paths != null)</b>
+<b class="nc"><i>2423</i>&nbsp;				m_paths.calculateHashImpl(hashCode, 0, pathCount + 1);</b>
+<i>2424</i>&nbsp;
+<b class="nc"><i>2425</i>&nbsp;			if (m_pathFlags != null)</b>
+<b class="nc"><i>2426</i>&nbsp;				m_pathFlags.calculateHashImpl(hashCode, 0, pathCount);</b>
+<i>2427</i>&nbsp;		}
+<i>2428</i>&nbsp;
+<b class="fc"><i>2429</i>&nbsp;		return hashCode;</b>
+<i>2430</i>&nbsp;	}
+<i>2431</i>&nbsp;
+<i>2432</i>&nbsp;	public byte getSegmentFlags(int ivertex) {
+<b class="nc"><i>2433</i>&nbsp;		if (m_segmentFlags != null)</b>
+<b class="nc"><i>2434</i>&nbsp;			return m_segmentFlags.read(ivertex);</b>
+<i>2435</i>&nbsp;		else
+<b class="nc"><i>2436</i>&nbsp;			return (byte) SegmentFlags.enumLineSeg;</b>
+<i>2437</i>&nbsp;	}
+<i>2438</i>&nbsp;
+<i>2439</i>&nbsp;	public void getSegment(int startVertexIndex, SegmentBuffer segBuffer,
+<i>2440</i>&nbsp;			boolean bStripAttributes) {
+<b class="nc"><i>2441</i>&nbsp;		int ipath = getPathIndexFromPointIndex(startVertexIndex);</b>
+<b class="nc"><i>2442</i>&nbsp;		if (startVertexIndex == getPathEnd(ipath) - 1 &amp;&amp; !isClosedPath(ipath))</b>
+<b class="nc"><i>2443</i>&nbsp;			throw new GeometryException(&quot;index out of bounds&quot;);</b>
+<i>2444</i>&nbsp;
+<b class="nc"><i>2445</i>&nbsp;		_verifyAllStreams();</b>
+<b class="nc"><i>2446</i>&nbsp;		AttributeStreamOfInt8 segFlagStream = getSegmentFlagsStreamRef();</b>
+<b class="nc"><i>2447</i>&nbsp;		int segFlag = SegmentFlags.enumLineSeg;</b>
+<b class="nc"><i>2448</i>&nbsp;		if (segFlagStream != null)</b>
+<b class="nc"><i>2449</i>&nbsp;			segFlag = segFlagStream.read(startVertexIndex)</b>
+<i>2450</i>&nbsp;					&amp; SegmentFlags.enumSegmentMask;
+<i>2451</i>&nbsp;
+<b class="nc"><i>2452</i>&nbsp;		switch (segFlag) {</b>
+<i>2453</i>&nbsp;		case SegmentFlags.enumLineSeg:
+<b class="nc"><i>2454</i>&nbsp;			segBuffer.createLine();</b>
+<b class="nc"><i>2455</i>&nbsp;			break;</b>
+<i>2456</i>&nbsp;		case SegmentFlags.enumBezierSeg:
+<b class="nc"><i>2457</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>2458</i>&nbsp;		case SegmentFlags.enumArcSeg:
+<b class="nc"><i>2459</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>2460</i>&nbsp;		default:
+<b class="nc"><i>2461</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>2462</i>&nbsp;		}
+<i>2463</i>&nbsp;
+<b class="nc"><i>2464</i>&nbsp;		Segment currentSegment = segBuffer.get();</b>
+<b class="nc"><i>2465</i>&nbsp;		if (!bStripAttributes)</b>
+<b class="nc"><i>2466</i>&nbsp;			currentSegment.assignVertexDescription(m_description);</b>
+<i>2467</i>&nbsp;		else
+<b class="nc"><i>2468</i>&nbsp;			currentSegment</b>
+<b class="nc"><i>2469</i>&nbsp;					.assignVertexDescription(VertexDescriptionDesignerImpl</b>
+<b class="nc"><i>2470</i>&nbsp;							.getDefaultDescriptor2D());</b>
+<i>2471</i>&nbsp;
+<i>2472</i>&nbsp;		int endVertexIndex;
+<b class="nc"><i>2473</i>&nbsp;		if (startVertexIndex == getPathEnd(ipath) - 1 &amp;&amp; isClosedPath(ipath)) {</b>
+<b class="nc"><i>2474</i>&nbsp;			endVertexIndex = getPathStart(ipath);</b>
+<i>2475</i>&nbsp;		} else
+<b class="nc"><i>2476</i>&nbsp;			endVertexIndex = startVertexIndex + 1;</b>
+<i>2477</i>&nbsp;
+<b class="nc"><i>2478</i>&nbsp;		Point2D pt = new Point2D();</b>
+<b class="nc"><i>2479</i>&nbsp;		getXY(startVertexIndex, pt);</b>
+<b class="nc"><i>2480</i>&nbsp;		currentSegment.setStartXY(pt);</b>
+<b class="nc"><i>2481</i>&nbsp;		getXY(endVertexIndex, pt);</b>
+<b class="nc"><i>2482</i>&nbsp;		currentSegment.setEndXY(pt);</b>
+<i>2483</i>&nbsp;
+<b class="nc"><i>2484</i>&nbsp;		if (!bStripAttributes) {</b>
+<b class="nc"><i>2485</i>&nbsp;			for (int i = 1, nattr = m_description.getAttributeCount(); i &lt; nattr; i++) {</b>
+<b class="nc"><i>2486</i>&nbsp;				int semantics = m_description._getSemanticsImpl(i);</b>
+<b class="nc"><i>2487</i>&nbsp;				int ncomp = VertexDescription.getComponentCount(semantics);</b>
+<b class="nc"><i>2488</i>&nbsp;				for (int ord = 0; ord &lt; ncomp; ord++) {</b>
+<b class="nc"><i>2489</i>&nbsp;					double vs = getAttributeAsDbl(semantics, startVertexIndex,</b>
+<i>2490</i>&nbsp;							ord);
+<b class="nc"><i>2491</i>&nbsp;					currentSegment.setStartAttribute(semantics, ord, vs);</b>
+<b class="nc"><i>2492</i>&nbsp;					double ve = getAttributeAsDbl(semantics, endVertexIndex,</b>
+<i>2493</i>&nbsp;							ord);
+<b class="nc"><i>2494</i>&nbsp;					currentSegment.setEndAttribute(semantics, ord, ve);</b>
+<i>2495</i>&nbsp;				}
+<i>2496</i>&nbsp;			}
+<i>2497</i>&nbsp;		}
+<b class="nc"><i>2498</i>&nbsp;	}</b>
+<i>2499</i>&nbsp;
+<i>2500</i>&nbsp;	void queryPathEnvelope2D(int path_index, Envelope2D envelope) {
+<b class="fc"><i>2501</i>&nbsp;		if (path_index &gt;= getPathCount())</b>
+<b class="nc"><i>2502</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>2503</i>&nbsp;
+<b class="fc"><i>2504</i>&nbsp;		if (isEmpty()) {</b>
+<b class="nc"><i>2505</i>&nbsp;			envelope.setEmpty();</b>
+<b class="nc"><i>2506</i>&nbsp;			return;</b>
+<i>2507</i>&nbsp;		}
+<i>2508</i>&nbsp;
+<b class="fc"><i>2509</i>&nbsp;		if (hasNonLinearSegments(path_index)) {</b>
+<b class="nc"><i>2510</i>&nbsp;			throw new GeometryException(&quot;not implemented&quot;);</b>
+<i>2511</i>&nbsp;		} else {
+<b class="fc"><i>2512</i>&nbsp;			AttributeStreamOfDbl stream = (AttributeStreamOfDbl) getAttributeStreamRef(VertexDescription.Semantics.POSITION);</b>
+<b class="fc"><i>2513</i>&nbsp;			Point2D pt = new Point2D();</b>
+<b class="fc"><i>2514</i>&nbsp;			Envelope2D env = new Envelope2D();</b>
+<b class="fc"><i>2515</i>&nbsp;			env.setEmpty();</b>
+<b class="fc"><i>2516</i>&nbsp;			for (int i = getPathStart(path_index), iend = getPathEnd(path_index); i &lt; iend; i++) {</b>
+<b class="fc"><i>2517</i>&nbsp;				stream.read(2 * i, pt);</b>
+<b class="fc"><i>2518</i>&nbsp;				env.merge(pt);</b>
+<i>2519</i>&nbsp;			}
+<b class="fc"><i>2520</i>&nbsp;			envelope.setCoords(env);</b>
+<i>2521</i>&nbsp;		}
+<b class="fc"><i>2522</i>&nbsp;	}</b>
+<i>2523</i>&nbsp;
+<i>2524</i>&nbsp;	public void queryLoosePathEnvelope2D(int path_index, Envelope2D envelope) {
+<b class="nc"><i>2525</i>&nbsp;		if (path_index &gt;= getPathCount())</b>
+<b class="nc"><i>2526</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>2527</i>&nbsp;
+<b class="nc"><i>2528</i>&nbsp;		if (isEmpty()) {</b>
+<b class="nc"><i>2529</i>&nbsp;			envelope.setEmpty();</b>
+<b class="nc"><i>2530</i>&nbsp;			return;</b>
+<i>2531</i>&nbsp;		}
+<i>2532</i>&nbsp;
+<b class="nc"><i>2533</i>&nbsp;		if (hasNonLinearSegments(path_index)) {</b>
+<b class="nc"><i>2534</i>&nbsp;			throw new GeometryException(&quot;not implemented&quot;);</b>
+<i>2535</i>&nbsp;		} else {
+<b class="nc"><i>2536</i>&nbsp;			AttributeStreamOfDbl stream = (AttributeStreamOfDbl) getAttributeStreamRef(VertexDescription.Semantics.POSITION);</b>
+<b class="nc"><i>2537</i>&nbsp;			Point2D pt = new Point2D();</b>
+<b class="nc"><i>2538</i>&nbsp;			Envelope2D env = new Envelope2D();</b>
+<b class="nc"><i>2539</i>&nbsp;			env.setEmpty();</b>
+<b class="nc"><i>2540</i>&nbsp;			for (int i = getPathStart(path_index), iend = getPathEnd(path_index); i &lt; iend; i++) {</b>
+<b class="nc"><i>2541</i>&nbsp;				stream.read(2 * i, pt);</b>
+<b class="nc"><i>2542</i>&nbsp;				env.merge(pt);</b>
+<i>2543</i>&nbsp;			}
+<b class="nc"><i>2544</i>&nbsp;			envelope.setCoords(env);</b>
+<i>2545</i>&nbsp;		}
+<b class="nc"><i>2546</i>&nbsp;	}</b>
+<i>2547</i>&nbsp;	
+<i>2548</i>&nbsp;	@Override
+<i>2549</i>&nbsp;	public boolean _buildQuadTreeAccelerator(GeometryAccelerationDegree d) {
+<b class="fc"><i>2550</i>&nbsp;		if (m_accelerators == null)// (!m_accelerators)</b>
+<i>2551</i>&nbsp;		{
+<b class="nc"><i>2552</i>&nbsp;			m_accelerators = new GeometryAccelerators();</b>
+<i>2553</i>&nbsp;		}
+<i>2554</i>&nbsp;
+<b class="fc"><i>2555</i>&nbsp;		if (d == GeometryAccelerationDegree.enumMild || getPointCount() &lt; 16)</b>
+<b class="nc"><i>2556</i>&nbsp;			return false;</b>
+<i>2557</i>&nbsp;
+<b class="fc"><i>2558</i>&nbsp;		QuadTreeImpl quad_tree_impl = InternalUtils.buildQuadTree(this);</b>
+<b class="fc"><i>2559</i>&nbsp;		m_accelerators._setQuadTree(quad_tree_impl);</b>
+<i>2560</i>&nbsp;
+<b class="fc"><i>2561</i>&nbsp;		return true;</b>
+<i>2562</i>&nbsp;	}
+<i>2563</i>&nbsp;
+<i>2564</i>&nbsp;	boolean _buildQuadTreeForPathsAccelerator(GeometryAccelerationDegree degree) {
+<b class="fc"><i>2565</i>&nbsp;		if (m_accelerators == null) {</b>
+<b class="nc"><i>2566</i>&nbsp;			m_accelerators = new GeometryAccelerators();</b>
+<i>2567</i>&nbsp;		}
+<i>2568</i>&nbsp;
+<i>2569</i>&nbsp;		// TODO: when less than two envelopes - no need to this.
+<i>2570</i>&nbsp;
+<b class="fc"><i>2571</i>&nbsp;		if (m_accelerators.getQuadTreeForPaths() != null)</b>
+<b class="nc"><i>2572</i>&nbsp;			return true;</b>
+<i>2573</i>&nbsp;
+<b class="fc"><i>2574</i>&nbsp;		m_accelerators._setQuadTreeForPaths(null);</b>
+<b class="fc"><i>2575</i>&nbsp;		QuadTreeImpl quad_tree_impl = InternalUtils.buildQuadTreeForPaths(this);</b>
+<b class="fc"><i>2576</i>&nbsp;		m_accelerators._setQuadTreeForPaths(quad_tree_impl);</b>
+<i>2577</i>&nbsp;
+<b class="fc"><i>2578</i>&nbsp;		return true;</b>
+<i>2579</i>&nbsp;	}
+<i>2580</i>&nbsp;
+<i>2581</i>&nbsp;	void setFillRule(int rule) {
+<b class="fc"><i>2582</i>&nbsp;		assert (m_bPolygon);</b>
+<b class="fc"><i>2583</i>&nbsp;		m_fill_rule = rule;</b>
+<b class="fc"><i>2584</i>&nbsp;	}</b>
+<i>2585</i>&nbsp;
+<i>2586</i>&nbsp;	int getFillRule() {
+<b class="fc"><i>2587</i>&nbsp;		return m_fill_rule;</b>
+<i>2588</i>&nbsp;	}
+<i>2589</i>&nbsp;
+<i>2590</i>&nbsp;	void clearDirtyOGCFlags() { 
+<b class="fc"><i>2591</i>&nbsp;		_setDirtyFlag(DirtyFlags.DirtyOGCFlags, false);</b>
+<b class="fc"><i>2592</i>&nbsp;	}</b>
+<i>2593</i>&nbsp;}
+<i>2594</i>&nbsp;
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-26 10:02</div>
+</div>
+</body>
+</html>

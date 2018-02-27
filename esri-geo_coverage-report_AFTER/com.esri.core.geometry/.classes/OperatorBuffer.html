@@ -1,0 +1,173 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OperatorBuffer</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OperatorBuffer (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OperatorBuffer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (1/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (1/ 3)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;package com.esri.core.geometry;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;import com.esri.core.geometry.Operator.Type;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;/**
+<i>30</i>&nbsp; *Creates buffer polygons around geometries.
+<i>31</i>&nbsp; */
+<b class="fc"><i>32</i>&nbsp;public abstract class OperatorBuffer extends Operator {</b>
+<i>33</i>&nbsp;	@Override
+<i>34</i>&nbsp;	public Type getType() {
+<b class="nc"><i>35</i>&nbsp;		return Type.Buffer;</b>
+<i>36</i>&nbsp;	}
+<i>37</i>&nbsp;
+<i>38</i>&nbsp;	/**
+<i>39</i>&nbsp;	 *Creates a buffer around the input geometries
+<i>40</i>&nbsp;	 *
+<i>41</i>&nbsp;	 *@param inputGeometries The geometries to buffer.
+<i>42</i>&nbsp;	 *@param sr The SpatialReference of the Geometries.
+<i>43</i>&nbsp;	 *@param distances The buffer distances for the Geometries. If the size of the distances array is less than the number of geometries in the inputGeometries, the last distance value is used for the rest of geometries.
+<i>44</i>&nbsp;	 *@param bUnion If True, the buffered geometries will be unioned, otherwise they wont be unioned.
+<i>45</i>&nbsp;	 */
+<i>46</i>&nbsp;	public abstract GeometryCursor execute(GeometryCursor inputGeometries,
+<i>47</i>&nbsp;			SpatialReference sr, double[] distances, boolean bUnion,
+<i>48</i>&nbsp;			ProgressTracker progressTracker);
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;	/**
+<i>51</i>&nbsp;	 *Creates a buffer around the input geometry
+<i>52</i>&nbsp;	 *
+<i>53</i>&nbsp;	 *@param inputGeometry The geometry to buffer.
+<i>54</i>&nbsp;	 *@param sr The SpatialReference of the Geometry.
+<i>55</i>&nbsp;	 *@param distance The buffer distance for the Geometry.
+<i>56</i>&nbsp;	 */
+<i>57</i>&nbsp;	public abstract Geometry execute(Geometry inputGeometry,
+<i>58</i>&nbsp;			SpatialReference sr, double distance,
+<i>59</i>&nbsp;			ProgressTracker progressTracker);
+<i>60</i>&nbsp;
+<i>61</i>&nbsp;    /**
+<i>62</i>&nbsp;    *Creates a buffer around the input geometries
+<i>63</i>&nbsp;    *
+<i>64</i>&nbsp;    *@param input_geometries The geometries to buffer.
+<i>65</i>&nbsp;    *@param sr The Spatial_reference of the Geometries. It is used to obtain the tolerance. Can be null.
+<i>66</i>&nbsp;    *@param distances The buffer distances for the Geometries. If the size of the distances array is less than the number of geometries in the input_geometries, the last distance value is used for the rest of geometries.
+<i>67</i>&nbsp;    *@param max_deviation The max deviation of the result buffer from the true buffer in the units of the sr.
+<i>68</i>&nbsp;    *When max_deviation is NaN or 0, it is replaced with 1e-5 * abs(distance).
+<i>69</i>&nbsp;    *When max_deviation is larger than MIN = 0.5 * abs(distance), it is replaced with MIN. See below for more information.
+<i>70</i>&nbsp;    *@param max_vertices_in_full_circle The maximum number of vertices in polygon produced from a buffered point. A value of 96 is used in methods that do not accept max_vertices_in_full_circle.
+<i>71</i>&nbsp;    *If the value is less than MIN=12, it is set to MIN. See below for more information.
+<i>72</i>&nbsp;    *@param b_union If True, the buffered geometries will be unioned, otherwise they wont be unioned.
+<i>73</i>&nbsp;    *@param progress_tracker The progress tracker that allows to cancel the operation. Pass null if not needed.
+<i>74</i>&nbsp;    *
+<i>75</i>&nbsp;    *The max_deviation and max_vertices_in_full_circle control the quality of round joins in the buffer. That is, the precision of the buffer is max_deviation unless
+<i>76</i>&nbsp;    *the number of required vertices is too large.
+<i>77</i>&nbsp;    *The max_vertices_in_full_circle controls how many vertices can be in each round join in the buffer. It is approximately equal to the number of vertices in the polygon around a
+<i>78</i>&nbsp;    *buffered point. It has a priority over max_deviation. The max deviation is the distance from the result polygon to a true buffer.
+<i>79</i>&nbsp;    *The real deviation is calculated as the max(max_deviation, abs(distance) * (1 - cos(PI / max_vertex_in_complete_circle))).
+<i>80</i>&nbsp;    *
+<i>81</i>&nbsp;    *Note that max_deviation can be exceeded because geometry is generalized with 0.25 * real_deviation, also input segments closer than 0.25 * real_deviation are 
+<i>82</i>&nbsp;    *snapped to a point.
+<i>83</i>&nbsp;    */
+<i>84</i>&nbsp;    abstract GeometryCursor execute(GeometryCursor input_geometries, SpatialReference sr, double[] distances, double max_deviation, int max_vertices_in_full_circle, boolean b_union, ProgressTracker progress_tracker);
+<i>85</i>&nbsp;	
+<i>86</i>&nbsp;	public static OperatorBuffer local() {
+<b class="nc"><i>87</i>&nbsp;		return (OperatorBuffer) OperatorFactoryLocal.getInstance().getOperator(</b>
+<i>88</i>&nbsp;				Type.Buffer);
+<i>89</i>&nbsp;	}
+<i>90</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

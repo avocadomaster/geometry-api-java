@@ -1,0 +1,217 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: NonSimpleResult</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: NonSimpleResult (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">NonSimpleResult</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (14/ 14)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">NonSimpleResult$Reason</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/ 12)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (26/ 26)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;/**
+<i>27</i>&nbsp; * The result of the IsSimpleXXX.
+<i>28</i>&nbsp; * 
+<i>29</i>&nbsp; *
+<i>30</i>&nbsp; */
+<i>31</i>&nbsp;public class NonSimpleResult {
+<b class="fc"><i>32</i>&nbsp;	public enum Reason {</b>
+<i>33</i>&nbsp;		/**
+<i>34</i>&nbsp;		*This value is returned if the geometry &quot;knows&quot; through an internal state that it is non-simple.
+<i>35</i>&nbsp;		*To make it determine the reason, use
+<i>36</i>&nbsp;		*bForceTest == True.
+<i>37</i>&nbsp;		*/		
+<b class="fc"><i>38</i>&nbsp;		NotDetermined,</b>
+<i>39</i>&nbsp;		/**
+<i>40</i>&nbsp;		 * non-simple, because the structure is bad (0 size path, for example).
+<i>41</i>&nbsp;		 */
+<b class="fc"><i>42</i>&nbsp;		Structure, </b>
+<i>43</i>&nbsp;		/**
+<i>44</i>&nbsp;		 * Non-simple, because there are degenerate segments.
+<i>45</i>&nbsp;		 */
+<b class="fc"><i>46</i>&nbsp;		DegenerateSegments,</b>
+<i>47</i>&nbsp;		/**
+<i>48</i>&nbsp;		 * Non-simple, because not clustered properly, that is there are non-coincident vertices closer than tolerance.
+<i>49</i>&nbsp;		 */		
+<b class="fc"><i>50</i>&nbsp;		Clustering,</b>
+<i>51</i>&nbsp;		/**
+<i>52</i>&nbsp;		 * Non-simple, because not cracked properly (intersecting segments, overlaping segments)
+<i>53</i>&nbsp;		 */		
+<b class="fc"><i>54</i>&nbsp;		Cracking,</b>
+<i>55</i>&nbsp;		/**
+<i>56</i>&nbsp;		 * Non-simple, because there are crossovers (self intersections that are not cracking case).
+<i>57</i>&nbsp;		 */
+<b class="fc"><i>58</i>&nbsp;		CrossOver,</b>
+<i>59</i>&nbsp;		/**
+<i>60</i>&nbsp;		 * Non-simple, because holes or exteriors have wrong orientation.
+<i>61</i>&nbsp;		 */
+<b class="fc"><i>62</i>&nbsp;		RingOrientation,</b>
+<i>63</i>&nbsp;		/**
+<i>64</i>&nbsp;		 *The geometry is simple, but not strong-simple, because exteriors
+<i>65</i>&nbsp;		 *and holes are not in the correct order, and separation into sub polygons is not possible.
+<i>66</i>&nbsp;		 *Geometry needs to be resimplified with the bForceTest = true to fix this.
+<i>67</i>&nbsp;		 */		
+<b class="fc"><i>68</i>&nbsp;		RingOrder,</b>
+<i>69</i>&nbsp;		/**
+<i>70</i>&nbsp;		 * There is a self tangency or cross-over situation (strong simple, but not OGC simple)
+<i>71</i>&nbsp;		 * Only OperatorSimplifyOGC returns this.
+<i>72</i>&nbsp;		 */		
+<b class="fc"><i>73</i>&nbsp;		OGCPolylineSelfTangency,</b>
+<i>74</i>&nbsp;		/**
+<i>75</i>&nbsp;		 * There is a self tangency situation (strong simple, but not OGC simple)
+<i>76</i>&nbsp;		 * Only OperatorSimplifyOGC returns this.
+<i>77</i>&nbsp;		 */
+<b class="fc"><i>78</i>&nbsp;		OGCPolygonSelfTangency,</b>
+<i>79</i>&nbsp;		/**
+<i>80</i>&nbsp;		 * Touching interioir rings make a disconnected point set from polygon interior
+<i>81</i>&nbsp;		 * (strong simple, but not OGC simple).
+<i>82</i>&nbsp;		 * Only OperatorSimplifyOGC returns this.
+<i>83</i>&nbsp;		 */
+<b class="fc"><i>84</i>&nbsp;		OGCDisconnectedInterior</b>
+<i>85</i>&nbsp;	}
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;	public Reason m_reason;
+<i>88</i>&nbsp;	public int m_vertexIndex1;
+<i>89</i>&nbsp;	public int m_vertexIndex2;
+<i>90</i>&nbsp;
+<b class="fc"><i>91</i>&nbsp;	public NonSimpleResult() {</b>
+<b class="fc"><i>92</i>&nbsp;		m_reason = Reason.NotDetermined;</b>
+<b class="fc"><i>93</i>&nbsp;		m_vertexIndex1 = -1;</b>
+<b class="fc"><i>94</i>&nbsp;		m_vertexIndex2 = -1;</b>
+<b class="fc"><i>95</i>&nbsp;	}</b>
+<i>96</i>&nbsp;
+<i>97</i>&nbsp;	void Assign(NonSimpleResult src) {
+<b class="fc"><i>98</i>&nbsp;		m_reason = src.m_reason;</b>
+<b class="fc"><i>99</i>&nbsp;		m_vertexIndex1 = src.m_vertexIndex1;</b>
+<b class="fc"><i>100</i>&nbsp;		m_vertexIndex2 = src.m_vertexIndex2;</b>
+<b class="fc"><i>101</i>&nbsp;	}</b>
+<i>102</i>&nbsp;
+<b class="fc"><i>103</i>&nbsp;	NonSimpleResult(Reason reason, int index1, int index2) {</b>
+<b class="fc"><i>104</i>&nbsp;		m_reason = reason;</b>
+<b class="fc"><i>105</i>&nbsp;		m_vertexIndex1 = index1;</b>
+<b class="fc"><i>106</i>&nbsp;		m_vertexIndex2 = index2;</b>
+<b class="fc"><i>107</i>&nbsp;	}</b>
+<i>108</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-26 10:02</div>
+</div>
+</body>
+</html>

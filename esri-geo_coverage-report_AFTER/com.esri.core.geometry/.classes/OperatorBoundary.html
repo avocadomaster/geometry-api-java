@@ -1,0 +1,142 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OperatorBoundary</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OperatorBoundary (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OperatorBoundary</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/ 3)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<b class="fc"><i>26</i>&nbsp;public abstract class OperatorBoundary extends Operator {</b>
+<i>27</i>&nbsp;  @Override
+<i>28</i>&nbsp;  public Type getType() {
+<b class="nc"><i>29</i>&nbsp;    return Type.Boundary;</b>
+<i>30</i>&nbsp;  }
+<i>31</i>&nbsp;
+<i>32</i>&nbsp;  /**
+<i>33</i>&nbsp;   * Calculates the boundary geometry.
+<i>34</i>&nbsp;   * @param geoms The input geometry cursor.
+<i>35</i>&nbsp;   * @param progress_tracker The progress tracker, that allows to cancel the lengthy operation.
+<i>36</i>&nbsp;   * @return Returns a cursor over boundaries for each geometry.
+<i>37</i>&nbsp;   */
+<i>38</i>&nbsp;  abstract public GeometryCursor execute(GeometryCursor geoms,
+<i>39</i>&nbsp;          ProgressTracker progress_tracker);
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;  /**
+<i>42</i>&nbsp;   * Calculates the boundary.
+<i>43</i>&nbsp;   * @param geom The input geometry.
+<i>44</i>&nbsp;   * @param progress_tracker The progress tracker, that allows to cancel the lengthy operation.
+<i>45</i>&nbsp;   * @return Returns the boundary.
+<i>46</i>&nbsp;   *
+<i>47</i>&nbsp;   * For Point - returns an empty point.
+<i>48</i>&nbsp;   * For Multi_point - returns an empty point.
+<i>49</i>&nbsp;   * For Envelope - returns a polyline, that bounds the envelope.
+<i>50</i>&nbsp;   * For Polyline - returns a multipoint, using OGC specification (includes path endpoints, using mod 2 rule).
+<i>51</i>&nbsp;   * For Polygon - returns a polyline that bounds the polygon (adds all rings of the polygon to a polyline).
+<i>52</i>&nbsp;   */
+<i>53</i>&nbsp;  abstract public Geometry execute(Geometry geom,
+<i>54</i>&nbsp;          ProgressTracker progress_tracker);
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;  public static OperatorBoundary local() {
+<b class="fc"><i>57</i>&nbsp;    return (OperatorBoundary) OperatorFactoryLocal.getInstance().getOperator(Type.Boundary);</b>
+<i>58</i>&nbsp;  }
+<i>59</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

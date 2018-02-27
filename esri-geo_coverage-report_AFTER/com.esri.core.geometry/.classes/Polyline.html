@@ -1,0 +1,201 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Polyline</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Polyline (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Polyline</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (11/ 11)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.3%
+  </span>
+  <span class="absValue">
+    (25/ 28)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;package com.esri.core.geometry;
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;import java.io.Serializable;
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;/**
+<i>31</i>&nbsp; * A polyline is a collection of one or many paths.
+<i>32</i>&nbsp; * 
+<i>33</i>&nbsp; */
+<i>34</i>&nbsp;public class Polyline extends MultiPath implements Serializable {
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;	private static final long serialVersionUID = 2L;// TODO:remove as we use
+<i>37</i>&nbsp;													// writeReplace and
+<i>38</i>&nbsp;													// GeometrySerializer
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;	/**
+<i>41</i>&nbsp;	 * Creates an empty polyline.
+<i>42</i>&nbsp;	 */
+<b class="fc"><i>43</i>&nbsp;	public Polyline() {</b>
+<b class="fc"><i>44</i>&nbsp;		m_impl = new MultiPathImpl(false);</b>
+<b class="fc"><i>45</i>&nbsp;	}</b>
+<i>46</i>&nbsp;
+<b class="fc"><i>47</i>&nbsp;	public Polyline(VertexDescription vd) {</b>
+<b class="fc"><i>48</i>&nbsp;		m_impl = new MultiPathImpl(false, vd);</b>
+<b class="fc"><i>49</i>&nbsp;	}</b>
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;	/**
+<i>52</i>&nbsp;	 * Creates a polyline with one line segment.
+<i>53</i>&nbsp;	 */
+<b class="fc"><i>54</i>&nbsp;	public Polyline(Point start, Point end) {</b>
+<b class="fc"><i>55</i>&nbsp;		m_impl = new MultiPathImpl(false, start.getDescription());</b>
+<b class="fc"><i>56</i>&nbsp;		startPath(start);</b>
+<b class="fc"><i>57</i>&nbsp;		lineTo(end);</b>
+<b class="fc"><i>58</i>&nbsp;	}</b>
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;	@Override
+<i>61</i>&nbsp;	public Geometry createInstance() {
+<b class="fc"><i>62</i>&nbsp;		return new Polyline(getDescription());</b>
+<i>63</i>&nbsp;	}
+<i>64</i>&nbsp;
+<i>65</i>&nbsp;	@Override
+<i>66</i>&nbsp;	public int getDimension() {
+<b class="fc"><i>67</i>&nbsp;		return 1;</b>
+<i>68</i>&nbsp;	}
+<i>69</i>&nbsp;
+<i>70</i>&nbsp;	@Override
+<i>71</i>&nbsp;	public Geometry.Type getType() {
+<b class="fc"><i>72</i>&nbsp;		return Type.Polyline;</b>
+<i>73</i>&nbsp;	}
+<i>74</i>&nbsp;
+<i>75</i>&nbsp;	/**
+<i>76</i>&nbsp;	 * Returns TRUE when this geometry has exactly same type, properties, and
+<i>77</i>&nbsp;	 * coordinates as the other geometry.
+<i>78</i>&nbsp;	 */
+<i>79</i>&nbsp;	@Override
+<i>80</i>&nbsp;	public boolean equals(Object other) {
+<b class="fc"><i>81</i>&nbsp;		if (other == null)</b>
+<b class="nc"><i>82</i>&nbsp;			return false;</b>
+<i>83</i>&nbsp;
+<b class="fc"><i>84</i>&nbsp;		if (other == this)</b>
+<b class="nc"><i>85</i>&nbsp;			return true;</b>
+<i>86</i>&nbsp;
+<b class="fc"><i>87</i>&nbsp;		if (other.getClass() != getClass())</b>
+<b class="nc"><i>88</i>&nbsp;			return false;</b>
+<i>89</i>&nbsp;
+<b class="fc"><i>90</i>&nbsp;		return m_impl.equals(((Polyline) other)._getImpl());</b>
+<i>91</i>&nbsp;	}
+<i>92</i>&nbsp;
+<i>93</i>&nbsp;	/**
+<i>94</i>&nbsp;	 * Returns the hash code for the polyline.
+<i>95</i>&nbsp;	 */
+<i>96</i>&nbsp;
+<i>97</i>&nbsp;	@Override
+<i>98</i>&nbsp;	public int hashCode() {
+<b class="fc"><i>99</i>&nbsp;		return m_impl.hashCode();</b>
+<i>100</i>&nbsp;	}
+<i>101</i>&nbsp;
+<i>102</i>&nbsp;	@Override
+<i>103</i>&nbsp;	public void addSegment(Segment segment, boolean bStartNewPath) {
+<b class="fc"><i>104</i>&nbsp;		m_impl.addSegment(segment, bStartNewPath);</b>
+<b class="fc"><i>105</i>&nbsp;	}</b>
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;	public void interpolateAttributes(int from_path_index,
+<i>108</i>&nbsp;			int from_point_index, int to_path_index, int to_point_index) {
+<b class="fc"><i>109</i>&nbsp;		m_impl.interpolateAttributes(from_path_index, from_point_index,</b>
+<i>110</i>&nbsp;				to_path_index, to_point_index);
+<b class="fc"><i>111</i>&nbsp;	}</b>
+<i>112</i>&nbsp;
+<i>113</i>&nbsp;	public void interpolateAttributes(int semantics, int from_path_index,
+<i>114</i>&nbsp;			int from_point_index, int to_path_index, int to_point_index) {
+<b class="fc"><i>115</i>&nbsp;		m_impl.interpolateAttributesForSemantics(semantics, from_path_index,</b>
+<i>116</i>&nbsp;				from_point_index, to_path_index, to_point_index);
+<b class="fc"><i>117</i>&nbsp;	}</b>
+<i>118</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

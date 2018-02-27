@@ -1,0 +1,267 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: RasterizedGeometry2D</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: RasterizedGeometry2D (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">RasterizedGeometry2D</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.9%
+  </span>
+  <span class="absValue">
+    (17/ 23)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">RasterizedGeometry2D$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">RasterizedGeometry2D$HitType</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/ 7)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (9/ 9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.6%
+  </span>
+  <span class="absValue">
+    (25/ 31)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;import com.esri.core.geometry.Geometry.GeometryAccelerationDegree;
+<i>27</i>&nbsp;
+<b class="fc"><i>28</i>&nbsp;public abstract class RasterizedGeometry2D {</b>
+<i>29</i>&nbsp;
+<b class="fc"><i>30</i>&nbsp;	public enum HitType {</b>
+<b class="fc"><i>31</i>&nbsp;		Outside(0), // the test geometry is well outside the geometry bounds</b>
+<b class="fc"><i>32</i>&nbsp;		Inside(1), // the test geometry is well inside the geomety bounds</b>
+<b class="fc"><i>33</i>&nbsp;		Border(2); // the test geometry is close to the bounds or intersects the</b>
+<i>34</i>&nbsp;					// bounds
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;		int enumVal;
+<i>37</i>&nbsp;
+<b class="fc"><i>38</i>&nbsp;		private HitType(int val) {</b>
+<b class="fc"><i>39</i>&nbsp;			enumVal = val;</b>
+<b class="fc"><i>40</i>&nbsp;		};</b>
+<i>41</i>&nbsp;	}
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;	/**
+<i>44</i>&nbsp;	 * Test a point against the RasterizedGeometry
+<i>45</i>&nbsp;	 */
+<i>46</i>&nbsp;	public abstract HitType queryPointInGeometry(double x, double y);
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;	/**
+<i>49</i>&nbsp;	 * Test an envelope against the RasterizedGeometry.
+<i>50</i>&nbsp;	 */
+<i>51</i>&nbsp;	public abstract HitType queryEnvelopeInGeometry(Envelope2D env);
+<i>52</i>&nbsp;
+<i>53</i>&nbsp;	/**
+<i>54</i>&nbsp;	 * Creates a rasterized geometry from a given Geometry.
+<i>55</i>&nbsp;	 * 
+<i>56</i>&nbsp;	 * @param geom
+<i>57</i>&nbsp;	 *            The input geometry to rasterize. It has to be a MultiVertexGeometry instance.
+<i>58</i>&nbsp;	 * @param toleranceXY
+<i>59</i>&nbsp;	 *            The tolerance of the rasterization. Raster pixels that are
+<i>60</i>&nbsp;	 *            closer than given tolerance to the Geometry will be set.
+<i>61</i>&nbsp;	 * @param rasterSizeBytes
+<i>62</i>&nbsp;	 *            The max size of the raster in bytes. The raster has size of
+<i>63</i>&nbsp;	 *            rasterSize x rasterSize. Polygons are rasterized into 2 bpp
+<i>64</i>&nbsp;	 *            (bits per pixel) rasters while other geometries are rasterized
+<i>65</i>&nbsp;	 *            into 1 bpp rasters. 32x32 pixel raster for a polygon would
+<i>66</i>&nbsp;	 *            take 256 bytes of memory
+<i>67</i>&nbsp;	 */
+<i>68</i>&nbsp;	public static RasterizedGeometry2D create(Geometry geom,
+<i>69</i>&nbsp;			double toleranceXY, int rasterSizeBytes) {
+<b class="fc"><i>70</i>&nbsp;		if (!canUseAccelerator(geom))</b>
+<b class="nc"><i>71</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>72</i>&nbsp;
+<b class="fc"><i>73</i>&nbsp;		RasterizedGeometry2DImpl gc = RasterizedGeometry2DImpl.createImpl(geom,</b>
+<i>74</i>&nbsp;				toleranceXY, rasterSizeBytes);
+<b class="fc"><i>75</i>&nbsp;		return (RasterizedGeometry2D) gc;</b>
+<i>76</i>&nbsp;	}
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;	static RasterizedGeometry2D create(MultiVertexGeometryImpl geom,
+<i>79</i>&nbsp;			double toleranceXY, int rasterSizeBytes) {
+<b class="fc"><i>80</i>&nbsp;		if (!canUseAccelerator(geom))</b>
+<b class="nc"><i>81</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>82</i>&nbsp;
+<b class="fc"><i>83</i>&nbsp;		RasterizedGeometry2DImpl gc = RasterizedGeometry2DImpl.createImpl(geom,</b>
+<i>84</i>&nbsp;				toleranceXY, rasterSizeBytes);
+<b class="fc"><i>85</i>&nbsp;		return (RasterizedGeometry2D) gc;</b>
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;	}
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;	public static int rasterSizeFromAccelerationDegree(
+<i>90</i>&nbsp;			GeometryAccelerationDegree accelDegree) {
+<b class="fc"><i>91</i>&nbsp;		int value = 0;</b>
+<b class="fc"><i>92</i>&nbsp;		switch (accelDegree) {</b>
+<i>93</i>&nbsp;		case enumMild:
+<b class="nc"><i>94</i>&nbsp;			value = 64 * 64 * 2 / 8;// 1k</b>
+<b class="nc"><i>95</i>&nbsp;			break;</b>
+<i>96</i>&nbsp;		case enumMedium:
+<b class="fc"><i>97</i>&nbsp;			value = 256 * 256 * 2 / 8;// 16k</b>
+<b class="fc"><i>98</i>&nbsp;			break;</b>
+<i>99</i>&nbsp;		case enumHot:
+<b class="fc"><i>100</i>&nbsp;			value = 1024 * 1024 * 2 / 8;// 256k</b>
+<b class="fc"><i>101</i>&nbsp;			break;</b>
+<i>102</i>&nbsp;		default:
+<b class="nc"><i>103</i>&nbsp;			throw GeometryException.GeometryInternalError();</b>
+<i>104</i>&nbsp;		}
+<i>105</i>&nbsp;
+<b class="fc"><i>106</i>&nbsp;		return value;</b>
+<i>107</i>&nbsp;	}
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;	/**
+<i>110</i>&nbsp;	 * Checks whether the RasterizedGeometry2D accelerator can be used with the
+<i>111</i>&nbsp;	 * given geometry.
+<i>112</i>&nbsp;	 */
+<i>113</i>&nbsp;	static boolean canUseAccelerator(Geometry geom) {
+<b class="fc"><i>114</i>&nbsp;		if (geom.isEmpty()</b>
+<b class="fc"><i>115</i>&nbsp;				|| !(geom.getType() == Geometry.Type.Polyline || geom.getType() == Geometry.Type.Polygon))</b>
+<b class="nc"><i>116</i>&nbsp;			return false;</b>
+<i>117</i>&nbsp;
+<b class="fc"><i>118</i>&nbsp;		return true;</b>
+<i>119</i>&nbsp;	}
+<i>120</i>&nbsp;
+<i>121</i>&nbsp;	/**
+<i>122</i>&nbsp;	 * Returns the tolerance for which the rasterized Geometry has been built.
+<i>123</i>&nbsp;	 */
+<i>124</i>&nbsp;	public abstract double getToleranceXY();
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;	/**
+<i>127</i>&nbsp;	 * Returns raster size in bytes
+<i>128</i>&nbsp;	 */
+<i>129</i>&nbsp;	public abstract int getRasterSize();
+<i>130</i>&nbsp;
+<i>131</i>&nbsp;	/**
+<i>132</i>&nbsp;	 * Dumps the raster to a bmp file for debug purposes.
+<i>133</i>&nbsp;	 * 
+<i>134</i>&nbsp;	 * @param fileName
+<i>135</i>&nbsp;	 * @return true if success, false otherwise.
+<i>136</i>&nbsp;	 */
+<i>137</i>&nbsp;	public abstract boolean dbgSaveToBitmap(String fileName);
+<i>138</i>&nbsp;
+<i>139</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,182 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OperatorIntersection</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OperatorIntersection (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OperatorIntersection</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;package com.esri.core.geometry;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;import com.esri.core.geometry.Operator.Type;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;/**
+<i>30</i>&nbsp; *Intersection of geometries by a given geometry.
+<i>31</i>&nbsp; */
+<b class="fc"><i>32</i>&nbsp;public abstract class OperatorIntersection extends Operator implements CombineOperator {</b>
+<i>33</i>&nbsp;	@Override
+<i>34</i>&nbsp;	public Type getType() {
+<b class="nc"><i>35</i>&nbsp;		return Type.Intersection;</b>
+<i>36</i>&nbsp;	}
+<i>37</i>&nbsp;
+<i>38</i>&nbsp;	/**
+<i>39</i>&nbsp;	 *Performs the Topological Intersection operation on the geometry set.
+<i>40</i>&nbsp;	 *@param inputGeometries is the set of Geometry instances to be intersected by the intersector.
+<i>41</i>&nbsp;	 *@param intersector is the intersector Geometry.
+<i>42</i>&nbsp;	 *
+<i>43</i>&nbsp;	 *The operator intersects every geometry in the inputGeometries with the first geometry of the intersector and returns the result.
+<i>44</i>&nbsp;	 */
+<i>45</i>&nbsp;	public abstract GeometryCursor execute(GeometryCursor inputGeometries,
+<i>46</i>&nbsp;			GeometryCursor intersector, SpatialReference sr,
+<i>47</i>&nbsp;			ProgressTracker progressTracker);
+<i>48</i>&nbsp;
+<i>49</i>&nbsp;	/**
+<i>50</i>&nbsp;	 *Performs the Topological intersection operation on the geometry set.
+<i>51</i>&nbsp;	 *@param input_geometries is the set of Geometry instances to be intersected by the intersector.
+<i>52</i>&nbsp;	 *@param intersector is the intersector Geometry. Only single intersector is used, therefore, the intersector.next() is called only once.
+<i>53</i>&nbsp;	 *@param sr The spatial reference is used to get tolerance value. Can be null, then the tolerance is not used and the operation is performed with
+<i>54</i>&nbsp;	 *a small tolerance value just enough to make the operation robust.
+<i>55</i>&nbsp;	 *@param progress_tracker Allows to cancel the operation. Can be null.
+<i>56</i>&nbsp;	 *@param dimensionMask The dimension of the intersection. The value is either -1, or a bitmask mask of values (1 &lt;&lt; dim).
+<i>57</i>&nbsp;	 *The value of -1 means the lower dimension in the intersecting pair.
+<i>58</i>&nbsp;	 *This is a fastest option when intersecting polygons with polygons or polylines.
+<i>59</i>&nbsp;	 *The bitmask of values (1 &lt;&lt; dim), where dim is the desired dimension value, is used to indicate
+<i>60</i>&nbsp;	 *what dimensions of geometry one wants to be returned. For example, to return
+<i>61</i>&nbsp;	 *multipoints and lines only, pass (1 &lt;&lt; 0) | (1 &lt;&lt; 1), which is equivalen to 1 | 2, or 3.
+<i>62</i>&nbsp;	 *@return Returns the cursor of the intersection result. The cursors&#39; getGeometryID method returns the current ID of the input geometry
+<i>63</i>&nbsp;	 *being processed. When dimensionMask is a bitmask, there will be n result geometries per one input geometry returned, where n is the number
+<i>64</i>&nbsp;	 *of bits set in the bitmask. For example, if the dimensionMask is 5, there will be two geometries per one input geometry.
+<i>65</i>&nbsp;	 *
+<i>66</i>&nbsp;	 *The operator intersects every geometry in the input_geometries with the first geometry of the intersector and returns the result.
+<i>67</i>&nbsp;	 *
+<i>68</i>&nbsp;	 *Note, when the dimensionMask is -1, then for each intersected pair of geometries,
+<i>69</i>&nbsp;	 *the result has the lower of dimentions of the two geometries. That is, the dimension of the Polyline/Polyline intersection
+<i>70</i>&nbsp;	 *is always 1 (that is, for polylines it never returns crossing points, but the overlaps only).
+<i>71</i>&nbsp;	 *If dimensionMask is 7, the operation will return any possible intersections.
+<i>72</i>&nbsp;	 */
+<i>73</i>&nbsp;	public abstract GeometryCursor execute(GeometryCursor input_geometries,
+<i>74</i>&nbsp;			GeometryCursor intersector, SpatialReference sr,
+<i>75</i>&nbsp;			ProgressTracker progress_tracker, int dimensionMask);
+<i>76</i>&nbsp;
+<i>77</i>&nbsp;	/**
+<i>78</i>&nbsp;	 *Performs the Topological Intersection operation on the geometry.
+<i>79</i>&nbsp;	 *The result has the lower of dimentions of the two geometries. That is, the dimension of the
+<i>80</i>&nbsp;	 *Polyline/Polyline intersection is always 1 (that is, for polylines it never returns crossing
+<i>81</i>&nbsp;	 *points, but the overlaps only).
+<i>82</i>&nbsp;	 *The call is equivalent to calling the overloaded method using cursors:
+<i>83</i>&nbsp;	 *execute(new SimpleGeometryCursor(input_geometry), new SimpleGeometryCursor(intersector), sr, progress_tracker, mask).next();
+<i>84</i>&nbsp;	 *where mask can be either -1 or min(1 &lt;&lt; input_geometry.getDimension(), 1 &lt;&lt; intersector.getDimension());
+<i>85</i>&nbsp;	 *@param inputGeometry is the Geometry instance to be intersected by the intersector.
+<i>86</i>&nbsp;	 *@param intersector is the intersector Geometry.
+<i>87</i>&nbsp;	 *@param sr The spatial reference to get the tolerance value from. Can be null, then the tolerance is calculated from the input geometries.
+<i>88</i>&nbsp;	 *@return Returns the intersected Geometry.
+<i>89</i>&nbsp;	 */
+<i>90</i>&nbsp;	public abstract Geometry execute(Geometry inputGeometry,
+<i>91</i>&nbsp;			Geometry intersector, SpatialReference sr,
+<i>92</i>&nbsp;			ProgressTracker progressTracker);
+<i>93</i>&nbsp;
+<i>94</i>&nbsp;	public static OperatorIntersection local() {
+<b class="fc"><i>95</i>&nbsp;		return (OperatorIntersection) OperatorFactoryLocal.getInstance()</b>
+<b class="fc"><i>96</i>&nbsp;				.getOperator(Type.Intersection);</b>
+<i>97</i>&nbsp;	}
+<i>98</i>&nbsp;
+<i>99</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

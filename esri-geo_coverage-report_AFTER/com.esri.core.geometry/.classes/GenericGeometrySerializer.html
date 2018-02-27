@@ -1,0 +1,177 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: GenericGeometrySerializer</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: GenericGeometrySerializer (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GenericGeometrySerializer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (40/ 44)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;import java.io.InvalidObjectException;
+<i>27</i>&nbsp;import java.io.ObjectStreamException;
+<i>28</i>&nbsp;import java.io.Serializable;
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;//This is a writeReplace class for MultiPoint, Polyline, and Polygon
+<b class="fc"><i>31</i>&nbsp;public class GenericGeometrySerializer implements Serializable {</b>
+<i>32</i>&nbsp;	private static final long serialVersionUID = 1L;
+<i>33</i>&nbsp;	int geometryType;
+<b class="fc"><i>34</i>&nbsp;	byte[] esriShape = null;</b>
+<b class="fc"><i>35</i>&nbsp;	int simpleFlag = 0;</b>
+<b class="fc"><i>36</i>&nbsp;	double tolerance = 0;</b>
+<b class="fc"><i>37</i>&nbsp;	boolean[] ogcFlags = null;</b>
+<i>38</i>&nbsp;	
+<i>39</i>&nbsp;	public Object readResolve() throws ObjectStreamException {
+<b class="fc"><i>40</i>&nbsp;		Geometry geometry = null;</b>
+<i>41</i>&nbsp;		try {
+<b class="fc"><i>42</i>&nbsp;			geometry = GeometryEngine.geometryFromEsriShape(</b>
+<b class="fc"><i>43</i>&nbsp;					esriShape, Geometry.Type.intToType(geometryType));</b>
+<i>44</i>&nbsp;			
+<b class="fc"><i>45</i>&nbsp;			if (Geometry.isMultiVertex(geometryType)) {</b>
+<b class="fc"><i>46</i>&nbsp;				MultiVertexGeometryImpl mvImpl = (MultiVertexGeometryImpl) geometry</b>
+<b class="fc"><i>47</i>&nbsp;						._getImpl();</b>
+<b class="fc"><i>48</i>&nbsp;				if (!geometry.isEmpty()</b>
+<b class="fc"><i>49</i>&nbsp;						&amp;&amp; Geometry.isMultiPath(geometryType)) {</b>
+<b class="fc"><i>50</i>&nbsp;					MultiPathImpl mpImpl = (MultiPathImpl) geometry._getImpl();</b>
+<b class="fc"><i>51</i>&nbsp;					AttributeStreamOfInt8 pathFlags = mpImpl</b>
+<b class="fc"><i>52</i>&nbsp;							.getPathFlagsStreamRef();</b>
+<b class="fc"><i>53</i>&nbsp;					for (int i = 0, n = mpImpl.getPathCount(); i &lt; n; i++) {</b>
+<b class="fc"><i>54</i>&nbsp;						if (ogcFlags[i])</b>
+<b class="fc"><i>55</i>&nbsp;							pathFlags.setBits(i,</b>
+<i>56</i>&nbsp;									(byte) PathFlags.enumOGCStartPolygon);
+<i>57</i>&nbsp;					}
+<i>58</i>&nbsp;				}
+<b class="fc"><i>59</i>&nbsp;				mvImpl.setIsSimple(simpleFlag, tolerance, false);</b>
+<i>60</i>&nbsp;			}
+<b class="nc"><i>61</i>&nbsp;		} catch (Exception ex) {</b>
+<b class="nc"><i>62</i>&nbsp;			throw new InvalidObjectException(&quot;Cannot read geometry from stream&quot;);</b>
+<b class="fc"><i>63</i>&nbsp;		}</b>
+<b class="fc"><i>64</i>&nbsp;		return geometry;</b>
+<i>65</i>&nbsp;	}
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;	public void setGeometryByValue(Geometry geometry)
+<i>68</i>&nbsp;			throws ObjectStreamException {
+<i>69</i>&nbsp;		try {
+<b class="fc"><i>70</i>&nbsp;			esriShape = GeometryEngine</b>
+<b class="fc"><i>71</i>&nbsp;					.geometryToEsriShape(geometry);</b>
+<b class="fc"><i>72</i>&nbsp;			geometryType = geometry.getType().value();</b>
+<b class="fc"><i>73</i>&nbsp;			if (Geometry.isMultiVertex(geometryType)) {</b>
+<b class="fc"><i>74</i>&nbsp;				MultiVertexGeometryImpl mvImpl = (MultiVertexGeometryImpl) geometry</b>
+<b class="fc"><i>75</i>&nbsp;						._getImpl();</b>
+<b class="fc"><i>76</i>&nbsp;				tolerance = mvImpl.m_simpleTolerance;</b>
+<b class="fc"><i>77</i>&nbsp;				simpleFlag = mvImpl.getIsSimple(0);</b>
+<b class="fc"><i>78</i>&nbsp;				if (!geometry.isEmpty()</b>
+<b class="fc"><i>79</i>&nbsp;						&amp;&amp; Geometry.isMultiPath(geometryType)) {</b>
+<b class="fc"><i>80</i>&nbsp;					MultiPathImpl mpImpl = (MultiPathImpl) geometry._getImpl();</b>
+<b class="fc"><i>81</i>&nbsp;					ogcFlags = new boolean[mpImpl.getPathCount()];</b>
+<b class="fc"><i>82</i>&nbsp;					AttributeStreamOfInt8 pathFlags = mpImpl</b>
+<b class="fc"><i>83</i>&nbsp;							.getPathFlagsStreamRef();</b>
+<b class="fc"><i>84</i>&nbsp;					for (int i = 0, n = mpImpl.getPathCount(); i &lt; n; i++) {</b>
+<b class="fc"><i>85</i>&nbsp;						ogcFlags[i] = (pathFlags.read(i) &amp; (byte) PathFlags.enumOGCStartPolygon) != 0;</b>
+<i>86</i>&nbsp;					}
+<i>87</i>&nbsp;				}
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;			}
+<b class="nc"><i>90</i>&nbsp;		} catch (Exception ex) {</b>
+<b class="nc"><i>91</i>&nbsp;			throw new InvalidObjectException(&quot;Cannot serialize this geometry&quot;);</b>
+<b class="fc"><i>92</i>&nbsp;		}</b>
+<b class="fc"><i>93</i>&nbsp;	}</b>
+<i>94</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

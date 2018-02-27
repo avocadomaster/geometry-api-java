@@ -1,0 +1,150 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: JsonReader</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: JsonReader (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+  <tr>
+    <td class="name">JsonReader$Token</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/ 12)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/ 12)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2017 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;/**
+<i>27</i>&nbsp; * An abstract reader for Json.
+<i>28</i>&nbsp; * 
+<i>29</i>&nbsp; * See JsonParserReader for a concrete implementation around JsonParser.
+<i>30</i>&nbsp; */
+<i>31</i>&nbsp;abstract public interface JsonReader {
+<b class="fc"><i>32</i>&nbsp;	public static enum Token {</b>
+<b class="fc"><i>33</i>&nbsp;		END_ARRAY,</b>
+<b class="fc"><i>34</i>&nbsp;		END_OBJECT,</b>
+<b class="fc"><i>35</i>&nbsp;		FIELD_NAME,</b>
+<b class="fc"><i>36</i>&nbsp;		START_ARRAY,</b>
+<b class="fc"><i>37</i>&nbsp;		START_OBJECT,</b>
+<b class="fc"><i>38</i>&nbsp;		VALUE_FALSE,</b>
+<b class="fc"><i>39</i>&nbsp;		VALUE_NULL,</b>
+<b class="fc"><i>40</i>&nbsp;		VALUE_NUMBER_FLOAT,</b>
+<b class="fc"><i>41</i>&nbsp;		VALUE_NUMBER_INT,</b>
+<b class="fc"><i>42</i>&nbsp;		VALUE_STRING,</b>
+<b class="fc"><i>43</i>&nbsp;		VALUE_TRUE</b>
+<i>44</i>&nbsp;	}
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;	abstract public Token nextToken() throws JsonGeometryException;
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;	abstract public Token currentToken() throws JsonGeometryException;
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;	abstract public void skipChildren() throws JsonGeometryException;
+<i>51</i>&nbsp;
+<i>52</i>&nbsp;	abstract public String currentString() throws JsonGeometryException;
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;	abstract public double currentDoubleValue() throws JsonGeometryException;
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;	abstract public int currentIntValue() throws JsonGeometryException;
+<i>57</i>&nbsp;	
+<i>58</i>&nbsp;	abstract public boolean currentBooleanValue() throws JsonGeometryException;
+<i>59</i>&nbsp;}
+<i>60</i>&nbsp;
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-26 10:02</div>
+</div>
+</body>
+</html>

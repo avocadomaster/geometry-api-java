@@ -1,0 +1,2959 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: RelationalOperationsMatrix</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: RelationalOperationsMatrix (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">RelationalOperationsMatrix</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.8%
+  </span>
+  <span class="absValue">
+    (88/ 90)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.6%
+  </span>
+  <span class="absValue">
+    (1273/ 1488)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<b class="fc"><i>26</i>&nbsp;class RelationalOperationsMatrix {</b>
+<i>27</i>&nbsp;	private TopoGraph m_topo_graph;
+<i>28</i>&nbsp;	private int[] m_matrix;
+<i>29</i>&nbsp;    private int[] m_max_dim;
+<i>30</i>&nbsp;	private boolean[] m_perform_predicates;
+<i>31</i>&nbsp;	private String m_scl;
+<i>32</i>&nbsp;	private int m_predicates_half_edge;
+<i>33</i>&nbsp;    private int m_predicates_cluster;
+<i>34</i>&nbsp;	private int m_predicate_count;
+<i>35</i>&nbsp;	private int m_cluster_index_a;
+<i>36</i>&nbsp;	private int m_cluster_index_b;
+<i>37</i>&nbsp;	private int m_visited_index;
+<i>38</i>&nbsp;
+<i>39</i>&nbsp;	private interface MatrixPredicate {
+<i>40</i>&nbsp;		static final int InteriorInterior = 0;
+<i>41</i>&nbsp;		static final int InteriorBoundary = 1;
+<i>42</i>&nbsp;		static final int InteriorExterior = 2;
+<i>43</i>&nbsp;		static final int BoundaryInterior = 3;
+<i>44</i>&nbsp;		static final int BoundaryBoundary = 4;
+<i>45</i>&nbsp;		static final int BoundaryExterior = 5;
+<i>46</i>&nbsp;		static final int ExteriorInterior = 6;
+<i>47</i>&nbsp;		static final int ExteriorBoundary = 7;
+<i>48</i>&nbsp;		static final int ExteriorExterior = 8;
+<i>49</i>&nbsp;	}
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;	private interface Predicates {
+<i>52</i>&nbsp;		static final int AreaAreaPredicates = 0;
+<i>53</i>&nbsp;		static final int AreaLinePredicates = 1;
+<i>54</i>&nbsp;		static final int LineLinePredicates = 2;
+<i>55</i>&nbsp;		static final int AreaPointPredicates = 3;
+<i>56</i>&nbsp;		static final int LinePointPredicates = 4;
+<i>57</i>&nbsp;		static final int PointPointPredicates = 5;
+<i>58</i>&nbsp;	}
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;	// Computes the necessary 9 intersection relationships of boundary,
+<i>61</i>&nbsp;	// interior, and exterior of geometry_a vs geometry_b for the given scl
+<i>62</i>&nbsp;	// string.
+<i>63</i>&nbsp;	static boolean relate(Geometry geometry_a, Geometry geometry_b,
+<i>64</i>&nbsp;			SpatialReference sr, String scl, ProgressTracker progress_tracker) {
+<i>65</i>&nbsp;
+<b class="fc"><i>66</i>&nbsp;        if (scl.length() != 9)</b>
+<b class="nc"><i>67</i>&nbsp;            throw new GeometryException(&quot;relation string length has to be 9 characters&quot;);</b>
+<i>68</i>&nbsp;
+<b class="fc"><i>69</i>&nbsp;        for (int i = 0; i &lt; 9; i++)</b>
+<i>70</i>&nbsp;        {
+<b class="fc"><i>71</i>&nbsp;            char c = scl.charAt(i);</b>
+<i>72</i>&nbsp;
+<b class="fc"><i>73</i>&nbsp;            if (c != &#39;*&#39; &amp;&amp; c != &#39;T&#39; &amp;&amp; c != &#39;F&#39; &amp;&amp; c != &#39;0&#39; &amp;&amp; c != &#39;1&#39; &amp;&amp; c != &#39;2&#39;)</b>
+<b class="nc"><i>74</i>&nbsp;                throw new GeometryException(&quot;relation string&quot;);</b>
+<i>75</i>&nbsp;        }
+<i>76</i>&nbsp;
+<b class="fc"><i>77</i>&nbsp;        int relation = getPredefinedRelation_(scl, geometry_a.getDimension(),</b>
+<b class="fc"><i>78</i>&nbsp;				geometry_b.getDimension());</b>
+<i>79</i>&nbsp;
+<b class="fc"><i>80</i>&nbsp;		if (relation != RelationalOperations.Relation.unknown)</b>
+<b class="nc"><i>81</i>&nbsp;			return RelationalOperations.relate(geometry_a, geometry_b, sr,</b>
+<i>82</i>&nbsp;					relation, progress_tracker);
+<i>83</i>&nbsp;
+<b class="fc"><i>84</i>&nbsp;		Envelope2D env1 = new Envelope2D();</b>
+<b class="fc"><i>85</i>&nbsp;		geometry_a.queryEnvelope2D(env1);</b>
+<b class="fc"><i>86</i>&nbsp;		Envelope2D env2 = new Envelope2D();</b>
+<b class="fc"><i>87</i>&nbsp;		geometry_b.queryEnvelope2D(env2);</b>
+<i>88</i>&nbsp;
+<b class="fc"><i>89</i>&nbsp;		Envelope2D envMerged = new Envelope2D();</b>
+<b class="fc"><i>90</i>&nbsp;		envMerged.setCoords(env1);</b>
+<b class="fc"><i>91</i>&nbsp;		envMerged.merge(env2);</b>
+<b class="fc"><i>92</i>&nbsp;		double tolerance = InternalUtils.calculateToleranceFromGeometry(sr,</b>
+<i>93</i>&nbsp;				envMerged, false);
+<i>94</i>&nbsp;
+<b class="fc"><i>95</i>&nbsp;		Geometry _geometryA = convertGeometry_(geometry_a, tolerance);</b>
+<b class="fc"><i>96</i>&nbsp;		Geometry _geometryB = convertGeometry_(geometry_b, tolerance);</b>
+<i>97</i>&nbsp;
+<b class="fc"><i>98</i>&nbsp;        if (_geometryA.isEmpty() || _geometryB.isEmpty())</b>
+<b class="fc"><i>99</i>&nbsp;            return relateEmptyGeometries_(_geometryA, _geometryB, scl);</b>
+<i>100</i>&nbsp;
+<b class="fc"><i>101</i>&nbsp;		int typeA = _geometryA.getType().value();</b>
+<b class="fc"><i>102</i>&nbsp;		int typeB = _geometryB.getType().value();</b>
+<i>103</i>&nbsp;
+<b class="fc"><i>104</i>&nbsp;		boolean bRelation = false;</b>
+<i>105</i>&nbsp;
+<b class="fc"><i>106</i>&nbsp;		switch (typeA) {</b>
+<i>107</i>&nbsp;		case Geometry.GeometryType.Polygon:
+<b class="fc"><i>108</i>&nbsp;			switch (typeB) {</b>
+<i>109</i>&nbsp;			case Geometry.GeometryType.Polygon:
+<b class="fc"><i>110</i>&nbsp;				bRelation = polygonRelatePolygon_((Polygon) (_geometryA),</b>
+<i>111</i>&nbsp;						(Polygon) (_geometryB), tolerance, scl,
+<i>112</i>&nbsp;						progress_tracker);
+<b class="fc"><i>113</i>&nbsp;				break;</b>
+<i>114</i>&nbsp;
+<i>115</i>&nbsp;			case Geometry.GeometryType.Polyline:
+<b class="fc"><i>116</i>&nbsp;				bRelation = polygonRelatePolyline_((Polygon) (_geometryA),</b>
+<i>117</i>&nbsp;						(Polyline) (_geometryB), tolerance, scl,
+<i>118</i>&nbsp;						progress_tracker);
+<b class="fc"><i>119</i>&nbsp;				break;</b>
+<i>120</i>&nbsp;
+<i>121</i>&nbsp;			case Geometry.GeometryType.Point:
+<b class="fc"><i>122</i>&nbsp;				bRelation = polygonRelatePoint_((Polygon) (_geometryA),</b>
+<i>123</i>&nbsp;						(Point) (_geometryB), tolerance, scl, progress_tracker);
+<b class="fc"><i>124</i>&nbsp;				break;</b>
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;			case Geometry.GeometryType.MultiPoint:
+<b class="fc"><i>127</i>&nbsp;				bRelation = polygonRelateMultiPoint_((Polygon) (_geometryA),</b>
+<i>128</i>&nbsp;						(MultiPoint) (_geometryB), tolerance, scl,
+<i>129</i>&nbsp;						progress_tracker);
+<b class="fc"><i>130</i>&nbsp;				break;</b>
+<i>131</i>&nbsp;
+<i>132</i>&nbsp;			default:
+<b class="nc"><i>133</i>&nbsp;				break; // warning fix</b>
+<i>134</i>&nbsp;			}
+<i>135</i>&nbsp;			break;
+<i>136</i>&nbsp;
+<i>137</i>&nbsp;		case Geometry.GeometryType.Polyline:
+<b class="fc"><i>138</i>&nbsp;			switch (typeB) {</b>
+<i>139</i>&nbsp;			case Geometry.GeometryType.Polygon:
+<b class="nc"><i>140</i>&nbsp;				bRelation = polygonRelatePolyline_((Polygon) (_geometryB),</b>
+<i>141</i>&nbsp;						(Polyline) (_geometryA), tolerance,
+<b class="nc"><i>142</i>&nbsp;						getTransposeMatrix_(scl), progress_tracker);</b>
+<b class="nc"><i>143</i>&nbsp;				break;</b>
+<i>144</i>&nbsp;
+<i>145</i>&nbsp;			case Geometry.GeometryType.Polyline:
+<b class="fc"><i>146</i>&nbsp;				bRelation = polylineRelatePolyline_((Polyline) (_geometryA),</b>
+<i>147</i>&nbsp;						(Polyline) (_geometryB), tolerance, scl,
+<i>148</i>&nbsp;						progress_tracker);
+<b class="fc"><i>149</i>&nbsp;				break;</b>
+<i>150</i>&nbsp;
+<i>151</i>&nbsp;			case Geometry.GeometryType.Point:
+<b class="fc"><i>152</i>&nbsp;				bRelation = polylineRelatePoint_((Polyline) (_geometryA),</b>
+<i>153</i>&nbsp;						(Point) (_geometryB), tolerance, scl, progress_tracker);
+<b class="fc"><i>154</i>&nbsp;				break;</b>
+<i>155</i>&nbsp;
+<i>156</i>&nbsp;			case Geometry.GeometryType.MultiPoint:
+<b class="fc"><i>157</i>&nbsp;				bRelation = polylineRelateMultiPoint_((Polyline) (_geometryA),</b>
+<i>158</i>&nbsp;						(MultiPoint) (_geometryB), tolerance, scl,
+<i>159</i>&nbsp;						progress_tracker);
+<b class="fc"><i>160</i>&nbsp;				break;</b>
+<i>161</i>&nbsp;
+<i>162</i>&nbsp;			default:
+<b class="nc"><i>163</i>&nbsp;				break; // warning fix</b>
+<i>164</i>&nbsp;			}
+<i>165</i>&nbsp;			break;
+<i>166</i>&nbsp;
+<i>167</i>&nbsp;		case Geometry.GeometryType.Point:
+<b class="fc"><i>168</i>&nbsp;			switch (typeB) {</b>
+<i>169</i>&nbsp;			case Geometry.GeometryType.Polygon:
+<b class="nc"><i>170</i>&nbsp;				bRelation = polygonRelatePoint_((Polygon) (_geometryB),</b>
+<i>171</i>&nbsp;						(Point) (_geometryA), tolerance,
+<b class="nc"><i>172</i>&nbsp;						getTransposeMatrix_(scl), progress_tracker);</b>
+<b class="nc"><i>173</i>&nbsp;				break;</b>
+<i>174</i>&nbsp;
+<i>175</i>&nbsp;			case Geometry.GeometryType.Polyline:
+<b class="nc"><i>176</i>&nbsp;				bRelation = polylineRelatePoint_((Polyline) (_geometryB),</b>
+<i>177</i>&nbsp;						(Point) (_geometryA), tolerance,
+<b class="nc"><i>178</i>&nbsp;						getTransposeMatrix_(scl), progress_tracker);</b>
+<b class="nc"><i>179</i>&nbsp;				break;</b>
+<i>180</i>&nbsp;
+<i>181</i>&nbsp;			case Geometry.GeometryType.Point:
+<b class="fc"><i>182</i>&nbsp;				bRelation = pointRelatePoint_((Point) (_geometryA),</b>
+<i>183</i>&nbsp;						(Point) (_geometryB), tolerance, scl, progress_tracker);
+<b class="fc"><i>184</i>&nbsp;				break;</b>
+<i>185</i>&nbsp;
+<i>186</i>&nbsp;			case Geometry.GeometryType.MultiPoint:
+<b class="nc"><i>187</i>&nbsp;				bRelation = multiPointRelatePoint_((MultiPoint) (_geometryB),</b>
+<i>188</i>&nbsp;						(Point) (_geometryA), tolerance,
+<b class="nc"><i>189</i>&nbsp;						getTransposeMatrix_(scl), progress_tracker);</b>
+<b class="nc"><i>190</i>&nbsp;				break;</b>
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;			default:
+<b class="nc"><i>193</i>&nbsp;				break; // warning fix</b>
+<i>194</i>&nbsp;			}
+<i>195</i>&nbsp;			break;
+<i>196</i>&nbsp;
+<i>197</i>&nbsp;		case Geometry.GeometryType.MultiPoint:
+<b class="fc"><i>198</i>&nbsp;			switch (typeB) {</b>
+<i>199</i>&nbsp;			case Geometry.GeometryType.Polygon:
+<b class="fc"><i>200</i>&nbsp;				bRelation = polygonRelateMultiPoint_((Polygon) (_geometryB),</b>
+<i>201</i>&nbsp;						(MultiPoint) (_geometryA), tolerance,
+<b class="fc"><i>202</i>&nbsp;						getTransposeMatrix_(scl), progress_tracker);</b>
+<b class="fc"><i>203</i>&nbsp;				break;</b>
+<i>204</i>&nbsp;
+<i>205</i>&nbsp;			case Geometry.GeometryType.Polyline:
+<b class="nc"><i>206</i>&nbsp;				bRelation = polylineRelateMultiPoint_((Polyline) (_geometryB),</b>
+<i>207</i>&nbsp;						(MultiPoint) (_geometryA), tolerance,
+<b class="nc"><i>208</i>&nbsp;						getTransposeMatrix_(scl), progress_tracker);</b>
+<b class="nc"><i>209</i>&nbsp;				break;</b>
+<i>210</i>&nbsp;
+<i>211</i>&nbsp;			case Geometry.GeometryType.MultiPoint:
+<b class="fc"><i>212</i>&nbsp;				bRelation = multiPointRelateMultiPoint_(</b>
+<i>213</i>&nbsp;						(MultiPoint) (_geometryA), (MultiPoint) (_geometryB),
+<i>214</i>&nbsp;						tolerance, scl, progress_tracker);
+<b class="fc"><i>215</i>&nbsp;				break;</b>
+<i>216</i>&nbsp;
+<i>217</i>&nbsp;			case Geometry.GeometryType.Point:
+<b class="fc"><i>218</i>&nbsp;				bRelation = multiPointRelatePoint_((MultiPoint) (_geometryA),</b>
+<i>219</i>&nbsp;						(Point) (_geometryB), tolerance, scl, progress_tracker);
+<b class="fc"><i>220</i>&nbsp;				break;</b>
+<i>221</i>&nbsp;
+<i>222</i>&nbsp;			default:
+<b class="nc"><i>223</i>&nbsp;				break; // warning fix</b>
+<i>224</i>&nbsp;			}
+<i>225</i>&nbsp;			break;
+<i>226</i>&nbsp;		default:
+<b class="nc"><i>227</i>&nbsp;			bRelation = false;</b>
+<i>228</i>&nbsp;			break;
+<i>229</i>&nbsp;		}
+<i>230</i>&nbsp;
+<b class="fc"><i>231</i>&nbsp;		return bRelation;</b>
+<i>232</i>&nbsp;	}
+<i>233</i>&nbsp;
+<b class="fc"><i>234</i>&nbsp;	private RelationalOperationsMatrix() {</b>
+<b class="fc"><i>235</i>&nbsp;		m_predicate_count = 0;</b>
+<b class="fc"><i>236</i>&nbsp;		m_topo_graph = new TopoGraph();</b>
+<b class="fc"><i>237</i>&nbsp;		m_matrix = new int[9];</b>
+<b class="fc"><i>238</i>&nbsp;        m_max_dim = new int[9];</b>
+<b class="fc"><i>239</i>&nbsp;		m_perform_predicates = new boolean[9];</b>
+<b class="fc"><i>240</i>&nbsp;        m_predicates_half_edge = -1;</b>
+<b class="fc"><i>241</i>&nbsp;        m_predicates_cluster =  -1;</b>
+<b class="fc"><i>242</i>&nbsp;	}</b>
+<i>243</i>&nbsp;
+<i>244</i>&nbsp;	// Returns true if the relation holds.
+<i>245</i>&nbsp;	static boolean polygonRelatePolygon_(Polygon polygon_a, Polygon polygon_b,
+<i>246</i>&nbsp;			double tolerance, String scl, ProgressTracker progress_tracker) {
+<b class="fc"><i>247</i>&nbsp;		RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>248</i>&nbsp;		relOps.resetMatrix_();</b>
+<b class="fc"><i>249</i>&nbsp;		relOps.setPredicates_(scl);</b>
+<b class="fc"><i>250</i>&nbsp;		relOps.setAreaAreaPredicates_();</b>
+<i>251</i>&nbsp;
+<b class="fc"><i>252</i>&nbsp;		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();</b>
+<b class="fc"><i>253</i>&nbsp;		polygon_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>254</i>&nbsp;		polygon_b.queryEnvelope2D(env_b);</b>
+<i>255</i>&nbsp;
+<b class="fc"><i>256</i>&nbsp;		boolean bRelationKnown = false;</b>
+<b class="fc"><i>257</i>&nbsp;		boolean b_disjoint = RelationalOperations.envelopeDisjointEnvelope_(</b>
+<i>258</i>&nbsp;				env_a, env_b, tolerance, progress_tracker);
+<i>259</i>&nbsp;
+<b class="fc"><i>260</i>&nbsp;		if (b_disjoint) {</b>
+<b class="fc"><i>261</i>&nbsp;			relOps.areaAreaDisjointPredicates_(polygon_a, polygon_b);</b>
+<b class="fc"><i>262</i>&nbsp;			bRelationKnown = true;</b>
+<i>263</i>&nbsp;		}
+<i>264</i>&nbsp;
+<b class="fc"><i>265</i>&nbsp;		if (!bRelationKnown) {</b>
+<i>266</i>&nbsp;			// Quick rasterize test to see whether the the geometries are
+<i>267</i>&nbsp;			// disjoint, or if one is contained in the other.
+<b class="fc"><i>268</i>&nbsp;			int relation = RelationalOperations</b>
+<b class="fc"><i>269</i>&nbsp;					.tryRasterizedContainsOrDisjoint_(polygon_a, polygon_b,</b>
+<i>270</i>&nbsp;							tolerance, false);
+<i>271</i>&nbsp;
+<b class="fc"><i>272</i>&nbsp;			if (relation == RelationalOperations.Relation.disjoint) {</b>
+<b class="nc"><i>273</i>&nbsp;				relOps.areaAreaDisjointPredicates_(polygon_a, polygon_b);</b>
+<b class="nc"><i>274</i>&nbsp;				bRelationKnown = true;</b>
+<b class="fc"><i>275</i>&nbsp;			} else if (relation == RelationalOperations.Relation.contains) {</b>
+<b class="fc"><i>276</i>&nbsp;				relOps.areaAreaContainsPredicates_(polygon_b);</b>
+<b class="fc"><i>277</i>&nbsp;				bRelationKnown = true;</b>
+<b class="fc"><i>278</i>&nbsp;			} else if (relation == RelationalOperations.Relation.within) {</b>
+<b class="nc"><i>279</i>&nbsp;				relOps.areaAreaWithinPredicates_(polygon_a);</b>
+<b class="nc"><i>280</i>&nbsp;				bRelationKnown = true;</b>
+<i>281</i>&nbsp;			}
+<i>282</i>&nbsp;		}
+<i>283</i>&nbsp;
+<b class="fc"><i>284</i>&nbsp;		if (!bRelationKnown) {</b>
+<b class="fc"><i>285</i>&nbsp;			EditShape edit_shape = new EditShape();</b>
+<b class="fc"><i>286</i>&nbsp;			int geom_a = edit_shape.addGeometry(polygon_a);</b>
+<b class="fc"><i>287</i>&nbsp;			int geom_b = edit_shape.addGeometry(polygon_b);</b>
+<b class="fc"><i>288</i>&nbsp;			relOps.setEditShapeCrackAndCluster_(edit_shape, tolerance,</b>
+<i>289</i>&nbsp;					progress_tracker);
+<b class="fc"><i>290</i>&nbsp;			relOps.computeMatrixTopoGraphHalfEdges_(geom_a, geom_b);</b>
+<b class="fc"><i>291</i>&nbsp;			relOps.m_topo_graph.removeShape();</b>
+<i>292</i>&nbsp;		}
+<i>293</i>&nbsp;
+<b class="fc"><i>294</i>&nbsp;		boolean bRelation = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>295</i>&nbsp;		return bRelation;</b>
+<i>296</i>&nbsp;	}
+<i>297</i>&nbsp;
+<i>298</i>&nbsp;    // The relation is based on the simplified-Polygon A containing Polygon B, which may be non-simple.
+<i>299</i>&nbsp;    static boolean polygonContainsPolygon_(Polygon polygon_a, Polygon polygon_b, double tolerance, ProgressTracker progress_tracker)
+<i>300</i>&nbsp;    {
+<b class="fc"><i>301</i>&nbsp;        assert(!polygon_a.isEmpty());</b>
+<b class="fc"><i>302</i>&nbsp;        assert(!polygon_b.isEmpty());</b>
+<i>303</i>&nbsp;
+<b class="fc"><i>304</i>&nbsp;        RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>305</i>&nbsp;        relOps.resetMatrix_();</b>
+<b class="fc"><i>306</i>&nbsp;        relOps.setPredicates_(&quot;T*****F**&quot;);</b>
+<b class="fc"><i>307</i>&nbsp;        relOps.setAreaAreaPredicates_();</b>
+<i>308</i>&nbsp;
+<b class="fc"><i>309</i>&nbsp;        Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();</b>
+<b class="fc"><i>310</i>&nbsp;        polygon_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>311</i>&nbsp;        polygon_b.queryEnvelope2D(env_b);</b>
+<i>312</i>&nbsp;
+<b class="fc"><i>313</i>&nbsp;        boolean bRelationKnown = false;</b>
+<b class="fc"><i>314</i>&nbsp;        boolean b_disjoint = RelationalOperations.envelopeDisjointEnvelope_(env_a, env_b, tolerance, progress_tracker);</b>
+<i>315</i>&nbsp;
+<b class="fc"><i>316</i>&nbsp;        if (b_disjoint)</b>
+<i>317</i>&nbsp;        {
+<b class="nc"><i>318</i>&nbsp;            relOps.areaAreaDisjointPredicates_(polygon_a, polygon_b);</b>
+<b class="nc"><i>319</i>&nbsp;            bRelationKnown = true;</b>
+<i>320</i>&nbsp;        }
+<i>321</i>&nbsp;
+<b class="fc"><i>322</i>&nbsp;        if (!bRelationKnown)</b>
+<i>323</i>&nbsp;        {
+<i>324</i>&nbsp;            // Quick rasterize test to see whether the the geometries are disjoint, or if one is contained in the other.
+<b class="fc"><i>325</i>&nbsp;            int relation = RelationalOperations.tryRasterizedContainsOrDisjoint_(polygon_a, polygon_b, tolerance, false);</b>
+<i>326</i>&nbsp;
+<b class="fc"><i>327</i>&nbsp;            if (relation == RelationalOperations.Relation.disjoint)</b>
+<i>328</i>&nbsp;            {
+<b class="nc"><i>329</i>&nbsp;                relOps.areaAreaDisjointPredicates_(polygon_a, polygon_b);</b>
+<b class="nc"><i>330</i>&nbsp;                bRelationKnown = true;</b>
+<i>331</i>&nbsp;            }
+<b class="fc"><i>332</i>&nbsp;            else if (relation == RelationalOperations.Relation.contains)</b>
+<i>333</i>&nbsp;            {
+<b class="nc"><i>334</i>&nbsp;                relOps.areaAreaContainsPredicates_(polygon_b);</b>
+<b class="nc"><i>335</i>&nbsp;                bRelationKnown = true;</b>
+<i>336</i>&nbsp;            }
+<b class="fc"><i>337</i>&nbsp;            else if (relation == RelationalOperations.Relation.within)</b>
+<i>338</i>&nbsp;            {
+<b class="nc"><i>339</i>&nbsp;                relOps.areaAreaWithinPredicates_(polygon_a);</b>
+<b class="nc"><i>340</i>&nbsp;                bRelationKnown = true;</b>
+<i>341</i>&nbsp;            }
+<i>342</i>&nbsp;        }
+<i>343</i>&nbsp;
+<b class="fc"><i>344</i>&nbsp;        if (bRelationKnown)</b>
+<i>345</i>&nbsp;        {
+<b class="nc"><i>346</i>&nbsp;            boolean bContains = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="nc"><i>347</i>&nbsp;            return bContains;</b>
+<i>348</i>&nbsp;        }
+<i>349</i>&nbsp;
+<b class="fc"><i>350</i>&nbsp;        EditShape edit_shape = new EditShape();</b>
+<b class="fc"><i>351</i>&nbsp;        int geom_a = edit_shape.addGeometry(polygon_a);</b>
+<b class="fc"><i>352</i>&nbsp;        int geom_b = edit_shape.addGeometry(polygon_b);</b>
+<i>353</i>&nbsp;
+<b class="fc"><i>354</i>&nbsp;        CrackAndCluster.execute(edit_shape, tolerance, progress_tracker, false);</b>
+<b class="fc"><i>355</i>&nbsp;        Polyline boundary_b = (Polyline)edit_shape.getGeometry(geom_b).getBoundary();</b>
+<b class="fc"><i>356</i>&nbsp;        edit_shape.filterClosePoints(0, true, true);</b>
+<b class="fc"><i>357</i>&nbsp;        Simplificator.execute(edit_shape, geom_a, -1, false, progress_tracker);</b>
+<i>358</i>&nbsp;
+<i>359</i>&nbsp;        // Make sure Polygon A has exterior
+<i>360</i>&nbsp;        // If the simplified Polygon A does not have interior, then it cannot contain anything.
+<b class="fc"><i>361</i>&nbsp;        if (edit_shape.getPointCount(geom_a) == 0)</b>
+<b class="nc"><i>362</i>&nbsp;            return false;</b>
+<i>363</i>&nbsp;
+<b class="fc"><i>364</i>&nbsp;        Simplificator.execute(edit_shape, geom_b, -1, false, progress_tracker);</b>
+<i>365</i>&nbsp;
+<b class="fc"><i>366</i>&nbsp;        relOps.setEditShape_(edit_shape, progress_tracker);</b>
+<i>367</i>&nbsp;
+<i>368</i>&nbsp;        // We see if the simplified Polygon A contains the simplified Polygon B.
+<i>369</i>&nbsp;
+<b class="fc"><i>370</i>&nbsp;        boolean b_empty = edit_shape.getPointCount(geom_b) == 0;</b>
+<i>371</i>&nbsp;
+<b class="fc"><i>372</i>&nbsp;        if (!b_empty)</b>
+<i>373</i>&nbsp;        {//geom_b has interior
+<b class="fc"><i>374</i>&nbsp;            relOps.computeMatrixTopoGraphHalfEdges_(geom_a, geom_b);</b>
+<b class="fc"><i>375</i>&nbsp;            relOps.m_topo_graph.removeShape();</b>
+<b class="fc"><i>376</i>&nbsp;            boolean bContains = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<i>377</i>&nbsp;
+<b class="fc"><i>378</i>&nbsp;            if (!bContains)</b>
+<b class="fc"><i>379</i>&nbsp;                return bContains;</b>
+<i>380</i>&nbsp;        }
+<i>381</i>&nbsp;
+<b class="fc"><i>382</i>&nbsp;        Polygon polygon_simple_a = (Polygon)edit_shape.getGeometry(geom_a);</b>
+<b class="fc"><i>383</i>&nbsp;        edit_shape = new EditShape();</b>
+<b class="fc"><i>384</i>&nbsp;        geom_a = edit_shape.addGeometry(polygon_simple_a);</b>
+<b class="fc"><i>385</i>&nbsp;        geom_b = edit_shape.addGeometry(boundary_b);</b>
+<b class="fc"><i>386</i>&nbsp;        relOps.setEditShape_(edit_shape, progress_tracker);</b>
+<i>387</i>&nbsp;
+<i>388</i>&nbsp;        // Check no interior lines of the boundary intersect the exterior
+<b class="fc"><i>389</i>&nbsp;        relOps.m_predicate_count = 0;</b>
+<b class="fc"><i>390</i>&nbsp;        relOps.resetMatrix_();</b>
+<b class="fc"><i>391</i>&nbsp;        relOps.setPredicates_(b_empty ? &quot;T*****F**&quot; : &quot;******F**&quot;);</b>
+<b class="fc"><i>392</i>&nbsp;        relOps.setAreaLinePredicates_();</b>
+<i>393</i>&nbsp;
+<b class="fc"><i>394</i>&nbsp;        relOps.computeMatrixTopoGraphHalfEdges_(geom_a, geom_b);</b>
+<b class="fc"><i>395</i>&nbsp;        relOps.m_topo_graph.removeShape();</b>
+<b class="fc"><i>396</i>&nbsp;        boolean bContains = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>397</i>&nbsp;        return bContains;</b>
+<i>398</i>&nbsp;    }
+<i>399</i>&nbsp;
+<i>400</i>&nbsp;	// Returns true if the relation holds.
+<i>401</i>&nbsp;	static boolean polygonRelatePolyline_(Polygon polygon_a,
+<i>402</i>&nbsp;			Polyline polyline_b, double tolerance, String scl,
+<i>403</i>&nbsp;			ProgressTracker progress_tracker) {
+<b class="fc"><i>404</i>&nbsp;		RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>405</i>&nbsp;		relOps.resetMatrix_();</b>
+<b class="fc"><i>406</i>&nbsp;		relOps.setPredicates_(scl);</b>
+<b class="fc"><i>407</i>&nbsp;		relOps.setAreaLinePredicates_();</b>
+<i>408</i>&nbsp;
+<b class="fc"><i>409</i>&nbsp;		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();</b>
+<b class="fc"><i>410</i>&nbsp;		polygon_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>411</i>&nbsp;		polyline_b.queryEnvelope2D(env_b);</b>
+<i>412</i>&nbsp;
+<b class="fc"><i>413</i>&nbsp;		boolean bRelationKnown = false;</b>
+<b class="fc"><i>414</i>&nbsp;		boolean b_disjoint = RelationalOperations.envelopeDisjointEnvelope_(</b>
+<i>415</i>&nbsp;				env_a, env_b, tolerance, progress_tracker);
+<i>416</i>&nbsp;
+<b class="fc"><i>417</i>&nbsp;		if (b_disjoint) {</b>
+<b class="fc"><i>418</i>&nbsp;			relOps.areaLineDisjointPredicates_(polygon_a, polyline_b); // passing polyline</b>
+<i>419</i>&nbsp;															// to get boundary
+<i>420</i>&nbsp;															// information
+<b class="fc"><i>421</i>&nbsp;			bRelationKnown = true;</b>
+<i>422</i>&nbsp;		}
+<i>423</i>&nbsp;
+<b class="fc"><i>424</i>&nbsp;		if (!bRelationKnown) {</b>
+<i>425</i>&nbsp;			// Quick rasterize test to see whether the the geometries are
+<i>426</i>&nbsp;			// disjoint, or if one is contained in the other.
+<b class="fc"><i>427</i>&nbsp;			int relation = RelationalOperations</b>
+<b class="fc"><i>428</i>&nbsp;					.tryRasterizedContainsOrDisjoint_(polygon_a, polyline_b,</b>
+<i>429</i>&nbsp;							tolerance, false);
+<i>430</i>&nbsp;
+<b class="fc"><i>431</i>&nbsp;			if (relation == RelationalOperations.Relation.disjoint) {</b>
+<b class="nc"><i>432</i>&nbsp;				relOps.areaLineDisjointPredicates_(polygon_a, polyline_b); // passing</b>
+<i>433</i>&nbsp;																// polyline to
+<i>434</i>&nbsp;																// get boundary
+<i>435</i>&nbsp;																// information
+<b class="nc"><i>436</i>&nbsp;				bRelationKnown = true;</b>
+<b class="fc"><i>437</i>&nbsp;			} else if (relation == RelationalOperations.Relation.contains) {</b>
+<b class="fc"><i>438</i>&nbsp;				relOps.areaLineContainsPredicates_(polygon_a, polyline_b); // passing</b>
+<i>439</i>&nbsp;																// polyline to
+<i>440</i>&nbsp;																// get boundary
+<i>441</i>&nbsp;																// information
+<b class="fc"><i>442</i>&nbsp;				bRelationKnown = true;</b>
+<i>443</i>&nbsp;			}
+<i>444</i>&nbsp;		}
+<i>445</i>&nbsp;
+<b class="fc"><i>446</i>&nbsp;		if (!bRelationKnown) {</b>
+<b class="fc"><i>447</i>&nbsp;			EditShape edit_shape = new EditShape();</b>
+<b class="fc"><i>448</i>&nbsp;			int geom_a = edit_shape.addGeometry(polygon_a);</b>
+<b class="fc"><i>449</i>&nbsp;			int geom_b = edit_shape.addGeometry(polyline_b);</b>
+<b class="fc"><i>450</i>&nbsp;			relOps.setEditShapeCrackAndCluster_(edit_shape, tolerance,</b>
+<i>451</i>&nbsp;					progress_tracker);
+<b class="fc"><i>452</i>&nbsp;			relOps.m_cluster_index_b = relOps.m_topo_graph</b>
+<b class="fc"><i>453</i>&nbsp;					.createUserIndexForClusters();</b>
+<b class="fc"><i>454</i>&nbsp;			markClusterEndPoints_(geom_b, relOps.m_topo_graph,</b>
+<i>455</i>&nbsp;					relOps.m_cluster_index_b);
+<b class="fc"><i>456</i>&nbsp;			relOps.computeMatrixTopoGraphHalfEdges_(geom_a, geom_b);</b>
+<b class="fc"><i>457</i>&nbsp;			relOps.m_topo_graph</b>
+<b class="fc"><i>458</i>&nbsp;					.deleteUserIndexForClusters(relOps.m_cluster_index_b);</b>
+<b class="fc"><i>459</i>&nbsp;			relOps.m_topo_graph.removeShape();</b>
+<i>460</i>&nbsp;		}
+<i>461</i>&nbsp;
+<b class="fc"><i>462</i>&nbsp;		boolean bRelation = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>463</i>&nbsp;		return bRelation;</b>
+<i>464</i>&nbsp;	}
+<i>465</i>&nbsp;
+<i>466</i>&nbsp;    static boolean polygonContainsPolyline_(Polygon polygon_a, Polyline polyline_b, double tolerance, ProgressTracker progress_tracker)
+<i>467</i>&nbsp;    {
+<b class="fc"><i>468</i>&nbsp;        RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>469</i>&nbsp;        relOps.resetMatrix_();</b>
+<b class="fc"><i>470</i>&nbsp;        relOps.setPredicates_(&quot;T*****F**&quot;);</b>
+<b class="fc"><i>471</i>&nbsp;        relOps.setAreaLinePredicates_();</b>
+<i>472</i>&nbsp;
+<b class="fc"><i>473</i>&nbsp;        Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();</b>
+<b class="fc"><i>474</i>&nbsp;        polygon_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>475</i>&nbsp;        polyline_b.queryEnvelope2D(env_b);</b>
+<i>476</i>&nbsp;
+<b class="fc"><i>477</i>&nbsp;        boolean bRelationKnown = false;</b>
+<b class="fc"><i>478</i>&nbsp;        boolean b_disjoint = RelationalOperations.envelopeDisjointEnvelope_(env_a, env_b, tolerance, progress_tracker);</b>
+<i>479</i>&nbsp;
+<b class="fc"><i>480</i>&nbsp;        if (b_disjoint)</b>
+<i>481</i>&nbsp;        {
+<b class="nc"><i>482</i>&nbsp;            relOps.areaLineDisjointPredicates_(polygon_a, polyline_b); // passing polyline to get boundary information</b>
+<b class="nc"><i>483</i>&nbsp;            bRelationKnown = true;</b>
+<i>484</i>&nbsp;        }
+<i>485</i>&nbsp;
+<b class="fc"><i>486</i>&nbsp;        if (!bRelationKnown)</b>
+<i>487</i>&nbsp;        {
+<i>488</i>&nbsp;            // Quick rasterize test to see whether the the geometries are disjoint, or if one is contained in the other.
+<b class="fc"><i>489</i>&nbsp;            int relation = RelationalOperations.tryRasterizedContainsOrDisjoint_(polygon_a, polyline_b, tolerance, false);</b>
+<i>490</i>&nbsp;
+<b class="fc"><i>491</i>&nbsp;            if (relation == RelationalOperations.Relation.disjoint)</b>
+<i>492</i>&nbsp;            {
+<b class="nc"><i>493</i>&nbsp;                relOps.areaLineDisjointPredicates_(polygon_a, polyline_b); // passing polyline to get boundary information</b>
+<b class="nc"><i>494</i>&nbsp;                bRelationKnown = true;</b>
+<i>495</i>&nbsp;            }
+<b class="fc"><i>496</i>&nbsp;            else if (relation == RelationalOperations.Relation.contains)</b>
+<i>497</i>&nbsp;            {
+<b class="nc"><i>498</i>&nbsp;                relOps.areaLineContainsPredicates_(polygon_a, polyline_b); // passing polyline to get boundary information</b>
+<b class="nc"><i>499</i>&nbsp;                bRelationKnown = true;</b>
+<i>500</i>&nbsp;            }
+<i>501</i>&nbsp;        }
+<i>502</i>&nbsp;
+<b class="fc"><i>503</i>&nbsp;        if (bRelationKnown)</b>
+<i>504</i>&nbsp;        {
+<b class="nc"><i>505</i>&nbsp;            boolean bContains = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="nc"><i>506</i>&nbsp;            return bContains;</b>
+<i>507</i>&nbsp;        }
+<i>508</i>&nbsp;
+<b class="fc"><i>509</i>&nbsp;        EditShape edit_shape = new EditShape();</b>
+<b class="fc"><i>510</i>&nbsp;        int geom_a = edit_shape.addGeometry(polygon_a);</b>
+<b class="fc"><i>511</i>&nbsp;        int geom_b = edit_shape.addGeometry(polyline_b);</b>
+<b class="fc"><i>512</i>&nbsp;        relOps.setEditShapeCrackAndCluster_(edit_shape, tolerance, progress_tracker);</b>
+<i>513</i>&nbsp;
+<i>514</i>&nbsp;        // Make sure Polygon A has exterior
+<i>515</i>&nbsp;        // If the simplified Polygon A does not have interior, then it cannot contain anything.
+<b class="fc"><i>516</i>&nbsp;        if (edit_shape.getPointCount(geom_a) == 0)</b>
+<b class="nc"><i>517</i>&nbsp;            return false;</b>
+<i>518</i>&nbsp;
+<b class="fc"><i>519</i>&nbsp;        relOps.computeMatrixTopoGraphHalfEdges_(geom_a, geom_b);</b>
+<b class="fc"><i>520</i>&nbsp;        relOps.m_topo_graph.removeShape();</b>
+<i>521</i>&nbsp;
+<b class="fc"><i>522</i>&nbsp;        boolean bContains = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>523</i>&nbsp;        return bContains;</b>
+<i>524</i>&nbsp;    }
+<i>525</i>&nbsp;
+<i>526</i>&nbsp;	// Returns true if the relation holds
+<i>527</i>&nbsp;	static boolean polygonRelateMultiPoint_(Polygon polygon_a,
+<i>528</i>&nbsp;			MultiPoint multipoint_b, double tolerance, String scl,
+<i>529</i>&nbsp;			ProgressTracker progress_tracker) {
+<b class="fc"><i>530</i>&nbsp;		RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>531</i>&nbsp;		relOps.resetMatrix_();</b>
+<b class="fc"><i>532</i>&nbsp;		relOps.setPredicates_(scl);</b>
+<b class="fc"><i>533</i>&nbsp;		relOps.setAreaPointPredicates_();</b>
+<i>534</i>&nbsp;
+<b class="fc"><i>535</i>&nbsp;		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();</b>
+<b class="fc"><i>536</i>&nbsp;		polygon_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>537</i>&nbsp;		multipoint_b.queryEnvelope2D(env_b);</b>
+<i>538</i>&nbsp;
+<b class="fc"><i>539</i>&nbsp;		boolean bRelationKnown = false;</b>
+<b class="fc"><i>540</i>&nbsp;		boolean b_disjoint = RelationalOperations.envelopeDisjointEnvelope_(</b>
+<i>541</i>&nbsp;				env_a, env_b, tolerance, progress_tracker);
+<i>542</i>&nbsp;
+<b class="fc"><i>543</i>&nbsp;		if (b_disjoint) {</b>
+<b class="nc"><i>544</i>&nbsp;			relOps.areaPointDisjointPredicates_(polygon_a);</b>
+<b class="nc"><i>545</i>&nbsp;			bRelationKnown = true;</b>
+<i>546</i>&nbsp;		}
+<i>547</i>&nbsp;
+<b class="fc"><i>548</i>&nbsp;		if (!bRelationKnown) {</b>
+<i>549</i>&nbsp;			// Quick rasterize test to see whether the the geometries are
+<i>550</i>&nbsp;			// disjoint, or if one is contained in the other.
+<b class="fc"><i>551</i>&nbsp;			int relation = RelationalOperations</b>
+<b class="fc"><i>552</i>&nbsp;					.tryRasterizedContainsOrDisjoint_(polygon_a, multipoint_b,</b>
+<i>553</i>&nbsp;							tolerance, false);
+<i>554</i>&nbsp;
+<b class="fc"><i>555</i>&nbsp;			if (relation == RelationalOperations.Relation.disjoint) {</b>
+<b class="fc"><i>556</i>&nbsp;				relOps.areaPointDisjointPredicates_(polygon_a);</b>
+<b class="fc"><i>557</i>&nbsp;				bRelationKnown = true;</b>
+<b class="fc"><i>558</i>&nbsp;			} else if (relation == RelationalOperations.Relation.contains) {</b>
+<b class="fc"><i>559</i>&nbsp;				relOps.areaPointContainsPredicates_(polygon_a);</b>
+<b class="fc"><i>560</i>&nbsp;				bRelationKnown = true;</b>
+<i>561</i>&nbsp;			}
+<i>562</i>&nbsp;		}
+<i>563</i>&nbsp;
+<b class="fc"><i>564</i>&nbsp;		if (!bRelationKnown) {</b>
+<b class="fc"><i>565</i>&nbsp;			EditShape edit_shape = new EditShape();</b>
+<b class="fc"><i>566</i>&nbsp;			int geom_a = edit_shape.addGeometry(polygon_a);</b>
+<b class="fc"><i>567</i>&nbsp;			int geom_b = edit_shape.addGeometry(multipoint_b);</b>
+<b class="fc"><i>568</i>&nbsp;			relOps.setEditShapeCrackAndCluster_(edit_shape, tolerance,</b>
+<i>569</i>&nbsp;					progress_tracker);
+<b class="fc"><i>570</i>&nbsp;			relOps.computeMatrixTopoGraphClusters_(geom_a, geom_b);</b>
+<b class="fc"><i>571</i>&nbsp;			relOps.m_topo_graph.removeShape();</b>
+<i>572</i>&nbsp;		}
+<i>573</i>&nbsp;
+<b class="fc"><i>574</i>&nbsp;		boolean bRelation = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>575</i>&nbsp;		return bRelation;</b>
+<i>576</i>&nbsp;	}
+<i>577</i>&nbsp;
+<i>578</i>&nbsp;	// Returns true if the relation holds.
+<i>579</i>&nbsp;	static boolean polylineRelatePolyline_(Polyline polyline_a,
+<i>580</i>&nbsp;			Polyline polyline_b, double tolerance, String scl,
+<i>581</i>&nbsp;			ProgressTracker progress_tracker) {
+<b class="fc"><i>582</i>&nbsp;		RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>583</i>&nbsp;		relOps.resetMatrix_();</b>
+<b class="fc"><i>584</i>&nbsp;		relOps.setPredicates_(scl);</b>
+<b class="fc"><i>585</i>&nbsp;		relOps.setLineLinePredicates_();</b>
+<i>586</i>&nbsp;
+<b class="fc"><i>587</i>&nbsp;		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();</b>
+<b class="fc"><i>588</i>&nbsp;		polyline_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>589</i>&nbsp;		polyline_b.queryEnvelope2D(env_b);</b>
+<i>590</i>&nbsp;
+<b class="fc"><i>591</i>&nbsp;		boolean bRelationKnown = false;</b>
+<b class="fc"><i>592</i>&nbsp;		boolean b_disjoint = RelationalOperations.envelopeDisjointEnvelope_(</b>
+<i>593</i>&nbsp;				env_a, env_b, tolerance, progress_tracker);
+<i>594</i>&nbsp;
+<b class="fc"><i>595</i>&nbsp;		if (b_disjoint) {</b>
+<b class="fc"><i>596</i>&nbsp;			relOps.lineLineDisjointPredicates_(polyline_a, polyline_b);</b>
+<b class="fc"><i>597</i>&nbsp;			bRelationKnown = true;</b>
+<i>598</i>&nbsp;		}
+<i>599</i>&nbsp;
+<b class="fc"><i>600</i>&nbsp;		if (!bRelationKnown) {</b>
+<i>601</i>&nbsp;			// Quick rasterize test to see whether the the geometries are
+<i>602</i>&nbsp;			// disjoint, or if one is contained in the other.
+<b class="fc"><i>603</i>&nbsp;			int relation = RelationalOperations</b>
+<b class="fc"><i>604</i>&nbsp;					.tryRasterizedContainsOrDisjoint_(polyline_a, polyline_b,</b>
+<i>605</i>&nbsp;							tolerance, false);
+<i>606</i>&nbsp;
+<b class="fc"><i>607</i>&nbsp;			if (relation == RelationalOperations.Relation.disjoint) {</b>
+<b class="fc"><i>608</i>&nbsp;				relOps.lineLineDisjointPredicates_(polyline_a, polyline_b);</b>
+<b class="fc"><i>609</i>&nbsp;				bRelationKnown = true;</b>
+<i>610</i>&nbsp;			}
+<i>611</i>&nbsp;		}
+<i>612</i>&nbsp;
+<b class="fc"><i>613</i>&nbsp;		if (!bRelationKnown) {</b>
+<b class="fc"><i>614</i>&nbsp;			EditShape edit_shape = new EditShape();</b>
+<b class="fc"><i>615</i>&nbsp;			int geom_a = edit_shape.addGeometry(polyline_a);</b>
+<b class="fc"><i>616</i>&nbsp;			int geom_b = edit_shape.addGeometry(polyline_b);</b>
+<b class="fc"><i>617</i>&nbsp;			relOps.setEditShapeCrackAndCluster_(edit_shape, tolerance,</b>
+<i>618</i>&nbsp;					progress_tracker);
+<b class="fc"><i>619</i>&nbsp;			relOps.m_cluster_index_a = relOps.m_topo_graph</b>
+<b class="fc"><i>620</i>&nbsp;					.createUserIndexForClusters();</b>
+<b class="fc"><i>621</i>&nbsp;			relOps.m_cluster_index_b = relOps.m_topo_graph</b>
+<b class="fc"><i>622</i>&nbsp;					.createUserIndexForClusters();</b>
+<b class="fc"><i>623</i>&nbsp;			markClusterEndPoints_(geom_a, relOps.m_topo_graph,</b>
+<i>624</i>&nbsp;					relOps.m_cluster_index_a);
+<b class="fc"><i>625</i>&nbsp;			markClusterEndPoints_(geom_b, relOps.m_topo_graph,</b>
+<i>626</i>&nbsp;					relOps.m_cluster_index_b);
+<b class="fc"><i>627</i>&nbsp;			relOps.computeMatrixTopoGraphHalfEdges_(geom_a, geom_b);</b>
+<b class="fc"><i>628</i>&nbsp;			relOps.m_topo_graph</b>
+<b class="fc"><i>629</i>&nbsp;					.deleteUserIndexForClusters(relOps.m_cluster_index_a);</b>
+<b class="fc"><i>630</i>&nbsp;			relOps.m_topo_graph</b>
+<b class="fc"><i>631</i>&nbsp;					.deleteUserIndexForClusters(relOps.m_cluster_index_b);</b>
+<b class="fc"><i>632</i>&nbsp;			relOps.m_topo_graph.removeShape();</b>
+<i>633</i>&nbsp;		}
+<i>634</i>&nbsp;
+<b class="fc"><i>635</i>&nbsp;		boolean bRelation = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>636</i>&nbsp;		return bRelation;</b>
+<i>637</i>&nbsp;	}
+<i>638</i>&nbsp;
+<i>639</i>&nbsp;	// Returns true if the relation holds.
+<i>640</i>&nbsp;	static boolean polylineRelateMultiPoint_(Polyline polyline_a,
+<i>641</i>&nbsp;			MultiPoint multipoint_b, double tolerance, String scl,
+<i>642</i>&nbsp;			ProgressTracker progress_tracker) {
+<b class="fc"><i>643</i>&nbsp;		RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>644</i>&nbsp;		relOps.resetMatrix_();</b>
+<b class="fc"><i>645</i>&nbsp;		relOps.setPredicates_(scl);</b>
+<b class="fc"><i>646</i>&nbsp;		relOps.setLinePointPredicates_();</b>
+<i>647</i>&nbsp;
+<b class="fc"><i>648</i>&nbsp;		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();</b>
+<b class="fc"><i>649</i>&nbsp;		polyline_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>650</i>&nbsp;		multipoint_b.queryEnvelope2D(env_b);</b>
+<i>651</i>&nbsp;
+<b class="fc"><i>652</i>&nbsp;		boolean bRelationKnown = false;</b>
+<b class="fc"><i>653</i>&nbsp;		boolean b_disjoint = RelationalOperations.envelopeDisjointEnvelope_(</b>
+<i>654</i>&nbsp;				env_a, env_b, tolerance, progress_tracker);
+<i>655</i>&nbsp;
+<b class="fc"><i>656</i>&nbsp;		if (b_disjoint) {</b>
+<b class="fc"><i>657</i>&nbsp;			relOps.linePointDisjointPredicates_(polyline_a);</b>
+<b class="fc"><i>658</i>&nbsp;			bRelationKnown = true;</b>
+<i>659</i>&nbsp;		}
+<i>660</i>&nbsp;
+<b class="fc"><i>661</i>&nbsp;		if (!bRelationKnown) {</b>
+<i>662</i>&nbsp;			// Quick rasterize test to see whether the the geometries are
+<i>663</i>&nbsp;			// disjoint, or if one is contained in the other.
+<b class="fc"><i>664</i>&nbsp;			int relation = RelationalOperations</b>
+<b class="fc"><i>665</i>&nbsp;					.tryRasterizedContainsOrDisjoint_(polyline_a, multipoint_b,</b>
+<i>666</i>&nbsp;							tolerance, false);
+<i>667</i>&nbsp;
+<b class="fc"><i>668</i>&nbsp;			if (relation == RelationalOperations.Relation.disjoint) {</b>
+<b class="fc"><i>669</i>&nbsp;				relOps.linePointDisjointPredicates_(polyline_a);</b>
+<b class="fc"><i>670</i>&nbsp;				bRelationKnown = true;</b>
+<i>671</i>&nbsp;			}
+<i>672</i>&nbsp;		}
+<i>673</i>&nbsp;
+<b class="fc"><i>674</i>&nbsp;		if (!bRelationKnown) {</b>
+<b class="fc"><i>675</i>&nbsp;			EditShape edit_shape = new EditShape();</b>
+<b class="fc"><i>676</i>&nbsp;			int geom_a = edit_shape.addGeometry(polyline_a);</b>
+<b class="fc"><i>677</i>&nbsp;			int geom_b = edit_shape.addGeometry(multipoint_b);</b>
+<b class="fc"><i>678</i>&nbsp;			relOps.setEditShapeCrackAndCluster_(edit_shape, tolerance,</b>
+<i>679</i>&nbsp;					progress_tracker);
+<b class="fc"><i>680</i>&nbsp;			relOps.m_cluster_index_a = relOps.m_topo_graph</b>
+<b class="fc"><i>681</i>&nbsp;					.createUserIndexForClusters();</b>
+<b class="fc"><i>682</i>&nbsp;			markClusterEndPoints_(geom_a, relOps.m_topo_graph,</b>
+<i>683</i>&nbsp;					relOps.m_cluster_index_a);
+<b class="fc"><i>684</i>&nbsp;			relOps.computeMatrixTopoGraphClusters_(geom_a, geom_b);</b>
+<b class="fc"><i>685</i>&nbsp;			relOps.m_topo_graph</b>
+<b class="fc"><i>686</i>&nbsp;					.deleteUserIndexForClusters(relOps.m_cluster_index_a);</b>
+<b class="fc"><i>687</i>&nbsp;			relOps.m_topo_graph.removeShape();</b>
+<i>688</i>&nbsp;		}
+<i>689</i>&nbsp;
+<b class="fc"><i>690</i>&nbsp;		boolean bRelation = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>691</i>&nbsp;		return bRelation;</b>
+<i>692</i>&nbsp;	}
+<i>693</i>&nbsp;
+<i>694</i>&nbsp;	// Returns true if the relation holds.
+<i>695</i>&nbsp;	static boolean multiPointRelateMultiPoint_(MultiPoint multipoint_a,
+<i>696</i>&nbsp;			MultiPoint multipoint_b, double tolerance, String scl,
+<i>697</i>&nbsp;			ProgressTracker progress_tracker) {
+<b class="fc"><i>698</i>&nbsp;		RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>699</i>&nbsp;		relOps.resetMatrix_();</b>
+<b class="fc"><i>700</i>&nbsp;		relOps.setPredicates_(scl);</b>
+<b class="fc"><i>701</i>&nbsp;		relOps.setPointPointPredicates_();</b>
+<i>702</i>&nbsp;
+<b class="fc"><i>703</i>&nbsp;		Envelope2D env_a = new Envelope2D(), env_b = new Envelope2D();</b>
+<b class="fc"><i>704</i>&nbsp;		multipoint_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>705</i>&nbsp;		multipoint_b.queryEnvelope2D(env_b);</b>
+<i>706</i>&nbsp;
+<b class="fc"><i>707</i>&nbsp;		boolean bRelationKnown = false;</b>
+<b class="fc"><i>708</i>&nbsp;		boolean b_disjoint = RelationalOperations.envelopeDisjointEnvelope_(</b>
+<i>709</i>&nbsp;				env_a, env_b, tolerance, progress_tracker);
+<i>710</i>&nbsp;
+<b class="fc"><i>711</i>&nbsp;		if (b_disjoint) {</b>
+<b class="fc"><i>712</i>&nbsp;			relOps.pointPointDisjointPredicates_();</b>
+<b class="fc"><i>713</i>&nbsp;			bRelationKnown = true;</b>
+<i>714</i>&nbsp;		}
+<i>715</i>&nbsp;
+<b class="fc"><i>716</i>&nbsp;		if (!bRelationKnown) {</b>
+<b class="fc"><i>717</i>&nbsp;			EditShape edit_shape = new EditShape();</b>
+<b class="fc"><i>718</i>&nbsp;			int geom_a = edit_shape.addGeometry(multipoint_a);</b>
+<b class="fc"><i>719</i>&nbsp;			int geom_b = edit_shape.addGeometry(multipoint_b);</b>
+<b class="fc"><i>720</i>&nbsp;			relOps.setEditShapeCrackAndCluster_(edit_shape, tolerance,</b>
+<i>721</i>&nbsp;					progress_tracker);
+<b class="fc"><i>722</i>&nbsp;			relOps.computeMatrixTopoGraphClusters_(geom_a, geom_b);</b>
+<b class="fc"><i>723</i>&nbsp;			relOps.m_topo_graph.removeShape();</b>
+<i>724</i>&nbsp;		}
+<i>725</i>&nbsp;
+<b class="fc"><i>726</i>&nbsp;		boolean bRelation = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>727</i>&nbsp;		return bRelation;</b>
+<i>728</i>&nbsp;	}
+<i>729</i>&nbsp;
+<i>730</i>&nbsp;	// Returns true if the relation holds.
+<i>731</i>&nbsp;	static boolean polygonRelatePoint_(Polygon polygon_a, Point point_b,
+<i>732</i>&nbsp;			double tolerance, String scl, ProgressTracker progress_tracker) {
+<b class="fc"><i>733</i>&nbsp;        RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>734</i>&nbsp;        relOps.resetMatrix_();</b>
+<b class="fc"><i>735</i>&nbsp;        relOps.setPredicates_(scl);</b>
+<b class="fc"><i>736</i>&nbsp;        relOps.setAreaPointPredicates_();</b>
+<i>737</i>&nbsp;
+<b class="fc"><i>738</i>&nbsp;        Envelope2D env_a = new Envelope2D();</b>
+<b class="fc"><i>739</i>&nbsp;        polygon_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>740</i>&nbsp;        Point2D pt_b = point_b.getXY();</b>
+<i>741</i>&nbsp;
+<b class="fc"><i>742</i>&nbsp;        boolean bRelationKnown = false;</b>
+<b class="fc"><i>743</i>&nbsp;        boolean b_disjoint = RelationalOperations.pointDisjointEnvelope_(pt_b, env_a, tolerance, progress_tracker);</b>
+<i>744</i>&nbsp;
+<b class="fc"><i>745</i>&nbsp;        if (b_disjoint)</b>
+<i>746</i>&nbsp;        {
+<b class="fc"><i>747</i>&nbsp;            relOps.areaPointDisjointPredicates_(polygon_a);</b>
+<b class="fc"><i>748</i>&nbsp;            bRelationKnown = true;</b>
+<i>749</i>&nbsp;        }
+<i>750</i>&nbsp;
+<b class="fc"><i>751</i>&nbsp;        if (!bRelationKnown)</b>
+<i>752</i>&nbsp;        {
+<b class="fc"><i>753</i>&nbsp;            PolygonUtils.PiPResult res = PolygonUtils.isPointInPolygon2D(polygon_a, pt_b, tolerance); // uses accelerator</b>
+<i>754</i>&nbsp;
+<b class="fc"><i>755</i>&nbsp;            if (res == PolygonUtils.PiPResult.PiPInside)</b>
+<i>756</i>&nbsp;            {// polygon must have area
+<b class="nc"><i>757</i>&nbsp;                relOps.m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<b class="nc"><i>758</i>&nbsp;                relOps.m_matrix[MatrixPredicate.InteriorExterior] = 2;</b>
+<b class="nc"><i>759</i>&nbsp;                relOps.m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="nc"><i>760</i>&nbsp;                relOps.m_matrix[MatrixPredicate.BoundaryExterior] = 1;</b>
+<b class="nc"><i>761</i>&nbsp;                relOps.m_matrix[MatrixPredicate.ExteriorInterior] = -1;</b>
+<i>762</i>&nbsp;            }
+<b class="fc"><i>763</i>&nbsp;            else if (res == PolygonUtils.PiPResult.PiPBoundary)</b>
+<i>764</i>&nbsp;            {
+<b class="fc"><i>765</i>&nbsp;                relOps.m_matrix[MatrixPredicate.ExteriorInterior] = -1;</b>
+<i>766</i>&nbsp;
+<b class="fc"><i>767</i>&nbsp;                double area = polygon_a.calculateArea2D();</b>
+<i>768</i>&nbsp;
+<b class="fc"><i>769</i>&nbsp;                if (area != 0)</b>
+<i>770</i>&nbsp;                {
+<b class="fc"><i>771</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="fc"><i>772</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.BoundaryInterior] = 0;</b>
+<b class="fc"><i>773</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.InteriorExterior] = 2;</b>
+<b class="fc"><i>774</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.BoundaryExterior] = 1;</b>
+<i>775</i>&nbsp;                }
+<i>776</i>&nbsp;                else
+<i>777</i>&nbsp;                {
+<b class="fc"><i>778</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<b class="fc"><i>779</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>780</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.BoundaryExterior] = -1;</b>
+<i>781</i>&nbsp;
+<b class="fc"><i>782</i>&nbsp;                    Envelope2D env = new Envelope2D();</b>
+<b class="fc"><i>783</i>&nbsp;                    polygon_a.queryEnvelope2D(env);</b>
+<b class="fc"><i>784</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.InteriorExterior] = (env.getHeight() == 0.0 &amp;&amp; env.getWidth() == 0.0 ? -1 : 1);</b>
+<i>785</i>&nbsp;                }
+<b class="fc"><i>786</i>&nbsp;            }</b>
+<i>787</i>&nbsp;            else
+<i>788</i>&nbsp;            {
+<b class="nc"><i>789</i>&nbsp;                relOps.areaPointDisjointPredicates_(polygon_a);</b>
+<i>790</i>&nbsp;            }
+<i>791</i>&nbsp;        }
+<i>792</i>&nbsp;
+<b class="fc"><i>793</i>&nbsp;        boolean bRelation = relationCompare_(relOps.m_matrix, scl);</b>
+<b class="fc"><i>794</i>&nbsp;        return bRelation;</b>
+<i>795</i>&nbsp;	}
+<i>796</i>&nbsp;
+<i>797</i>&nbsp;	// Returns true if the relation holds.
+<i>798</i>&nbsp;	static boolean polylineRelatePoint_(Polyline polyline_a, Point point_b,
+<i>799</i>&nbsp;			double tolerance, String scl, ProgressTracker progress_tracker) {
+<b class="fc"><i>800</i>&nbsp;        RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>801</i>&nbsp;        relOps.resetMatrix_();</b>
+<b class="fc"><i>802</i>&nbsp;        relOps.setPredicates_(scl);</b>
+<b class="fc"><i>803</i>&nbsp;        relOps.setLinePointPredicates_();</b>
+<i>804</i>&nbsp;
+<b class="fc"><i>805</i>&nbsp;        Envelope2D env_a = new Envelope2D();</b>
+<b class="fc"><i>806</i>&nbsp;        polyline_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>807</i>&nbsp;        Point2D pt_b = point_b.getXY();</b>
+<i>808</i>&nbsp;
+<b class="fc"><i>809</i>&nbsp;        boolean bRelationKnown = false;</b>
+<b class="fc"><i>810</i>&nbsp;        boolean b_disjoint = RelationalOperations.pointDisjointEnvelope_(pt_b, env_a, tolerance, progress_tracker);</b>
+<i>811</i>&nbsp;
+<b class="fc"><i>812</i>&nbsp;        if (b_disjoint)</b>
+<i>813</i>&nbsp;        {
+<b class="fc"><i>814</i>&nbsp;            relOps.linePointDisjointPredicates_(polyline_a);</b>
+<b class="fc"><i>815</i>&nbsp;            bRelationKnown = true;</b>
+<i>816</i>&nbsp;        }
+<i>817</i>&nbsp;
+<b class="fc"><i>818</i>&nbsp;        if (!bRelationKnown)</b>
+<i>819</i>&nbsp;        {
+<b class="fc"><i>820</i>&nbsp;            MultiPoint boundary_a = null;</b>
+<b class="fc"><i>821</i>&nbsp;            boolean b_boundary_contains_point_known = false;</b>
+<b class="fc"><i>822</i>&nbsp;            boolean b_boundary_contains_point = false;</b>
+<i>823</i>&nbsp;
+<b class="fc"><i>824</i>&nbsp;            if (relOps.m_perform_predicates[MatrixPredicate.InteriorInterior] || relOps.m_perform_predicates[MatrixPredicate.ExteriorInterior])</b>
+<i>825</i>&nbsp;            {
+<b class="fc"><i>826</i>&nbsp;                boolean b_intersects = RelationalOperations.linearPathIntersectsPoint_(polyline_a, pt_b, tolerance);</b>
+<i>827</i>&nbsp;
+<b class="fc"><i>828</i>&nbsp;                if (b_intersects)</b>
+<i>829</i>&nbsp;                {
+<b class="fc"><i>830</i>&nbsp;                    if (relOps.m_perform_predicates[MatrixPredicate.InteriorInterior])</b>
+<i>831</i>&nbsp;                    {
+<b class="fc"><i>832</i>&nbsp;                        boundary_a = (MultiPoint)Boundary.calculate(polyline_a, progress_tracker);</b>
+<b class="fc"><i>833</i>&nbsp;                        b_boundary_contains_point = !RelationalOperations.multiPointDisjointPointImpl_(boundary_a, pt_b, tolerance, progress_tracker);</b>
+<b class="fc"><i>834</i>&nbsp;                        b_boundary_contains_point_known = true;</b>
+<i>835</i>&nbsp;
+<b class="fc"><i>836</i>&nbsp;                        if (b_boundary_contains_point)</b>
+<b class="nc"><i>837</i>&nbsp;                            relOps.m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<i>838</i>&nbsp;                        else
+<b class="fc"><i>839</i>&nbsp;                            relOps.m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<i>840</i>&nbsp;                    }
+<i>841</i>&nbsp;
+<b class="fc"><i>842</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.ExteriorInterior] = -1;</b>
+<i>843</i>&nbsp;                }
+<i>844</i>&nbsp;                else
+<i>845</i>&nbsp;                {
+<b class="fc"><i>846</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="fc"><i>847</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.ExteriorInterior] = 0;</b>
+<i>848</i>&nbsp;                }
+<i>849</i>&nbsp;            }
+<i>850</i>&nbsp;
+<b class="fc"><i>851</i>&nbsp;            if (relOps.m_perform_predicates[MatrixPredicate.BoundaryInterior])</b>
+<i>852</i>&nbsp;            {
+<b class="fc"><i>853</i>&nbsp;                if (boundary_a != null &amp;&amp; boundary_a.isEmpty())</b>
+<i>854</i>&nbsp;                {
+<b class="fc"><i>855</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<i>856</i>&nbsp;                }
+<i>857</i>&nbsp;                else
+<i>858</i>&nbsp;                {
+<b class="fc"><i>859</i>&nbsp;                    if (!b_boundary_contains_point_known)</b>
+<i>860</i>&nbsp;                    {
+<b class="fc"><i>861</i>&nbsp;                        if (boundary_a == null)</b>
+<b class="fc"><i>862</i>&nbsp;                            boundary_a = (MultiPoint)Boundary.calculate(polyline_a, progress_tracker);</b>
+<i>863</i>&nbsp;
+<b class="fc"><i>864</i>&nbsp;                        b_boundary_contains_point = !RelationalOperations.multiPointDisjointPointImpl_(boundary_a, pt_b, tolerance, progress_tracker);</b>
+<b class="fc"><i>865</i>&nbsp;                        b_boundary_contains_point_known = true;</b>
+<i>866</i>&nbsp;                    }
+<i>867</i>&nbsp;
+<b class="fc"><i>868</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.BoundaryInterior] = (b_boundary_contains_point ? 0 : -1);</b>
+<i>869</i>&nbsp;                }
+<i>870</i>&nbsp;            }
+<i>871</i>&nbsp;
+<b class="fc"><i>872</i>&nbsp;            if (relOps.m_perform_predicates[MatrixPredicate.BoundaryExterior])</b>
+<i>873</i>&nbsp;            {
+<b class="fc"><i>874</i>&nbsp;                if (boundary_a != null &amp;&amp; boundary_a.isEmpty())</b>
+<i>875</i>&nbsp;                {
+<b class="fc"><i>876</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.BoundaryExterior] = -1;</b>
+<i>877</i>&nbsp;                }
+<i>878</i>&nbsp;                else
+<i>879</i>&nbsp;                {
+<b class="fc"><i>880</i>&nbsp;                    if (b_boundary_contains_point_known &amp;&amp; !b_boundary_contains_point)</b>
+<i>881</i>&nbsp;                    {
+<b class="fc"><i>882</i>&nbsp;                        relOps.m_matrix[MatrixPredicate.BoundaryExterior] = 0;</b>
+<i>883</i>&nbsp;                    }
+<i>884</i>&nbsp;                    else
+<i>885</i>&nbsp;                    {
+<b class="nc"><i>886</i>&nbsp;                        if (boundary_a == null)</b>
+<b class="nc"><i>887</i>&nbsp;                            boundary_a = (MultiPoint)Boundary.calculate(polyline_a, progress_tracker);</b>
+<i>888</i>&nbsp;
+<b class="nc"><i>889</i>&nbsp;                        boolean b_boundary_equals_point = RelationalOperations.multiPointEqualsPoint_(boundary_a, point_b, tolerance, progress_tracker);</b>
+<b class="nc"><i>890</i>&nbsp;                        relOps.m_matrix[MatrixPredicate.BoundaryExterior] = (b_boundary_equals_point ? -1 : 0);</b>
+<i>891</i>&nbsp;                    }
+<i>892</i>&nbsp;                }
+<i>893</i>&nbsp;            }
+<i>894</i>&nbsp;
+<b class="fc"><i>895</i>&nbsp;            if (relOps.m_perform_predicates[MatrixPredicate.InteriorExterior])</b>
+<i>896</i>&nbsp;            {
+<b class="fc"><i>897</i>&nbsp;                boolean b_has_length = polyline_a.calculateLength2D() != 0;</b>
+<i>898</i>&nbsp;
+<b class="fc"><i>899</i>&nbsp;                if (b_has_length)</b>
+<i>900</i>&nbsp;                {
+<b class="fc"><i>901</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.InteriorExterior] = 1;</b>
+<i>902</i>&nbsp;                }
+<i>903</i>&nbsp;                else
+<i>904</i>&nbsp;                {
+<i>905</i>&nbsp;                    // all points are interior
+<b class="fc"><i>906</i>&nbsp;                    MultiPoint interior_a = new MultiPoint(polyline_a.getDescription());</b>
+<b class="fc"><i>907</i>&nbsp;                    interior_a.add(polyline_a, 0, polyline_a.getPointCount());</b>
+<b class="fc"><i>908</i>&nbsp;                    boolean b_interior_equals_point = RelationalOperations.multiPointEqualsPoint_(interior_a, point_b, tolerance, progress_tracker);</b>
+<b class="fc"><i>909</i>&nbsp;                    relOps.m_matrix[MatrixPredicate.InteriorExterior] = (b_interior_equals_point ? -1 : 0);</b>
+<i>910</i>&nbsp;                }
+<i>911</i>&nbsp;            }
+<i>912</i>&nbsp;        }
+<i>913</i>&nbsp;
+<b class="fc"><i>914</i>&nbsp;        boolean bRelation = relationCompare_(relOps.m_matrix, relOps.m_scl);</b>
+<b class="fc"><i>915</i>&nbsp;        return bRelation;</b>
+<i>916</i>&nbsp;	}
+<i>917</i>&nbsp;
+<i>918</i>&nbsp;	// Returns true if the relation holds.
+<i>919</i>&nbsp;	static boolean multiPointRelatePoint_(MultiPoint multipoint_a,
+<i>920</i>&nbsp;			Point point_b, double tolerance, String scl,
+<i>921</i>&nbsp;			ProgressTracker progress_tracker) {
+<b class="fc"><i>922</i>&nbsp;		RelationalOperationsMatrix relOps = new RelationalOperationsMatrix();</b>
+<b class="fc"><i>923</i>&nbsp;		relOps.resetMatrix_();</b>
+<b class="fc"><i>924</i>&nbsp;		relOps.setPredicates_(scl);</b>
+<b class="fc"><i>925</i>&nbsp;		relOps.setPointPointPredicates_();</b>
+<i>926</i>&nbsp;
+<b class="fc"><i>927</i>&nbsp;		Envelope2D env_a = new Envelope2D();</b>
+<b class="fc"><i>928</i>&nbsp;		multipoint_a.queryEnvelope2D(env_a);</b>
+<b class="fc"><i>929</i>&nbsp;		Point2D pt_b = point_b.getXY();</b>
+<i>930</i>&nbsp;
+<b class="fc"><i>931</i>&nbsp;		boolean bRelationKnown = false;</b>
+<b class="fc"><i>932</i>&nbsp;		boolean b_disjoint = RelationalOperations.pointDisjointEnvelope_(pt_b,</b>
+<i>933</i>&nbsp;				env_a, tolerance, progress_tracker);
+<i>934</i>&nbsp;
+<b class="fc"><i>935</i>&nbsp;		if (b_disjoint) {</b>
+<b class="fc"><i>936</i>&nbsp;			relOps.pointPointDisjointPredicates_();</b>
+<b class="fc"><i>937</i>&nbsp;			bRelationKnown = true;</b>
+<i>938</i>&nbsp;		}
+<i>939</i>&nbsp;
+<b class="fc"><i>940</i>&nbsp;		if (!bRelationKnown) {</b>
+<b class="fc"><i>941</i>&nbsp;			boolean b_intersects = false;</b>
+<b class="fc"><i>942</i>&nbsp;			boolean b_multipoint_contained = true;</b>
+<b class="fc"><i>943</i>&nbsp;			double tolerance_sq = tolerance * tolerance;</b>
+<i>944</i>&nbsp;
+<b class="fc"><i>945</i>&nbsp;			for (int i = 0; i &lt; multipoint_a.getPointCount(); i++) {</b>
+<b class="fc"><i>946</i>&nbsp;				Point2D pt_a = multipoint_a.getXY(i);</b>
+<i>947</i>&nbsp;
+<b class="fc"><i>948</i>&nbsp;				if (Point2D.sqrDistance(pt_a, pt_b) &lt;= tolerance_sq)</b>
+<b class="fc"><i>949</i>&nbsp;					b_intersects = true;</b>
+<i>950</i>&nbsp;				else
+<b class="fc"><i>951</i>&nbsp;					b_multipoint_contained = false;</b>
+<i>952</i>&nbsp;
+<b class="fc"><i>953</i>&nbsp;				if (b_intersects &amp;&amp; !b_multipoint_contained)</b>
+<b class="fc"><i>954</i>&nbsp;					break;</b>
+<i>955</i>&nbsp;			}
+<i>956</i>&nbsp;
+<b class="fc"><i>957</i>&nbsp;			if (b_intersects) {</b>
+<b class="fc"><i>958</i>&nbsp;				relOps.m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<i>959</i>&nbsp;
+<b class="fc"><i>960</i>&nbsp;				if (!b_multipoint_contained)</b>
+<b class="fc"><i>961</i>&nbsp;					relOps.m_matrix[MatrixPredicate.InteriorExterior] = 0;</b>
+<i>962</i>&nbsp;				else
+<b class="fc"><i>963</i>&nbsp;					relOps.m_matrix[MatrixPredicate.InteriorExterior] = -1;</b>
+<i>964</i>&nbsp;
+<b class="fc"><i>965</i>&nbsp;				relOps.m_matrix[MatrixPredicate.ExteriorInterior] = -1;</b>
+<i>966</i>&nbsp;			} else {
+<b class="nc"><i>967</i>&nbsp;				relOps.m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="nc"><i>968</i>&nbsp;				relOps.m_matrix[MatrixPredicate.InteriorExterior] = 0;</b>
+<b class="nc"><i>969</i>&nbsp;				relOps.m_matrix[MatrixPredicate.ExteriorInterior] = 0;</b>
+<i>970</i>&nbsp;			}
+<i>971</i>&nbsp;		}
+<i>972</i>&nbsp;
+<b class="fc"><i>973</i>&nbsp;		boolean bRelation = relationCompare_(relOps.m_matrix, scl);</b>
+<b class="fc"><i>974</i>&nbsp;		return bRelation;</b>
+<i>975</i>&nbsp;	}
+<i>976</i>&nbsp;
+<i>977</i>&nbsp;	// Returns true if the relation holds.
+<i>978</i>&nbsp;	static boolean pointRelatePoint_(Point point_a, Point point_b,
+<i>979</i>&nbsp;			double tolerance, String scl, ProgressTracker progress_tracker) {
+<b class="fc"><i>980</i>&nbsp;		Point2D pt_a = point_a.getXY();</b>
+<b class="fc"><i>981</i>&nbsp;		Point2D pt_b = point_b.getXY();</b>
+<b class="fc"><i>982</i>&nbsp;		int[] matrix = new int[9];</b>
+<i>983</i>&nbsp;
+<b class="fc"><i>984</i>&nbsp;		for (int i = 0; i &lt; 9; i++)</b>
+<b class="fc"><i>985</i>&nbsp;			matrix[i] = -1;</b>
+<i>986</i>&nbsp;
+<b class="fc"><i>987</i>&nbsp;		if (Point2D.sqrDistance(pt_a, pt_b) &lt;= tolerance * tolerance) {</b>
+<b class="fc"><i>988</i>&nbsp;			matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<i>989</i>&nbsp;		} else {
+<b class="fc"><i>990</i>&nbsp;			matrix[MatrixPredicate.InteriorExterior] = 0;</b>
+<b class="fc"><i>991</i>&nbsp;			matrix[MatrixPredicate.ExteriorInterior] = 0;</b>
+<i>992</i>&nbsp;		}
+<i>993</i>&nbsp;
+<b class="fc"><i>994</i>&nbsp;		matrix[MatrixPredicate.ExteriorExterior] = 2;</b>
+<i>995</i>&nbsp;
+<b class="fc"><i>996</i>&nbsp;		boolean bRelation = relationCompare_(matrix, scl);</b>
+<b class="fc"><i>997</i>&nbsp;		return bRelation;</b>
+<i>998</i>&nbsp;	}
+<i>999</i>&nbsp;
+<i>1000</i>&nbsp;	// Compares the DE-9I matrix against the scl string.
+<i>1001</i>&nbsp;	private static boolean relationCompare_(int[] matrix, String scl) {
+<b class="fc"><i>1002</i>&nbsp;		for (int i = 0; i &lt; 9; i++) {</b>
+<b class="fc"><i>1003</i>&nbsp;			switch (scl.charAt(i)) {</b>
+<i>1004</i>&nbsp;			case &#39;T&#39;:
+<b class="fc"><i>1005</i>&nbsp;				assert (matrix[i] != -2);</b>
+<b class="fc"><i>1006</i>&nbsp;				if (matrix[i] == -1)</b>
+<b class="fc"><i>1007</i>&nbsp;					return false;</b>
+<i>1008</i>&nbsp;				break;
+<i>1009</i>&nbsp;
+<i>1010</i>&nbsp;			case &#39;F&#39;:
+<b class="fc"><i>1011</i>&nbsp;				assert (matrix[i] != -2);</b>
+<b class="fc"><i>1012</i>&nbsp;				if (matrix[i] != -1)</b>
+<b class="fc"><i>1013</i>&nbsp;					return false;</b>
+<i>1014</i>&nbsp;				break;
+<i>1015</i>&nbsp;
+<i>1016</i>&nbsp;			case &#39;0&#39;:
+<b class="fc"><i>1017</i>&nbsp;				assert (matrix[i] != -2);</b>
+<b class="fc"><i>1018</i>&nbsp;				if (matrix[i] != 0)</b>
+<b class="fc"><i>1019</i>&nbsp;					return false;</b>
+<i>1020</i>&nbsp;				break;
+<i>1021</i>&nbsp;
+<i>1022</i>&nbsp;			case &#39;1&#39;:
+<b class="fc"><i>1023</i>&nbsp;				assert (matrix[i] != -2);</b>
+<b class="fc"><i>1024</i>&nbsp;				if (matrix[i] != 1)</b>
+<b class="fc"><i>1025</i>&nbsp;					return false;</b>
+<i>1026</i>&nbsp;				break;
+<i>1027</i>&nbsp;
+<i>1028</i>&nbsp;			case &#39;2&#39;:
+<b class="fc"><i>1029</i>&nbsp;				assert (matrix[i] != -2);</b>
+<b class="fc"><i>1030</i>&nbsp;				if (matrix[i] != 2)</b>
+<b class="nc"><i>1031</i>&nbsp;					return false;</b>
+<i>1032</i>&nbsp;				break;
+<i>1033</i>&nbsp;
+<i>1034</i>&nbsp;			default:
+<i>1035</i>&nbsp;				break;
+<i>1036</i>&nbsp;			}
+<i>1037</i>&nbsp;		}
+<i>1038</i>&nbsp;
+<b class="fc"><i>1039</i>&nbsp;		return true;</b>
+<i>1040</i>&nbsp;	}
+<i>1041</i>&nbsp;
+<i>1042</i>&nbsp;    static boolean relateEmptyGeometries_(Geometry geometry_a, Geometry geometry_b, String scl)
+<i>1043</i>&nbsp;    {
+<b class="fc"><i>1044</i>&nbsp;        int[] matrix = new int[9];</b>
+<i>1045</i>&nbsp;
+<b class="fc"><i>1046</i>&nbsp;        if (geometry_a.isEmpty() &amp;&amp; geometry_b.isEmpty())</b>
+<i>1047</i>&nbsp;        {
+<b class="fc"><i>1048</i>&nbsp;            for (int i = 0; i &lt; 9; i++)</b>
+<b class="fc"><i>1049</i>&nbsp;                matrix[i] = -1;</b>
+<i>1050</i>&nbsp;
+<b class="fc"><i>1051</i>&nbsp;            return relationCompare_(matrix, scl);</b>
+<i>1052</i>&nbsp;        }
+<i>1053</i>&nbsp;
+<b class="nc"><i>1054</i>&nbsp;        boolean b_transpose = false;</b>
+<i>1055</i>&nbsp;
+<i>1056</i>&nbsp;        Geometry g_a;
+<i>1057</i>&nbsp;        Geometry g_b;
+<i>1058</i>&nbsp;
+<b class="nc"><i>1059</i>&nbsp;        if (!geometry_a.isEmpty())</b>
+<i>1060</i>&nbsp;        {
+<b class="nc"><i>1061</i>&nbsp;            g_a = geometry_a;</b>
+<b class="nc"><i>1062</i>&nbsp;            g_b = geometry_b;</b>
+<i>1063</i>&nbsp;        }
+<i>1064</i>&nbsp;        else
+<i>1065</i>&nbsp;        {
+<b class="nc"><i>1066</i>&nbsp;            g_a = geometry_b;</b>
+<b class="nc"><i>1067</i>&nbsp;            g_b = geometry_a;</b>
+<b class="nc"><i>1068</i>&nbsp;            b_transpose = true;</b>
+<i>1069</i>&nbsp;        }
+<i>1070</i>&nbsp;
+<b class="nc"><i>1071</i>&nbsp;        matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="nc"><i>1072</i>&nbsp;        matrix[MatrixPredicate.InteriorBoundary] = -1;</b>
+<b class="nc"><i>1073</i>&nbsp;        matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="nc"><i>1074</i>&nbsp;        matrix[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<b class="nc"><i>1075</i>&nbsp;        matrix[MatrixPredicate.ExteriorInterior] = -1;</b>
+<b class="nc"><i>1076</i>&nbsp;        matrix[MatrixPredicate.ExteriorBoundary] = -1;</b>
+<i>1077</i>&nbsp;
+<b class="nc"><i>1078</i>&nbsp;        matrix[MatrixPredicate.ExteriorExterior] = 2;</b>
+<i>1079</i>&nbsp;
+<b class="nc"><i>1080</i>&nbsp;        int type = g_a.getType().value();</b>
+<i>1081</i>&nbsp;
+<b class="nc"><i>1082</i>&nbsp;        if (Geometry.isMultiPath(type))</b>
+<i>1083</i>&nbsp;        {
+<b class="nc"><i>1084</i>&nbsp;            if (type == Geometry.GeometryType.Polygon)</b>
+<i>1085</i>&nbsp;            {
+<b class="nc"><i>1086</i>&nbsp;                double area = ((Polygon)g_a).calculateArea2D();</b>
+<i>1087</i>&nbsp;
+<b class="nc"><i>1088</i>&nbsp;                if (area != 0)</b>
+<i>1089</i>&nbsp;                {
+<b class="nc"><i>1090</i>&nbsp;                    matrix[MatrixPredicate.InteriorExterior] = 2;</b>
+<b class="nc"><i>1091</i>&nbsp;                    matrix[MatrixPredicate.BoundaryExterior] = 1;</b>
+<i>1092</i>&nbsp;                }
+<i>1093</i>&nbsp;                else
+<i>1094</i>&nbsp;                {
+<b class="nc"><i>1095</i>&nbsp;                    matrix[MatrixPredicate.BoundaryExterior] = -1;</b>
+<i>1096</i>&nbsp;
+<b class="nc"><i>1097</i>&nbsp;                    Envelope2D env = new Envelope2D();</b>
+<b class="nc"><i>1098</i>&nbsp;                    g_a.queryEnvelope2D(env);</b>
+<b class="nc"><i>1099</i>&nbsp;                    matrix[MatrixPredicate.InteriorExterior] = (env.getHeight() == 0.0 &amp;&amp; env.getWidth() == 0.0 ? 0 : 1);</b>
+<i>1100</i>&nbsp;                }
+<b class="nc"><i>1101</i>&nbsp;            }</b>
+<i>1102</i>&nbsp;            else
+<i>1103</i>&nbsp;            {
+<b class="nc"><i>1104</i>&nbsp;                boolean b_has_length = ((Polyline)g_a).calculateLength2D() != 0;</b>
+<b class="nc"><i>1105</i>&nbsp;                matrix[MatrixPredicate.InteriorExterior] = (b_has_length ? 1 : 0);</b>
+<b class="nc"><i>1106</i>&nbsp;                matrix[MatrixPredicate.BoundaryExterior] = (Boundary.hasNonEmptyBoundary((Polyline)g_a, null) ? 0 : -1);</b>
+<b class="nc"><i>1107</i>&nbsp;            }</b>
+<i>1108</i>&nbsp;        }
+<i>1109</i>&nbsp;        else
+<i>1110</i>&nbsp;        {
+<b class="nc"><i>1111</i>&nbsp;            matrix[MatrixPredicate.InteriorExterior] = 0;</b>
+<b class="nc"><i>1112</i>&nbsp;            matrix[MatrixPredicate.BoundaryExterior] = -1;</b>
+<i>1113</i>&nbsp;        }
+<i>1114</i>&nbsp;
+<b class="nc"><i>1115</i>&nbsp;        if (b_transpose)</b>
+<b class="nc"><i>1116</i>&nbsp;            transposeMatrix_(matrix);</b>
+<i>1117</i>&nbsp;
+<b class="nc"><i>1118</i>&nbsp;        return relationCompare_(matrix, scl);</b>
+<i>1119</i>&nbsp;    }
+<i>1120</i>&nbsp;
+<i>1121</i>&nbsp;	// Checks whether scl string is a predefined relation.
+<i>1122</i>&nbsp;	private static int getPredefinedRelation_(String scl, int dim_a, int dim_b) {
+<b class="fc"><i>1123</i>&nbsp;		if (equals_(scl))</b>
+<b class="nc"><i>1124</i>&nbsp;			return RelationalOperations.Relation.equals;</b>
+<i>1125</i>&nbsp;
+<b class="fc"><i>1126</i>&nbsp;		if (disjoint_(scl))</b>
+<b class="nc"><i>1127</i>&nbsp;			return RelationalOperations.Relation.disjoint;</b>
+<i>1128</i>&nbsp;
+<b class="fc"><i>1129</i>&nbsp;		if (touches_(scl, dim_a, dim_b))</b>
+<b class="nc"><i>1130</i>&nbsp;			return RelationalOperations.Relation.touches;</b>
+<i>1131</i>&nbsp;
+<b class="fc"><i>1132</i>&nbsp;		if (crosses_(scl, dim_a, dim_b))</b>
+<b class="nc"><i>1133</i>&nbsp;			return RelationalOperations.Relation.crosses;</b>
+<i>1134</i>&nbsp;
+<b class="fc"><i>1135</i>&nbsp;		if (contains_(scl))</b>
+<b class="nc"><i>1136</i>&nbsp;			return RelationalOperations.Relation.contains;</b>
+<i>1137</i>&nbsp;
+<b class="fc"><i>1138</i>&nbsp;		if (overlaps_(scl, dim_a, dim_b))</b>
+<b class="nc"><i>1139</i>&nbsp;			return RelationalOperations.Relation.overlaps;</b>
+<i>1140</i>&nbsp;
+<b class="fc"><i>1141</i>&nbsp;		return RelationalOperations.Relation.unknown;</b>
+<i>1142</i>&nbsp;	}
+<i>1143</i>&nbsp;
+<i>1144</i>&nbsp;	// Checks whether the scl string is the equals relation.
+<i>1145</i>&nbsp;	private static boolean equals_(String scl) {
+<i>1146</i>&nbsp;		// Valid for all
+<b class="fc"><i>1147</i>&nbsp;		if (scl.charAt(0) == &#39;T&#39; &amp;&amp; scl.charAt(1) == &#39;*&#39;</b>
+<b class="fc"><i>1148</i>&nbsp;				&amp;&amp; scl.charAt(2) == &#39;F&#39; &amp;&amp; scl.charAt(3) == &#39;*&#39;</b>
+<b class="fc"><i>1149</i>&nbsp;				&amp;&amp; scl.charAt(4) == &#39;*&#39; &amp;&amp; scl.charAt(5) == &#39;F&#39;</b>
+<b class="nc"><i>1150</i>&nbsp;				&amp;&amp; scl.charAt(6) == &#39;F&#39; &amp;&amp; scl.charAt(7) == &#39;F&#39;</b>
+<b class="nc"><i>1151</i>&nbsp;				&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1152</i>&nbsp;			return true;</b>
+<i>1153</i>&nbsp;
+<b class="fc"><i>1154</i>&nbsp;		return false;</b>
+<i>1155</i>&nbsp;	}
+<i>1156</i>&nbsp;
+<i>1157</i>&nbsp;	// Checks whether the scl string is the disjoint relation.
+<i>1158</i>&nbsp;	private static boolean disjoint_(String scl) {
+<b class="fc"><i>1159</i>&nbsp;		if (scl.charAt(0) == &#39;F&#39; &amp;&amp; scl.charAt(1) == &#39;F&#39;</b>
+<b class="fc"><i>1160</i>&nbsp;				&amp;&amp; scl.charAt(2) == &#39;*&#39; &amp;&amp; scl.charAt(3) == &#39;F&#39;</b>
+<b class="nc"><i>1161</i>&nbsp;				&amp;&amp; scl.charAt(4) == &#39;F&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="nc"><i>1162</i>&nbsp;				&amp;&amp; scl.charAt(6) == &#39;*&#39; &amp;&amp; scl.charAt(7) == &#39;*&#39;</b>
+<b class="nc"><i>1163</i>&nbsp;				&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1164</i>&nbsp;			return true;</b>
+<i>1165</i>&nbsp;
+<b class="fc"><i>1166</i>&nbsp;		return false;</b>
+<i>1167</i>&nbsp;	}
+<i>1168</i>&nbsp;
+<i>1169</i>&nbsp;	// Checks whether the scl string is the touches relation.
+<i>1170</i>&nbsp;	private static boolean touches_(String scl, int dim_a, int dim_b) {
+<i>1171</i>&nbsp;		// Points cant touch
+<b class="fc"><i>1172</i>&nbsp;		if (dim_a == 0 &amp;&amp; dim_b == 0)</b>
+<b class="fc"><i>1173</i>&nbsp;			return false;</b>
+<i>1174</i>&nbsp;
+<b class="fc"><i>1175</i>&nbsp;		if (!(dim_a == 2 &amp;&amp; dim_b == 2)) {</b>
+<i>1176</i>&nbsp;			// Valid for area-Line, Line-Line, area-Point, and Line-Point
+<b class="fc"><i>1177</i>&nbsp;			if (scl.charAt(0) == &#39;F&#39; &amp;&amp; scl.charAt(1) == &#39;*&#39;</b>
+<b class="fc"><i>1178</i>&nbsp;					&amp;&amp; scl.charAt(2) == &#39;*&#39; &amp;&amp; scl.charAt(3) == &#39;T&#39;</b>
+<b class="nc"><i>1179</i>&nbsp;					&amp;&amp; scl.charAt(4) == &#39;*&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="nc"><i>1180</i>&nbsp;					&amp;&amp; scl.charAt(6) == &#39;*&#39; &amp;&amp; scl.charAt(7) == &#39;*&#39;</b>
+<b class="nc"><i>1181</i>&nbsp;					&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1182</i>&nbsp;				return true;</b>
+<i>1183</i>&nbsp;
+<b class="fc"><i>1184</i>&nbsp;			if (dim_a == 1 &amp;&amp; dim_b == 1) {</b>
+<i>1185</i>&nbsp;				// Valid for Line-Line
+<b class="fc"><i>1186</i>&nbsp;				if (scl.charAt(0) == &#39;F&#39; &amp;&amp; scl.charAt(1) == &#39;T&#39;</b>
+<b class="fc"><i>1187</i>&nbsp;						&amp;&amp; scl.charAt(2) == &#39;*&#39; &amp;&amp; scl.charAt(3) == &#39;*&#39;</b>
+<b class="nc"><i>1188</i>&nbsp;						&amp;&amp; scl.charAt(4) == &#39;*&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="nc"><i>1189</i>&nbsp;						&amp;&amp; scl.charAt(6) == &#39;*&#39; &amp;&amp; scl.charAt(7) == &#39;*&#39;</b>
+<b class="nc"><i>1190</i>&nbsp;						&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1191</i>&nbsp;					return true;</b>
+<i>1192</i>&nbsp;			}
+<i>1193</i>&nbsp;		}
+<i>1194</i>&nbsp;
+<i>1195</i>&nbsp;		// Valid for area-area, area-Line, Line-Line
+<i>1196</i>&nbsp;
+<b class="fc"><i>1197</i>&nbsp;		if (dim_b != 0) {</b>
+<b class="fc"><i>1198</i>&nbsp;			if (scl.charAt(0) == &#39;F&#39; &amp;&amp; scl.charAt(1) == &#39;*&#39;</b>
+<b class="fc"><i>1199</i>&nbsp;					&amp;&amp; scl.charAt(2) == &#39;*&#39; &amp;&amp; scl.charAt(3) == &#39;*&#39;</b>
+<b class="fc"><i>1200</i>&nbsp;					&amp;&amp; scl.charAt(4) == &#39;T&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="nc"><i>1201</i>&nbsp;					&amp;&amp; scl.charAt(6) == &#39;*&#39; &amp;&amp; scl.charAt(7) == &#39;*&#39;</b>
+<b class="nc"><i>1202</i>&nbsp;					&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1203</i>&nbsp;				return true;</b>
+<i>1204</i>&nbsp;		}
+<i>1205</i>&nbsp;
+<b class="fc"><i>1206</i>&nbsp;		return false;</b>
+<i>1207</i>&nbsp;	}
+<i>1208</i>&nbsp;
+<i>1209</i>&nbsp;	// Checks whether the scl string is the crosses relation.
+<i>1210</i>&nbsp;	private static boolean crosses_(String scl, int dim_a, int dim_b) {
+<b class="fc"><i>1211</i>&nbsp;		if (dim_a &gt; dim_b) {</b>
+<i>1212</i>&nbsp;			// Valid for area-Line, area-Point, Line-Point
+<b class="fc"><i>1213</i>&nbsp;			if (scl.charAt(0) == &#39;T&#39; &amp;&amp; scl.charAt(1) == &#39;*&#39;</b>
+<b class="fc"><i>1214</i>&nbsp;					&amp;&amp; scl.charAt(2) == &#39;*&#39; &amp;&amp; scl.charAt(3) == &#39;*&#39;</b>
+<b class="fc"><i>1215</i>&nbsp;					&amp;&amp; scl.charAt(4) == &#39;*&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="nc"><i>1216</i>&nbsp;					&amp;&amp; scl.charAt(6) == &#39;T&#39; &amp;&amp; scl.charAt(7) == &#39;*&#39;</b>
+<b class="nc"><i>1217</i>&nbsp;					&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1218</i>&nbsp;				return true;</b>
+<i>1219</i>&nbsp;
+<b class="fc"><i>1220</i>&nbsp;			return false;</b>
+<i>1221</i>&nbsp;		}
+<i>1222</i>&nbsp;
+<b class="fc"><i>1223</i>&nbsp;		if (dim_a == 1 &amp;&amp; dim_b == 1) {</b>
+<i>1224</i>&nbsp;			// Valid for Line-Line
+<b class="fc"><i>1225</i>&nbsp;			if (scl.charAt(0) == &#39;0&#39; &amp;&amp; scl.charAt(1) == &#39;*&#39;</b>
+<b class="nc"><i>1226</i>&nbsp;					&amp;&amp; scl.charAt(2) == &#39;*&#39; &amp;&amp; scl.charAt(3) == &#39;*&#39;</b>
+<b class="nc"><i>1227</i>&nbsp;					&amp;&amp; scl.charAt(4) == &#39;*&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="nc"><i>1228</i>&nbsp;					&amp;&amp; scl.charAt(6) == &#39;*&#39; &amp;&amp; scl.charAt(7) == &#39;*&#39;</b>
+<b class="nc"><i>1229</i>&nbsp;					&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1230</i>&nbsp;				return true;</b>
+<i>1231</i>&nbsp;		}
+<i>1232</i>&nbsp;
+<b class="fc"><i>1233</i>&nbsp;		return false;</b>
+<i>1234</i>&nbsp;	}
+<i>1235</i>&nbsp;
+<i>1236</i>&nbsp;	// Checks whether the scl string is the contains relation.
+<i>1237</i>&nbsp;	private static boolean contains_(String scl) {
+<i>1238</i>&nbsp;		// Valid for all
+<b class="fc"><i>1239</i>&nbsp;		if (scl.charAt(0) == &#39;T&#39; &amp;&amp; scl.charAt(1) == &#39;*&#39;</b>
+<b class="fc"><i>1240</i>&nbsp;				&amp;&amp; scl.charAt(2) == &#39;*&#39; &amp;&amp; scl.charAt(3) == &#39;*&#39;</b>
+<b class="fc"><i>1241</i>&nbsp;				&amp;&amp; scl.charAt(4) == &#39;*&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="fc"><i>1242</i>&nbsp;				&amp;&amp; scl.charAt(6) == &#39;F&#39; &amp;&amp; scl.charAt(7) == &#39;F&#39;</b>
+<b class="nc"><i>1243</i>&nbsp;				&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1244</i>&nbsp;			return true;</b>
+<i>1245</i>&nbsp;
+<b class="fc"><i>1246</i>&nbsp;		return false;</b>
+<i>1247</i>&nbsp;	}
+<i>1248</i>&nbsp;
+<i>1249</i>&nbsp;	// Checks whether the scl string is the overlaps relation.
+<i>1250</i>&nbsp;	private static boolean overlaps_(String scl, int dim_a, int dim_b) {
+<b class="fc"><i>1251</i>&nbsp;		if (dim_a == dim_b) {</b>
+<b class="fc"><i>1252</i>&nbsp;			if (dim_a != 1) {</b>
+<i>1253</i>&nbsp;				// Valid for area-area, Point-Point
+<b class="fc"><i>1254</i>&nbsp;				if (scl.charAt(0) == &#39;T&#39; &amp;&amp; scl.charAt(1) == &#39;*&#39;</b>
+<b class="fc"><i>1255</i>&nbsp;						&amp;&amp; scl.charAt(2) == &#39;T&#39; &amp;&amp; scl.charAt(3) == &#39;*&#39;</b>
+<b class="fc"><i>1256</i>&nbsp;						&amp;&amp; scl.charAt(4) == &#39;*&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="fc"><i>1257</i>&nbsp;						&amp;&amp; scl.charAt(6) == &#39;T&#39; &amp;&amp; scl.charAt(7) == &#39;*&#39;</b>
+<b class="nc"><i>1258</i>&nbsp;						&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1259</i>&nbsp;					return true;</b>
+<i>1260</i>&nbsp;
+<b class="fc"><i>1261</i>&nbsp;				return false;</b>
+<i>1262</i>&nbsp;			}
+<i>1263</i>&nbsp;
+<i>1264</i>&nbsp;			// Valid for Line-Line
+<b class="fc"><i>1265</i>&nbsp;			if (scl.charAt(0) == &#39;1&#39; &amp;&amp; scl.charAt(1) == &#39;*&#39;</b>
+<b class="fc"><i>1266</i>&nbsp;					&amp;&amp; scl.charAt(2) == &#39;T&#39; &amp;&amp; scl.charAt(3) == &#39;*&#39;</b>
+<b class="fc"><i>1267</i>&nbsp;					&amp;&amp; scl.charAt(4) == &#39;*&#39; &amp;&amp; scl.charAt(5) == &#39;*&#39;</b>
+<b class="nc"><i>1268</i>&nbsp;					&amp;&amp; scl.charAt(6) == &#39;T&#39; &amp;&amp; scl.charAt(7) == &#39;*&#39;</b>
+<b class="nc"><i>1269</i>&nbsp;					&amp;&amp; scl.charAt(8) == &#39;*&#39;)</b>
+<b class="nc"><i>1270</i>&nbsp;				return true;</b>
+<i>1271</i>&nbsp;		}
+<i>1272</i>&nbsp;
+<b class="fc"><i>1273</i>&nbsp;		return false;</b>
+<i>1274</i>&nbsp;	}
+<i>1275</i>&nbsp;
+<i>1276</i>&nbsp;	// Marks each cluster of the topoGraph as belonging to an interior vertex of
+<i>1277</i>&nbsp;	// the geometry and/or a boundary index of the geometry.
+<i>1278</i>&nbsp;	private static void markClusterEndPoints_(int geometry,
+<i>1279</i>&nbsp;			TopoGraph topoGraph, int clusterIndex) {
+<b class="fc"><i>1280</i>&nbsp;        int id = topoGraph.getGeometryID(geometry);</b>
+<i>1281</i>&nbsp;
+<b class="fc"><i>1282</i>&nbsp;        for (int cluster = topoGraph.getFirstCluster(); cluster != -1; cluster = topoGraph.getNextCluster(cluster))</b>
+<i>1283</i>&nbsp;        {
+<b class="fc"><i>1284</i>&nbsp;            int cluster_parentage = topoGraph.getClusterParentage(cluster);</b>
+<i>1285</i>&nbsp;
+<b class="fc"><i>1286</i>&nbsp;            if ((cluster_parentage &amp; id) == 0)</b>
+<b class="fc"><i>1287</i>&nbsp;                continue;</b>
+<i>1288</i>&nbsp;
+<b class="fc"><i>1289</i>&nbsp;            int first_half_edge = topoGraph.getClusterHalfEdge(cluster);</b>
+<b class="fc"><i>1290</i>&nbsp;            if (first_half_edge == -1)</b>
+<i>1291</i>&nbsp;            {
+<b class="fc"><i>1292</i>&nbsp;                topoGraph.setClusterUserIndex(cluster, clusterIndex, 0);</b>
+<b class="fc"><i>1293</i>&nbsp;                continue;</b>
+<i>1294</i>&nbsp;            }
+<i>1295</i>&nbsp;
+<b class="fc"><i>1296</i>&nbsp;            int next_half_edge = first_half_edge;</b>
+<b class="fc"><i>1297</i>&nbsp;            int index = 0;</b>
+<i>1298</i>&nbsp;
+<i>1299</i>&nbsp;            do
+<i>1300</i>&nbsp;            {
+<b class="fc"><i>1301</i>&nbsp;                int half_edge = next_half_edge;</b>
+<b class="fc"><i>1302</i>&nbsp;                int half_edge_parentage = topoGraph.getHalfEdgeParentage(half_edge);</b>
+<i>1303</i>&nbsp;
+<b class="fc"><i>1304</i>&nbsp;                if ((half_edge_parentage &amp; id) != 0)</b>
+<b class="fc"><i>1305</i>&nbsp;                    index++;</b>
+<i>1306</i>&nbsp;
+<b class="fc"><i>1307</i>&nbsp;                next_half_edge = topoGraph.getHalfEdgeNext(topoGraph.getHalfEdgeTwin(half_edge));</b>
+<i>1308</i>&nbsp;
+<b class="fc"><i>1309</i>&nbsp;            } while (next_half_edge != first_half_edge);</b>
+<i>1310</i>&nbsp;
+<b class="fc"><i>1311</i>&nbsp;            topoGraph.setClusterUserIndex(cluster, clusterIndex, index);</b>
+<i>1312</i>&nbsp;        }
+<i>1313</i>&nbsp;
+<b class="fc"><i>1314</i>&nbsp;        return;</b>
+<i>1315</i>&nbsp;	}
+<i>1316</i>&nbsp;
+<i>1317</i>&nbsp;	private static String getTransposeMatrix_(String scl) {
+<b class="fc"><i>1318</i>&nbsp;		String transpose = new String();</b>
+<b class="fc"><i>1319</i>&nbsp;		transpose += scl.charAt(0);</b>
+<b class="fc"><i>1320</i>&nbsp;		transpose += scl.charAt(3);</b>
+<b class="fc"><i>1321</i>&nbsp;		transpose += scl.charAt(6);</b>
+<b class="fc"><i>1322</i>&nbsp;		transpose += scl.charAt(1);</b>
+<b class="fc"><i>1323</i>&nbsp;		transpose += scl.charAt(4);</b>
+<b class="fc"><i>1324</i>&nbsp;		transpose += scl.charAt(7);</b>
+<b class="fc"><i>1325</i>&nbsp;		transpose += scl.charAt(2);</b>
+<b class="fc"><i>1326</i>&nbsp;		transpose += scl.charAt(5);</b>
+<b class="fc"><i>1327</i>&nbsp;		transpose += scl.charAt(8);</b>
+<b class="fc"><i>1328</i>&nbsp;		return transpose;</b>
+<i>1329</i>&nbsp;	}
+<i>1330</i>&nbsp;
+<i>1331</i>&nbsp;	// Allocates the matrix array if need be, and sets all entries to -2.
+<i>1332</i>&nbsp;	// -2: Not Computed
+<i>1333</i>&nbsp;	// -1: No intersection
+<i>1334</i>&nbsp;	// 0: 0-dimension intersection
+<i>1335</i>&nbsp;	// 1: 1-dimension intersection
+<i>1336</i>&nbsp;	// 2: 2-dimension intersection
+<i>1337</i>&nbsp;	private void resetMatrix_() {
+<b class="fc"><i>1338</i>&nbsp;		for (int i = 0; i &lt; 9; i++)</b>
+<i>1339</i>&nbsp;        {
+<b class="fc"><i>1340</i>&nbsp;            m_matrix[i] = -2;</b>
+<b class="fc"><i>1341</i>&nbsp;            m_max_dim[i] = -2;</b>
+<i>1342</i>&nbsp;        }
+<b class="fc"><i>1343</i>&nbsp;	}</b>
+<i>1344</i>&nbsp;
+<i>1345</i>&nbsp;	private static void transposeMatrix_(int[] matrix) {
+<b class="nc"><i>1346</i>&nbsp;		int temp1 = matrix[1];</b>
+<b class="nc"><i>1347</i>&nbsp;		int temp2 = matrix[2];</b>
+<b class="nc"><i>1348</i>&nbsp;		int temp5 = matrix[5];</b>
+<i>1349</i>&nbsp;
+<b class="nc"><i>1350</i>&nbsp;		matrix[1] = matrix[3];</b>
+<b class="nc"><i>1351</i>&nbsp;		matrix[2] = matrix[6];</b>
+<b class="nc"><i>1352</i>&nbsp;		matrix[5] = matrix[7];</b>
+<i>1353</i>&nbsp;
+<b class="nc"><i>1354</i>&nbsp;		matrix[3] = temp1;</b>
+<b class="nc"><i>1355</i>&nbsp;		matrix[6] = temp2;</b>
+<b class="nc"><i>1356</i>&nbsp;		matrix[7] = temp5;</b>
+<b class="nc"><i>1357</i>&nbsp;	}</b>
+<i>1358</i>&nbsp;
+<i>1359</i>&nbsp;	// Sets the relation predicates from the scl string.
+<i>1360</i>&nbsp;	private void setPredicates_(String scl) {
+<b class="fc"><i>1361</i>&nbsp;		m_scl = scl;</b>
+<i>1362</i>&nbsp;
+<b class="fc"><i>1363</i>&nbsp;		for (int i = 0; i &lt; 9; i++) {</b>
+<b class="fc"><i>1364</i>&nbsp;			if (m_scl.charAt(i) != &#39;*&#39;) {</b>
+<b class="fc"><i>1365</i>&nbsp;				m_perform_predicates[i] = true;</b>
+<b class="fc"><i>1366</i>&nbsp;				m_predicate_count++;</b>
+<i>1367</i>&nbsp;			} else
+<b class="fc"><i>1368</i>&nbsp;				m_perform_predicates[i] = false;</b>
+<i>1369</i>&nbsp;		}
+<b class="fc"><i>1370</i>&nbsp;	}</b>
+<i>1371</i>&nbsp;
+<i>1372</i>&nbsp;	// Sets the remaining predicates to false
+<i>1373</i>&nbsp;	private void setRemainingPredicatesToFalse_() {
+<b class="fc"><i>1374</i>&nbsp;		for (int i = 0; i &lt; 9; i++) {</b>
+<b class="fc"><i>1375</i>&nbsp;			if (m_perform_predicates[i] &amp;&amp; m_matrix[i] == -2) {</b>
+<b class="fc"><i>1376</i>&nbsp;				m_matrix[i] = -1;</b>
+<b class="fc"><i>1377</i>&nbsp;				m_perform_predicates[i] = false;</b>
+<i>1378</i>&nbsp;			}
+<i>1379</i>&nbsp;		}
+<b class="fc"><i>1380</i>&nbsp;	}</b>
+<i>1381</i>&nbsp;
+<i>1382</i>&nbsp;	// Checks whether the predicate is known.
+<i>1383</i>&nbsp;	private boolean isPredicateKnown_(int predicate) {
+<b class="fc"><i>1384</i>&nbsp;        assert(m_scl.charAt(predicate) != &#39;*&#39;);</b>
+<i>1385</i>&nbsp;
+<b class="fc"><i>1386</i>&nbsp;        if (m_matrix[predicate] == -2)</b>
+<b class="fc"><i>1387</i>&nbsp;            return false;</b>
+<i>1388</i>&nbsp;
+<b class="fc"><i>1389</i>&nbsp;        if (m_matrix[predicate] == -1)</b>
+<i>1390</i>&nbsp;        {
+<b class="nc"><i>1391</i>&nbsp;            m_perform_predicates[predicate] = false;</b>
+<b class="nc"><i>1392</i>&nbsp;            m_predicate_count--;</b>
+<b class="nc"><i>1393</i>&nbsp;            return true;</b>
+<i>1394</i>&nbsp;        }
+<i>1395</i>&nbsp;
+<b class="fc"><i>1396</i>&nbsp;        if (m_scl.charAt(predicate) != &#39;T&#39; &amp;&amp; m_scl.charAt(predicate) != &#39;F&#39;)</b>
+<i>1397</i>&nbsp;        {
+<b class="fc"><i>1398</i>&nbsp;            if (m_matrix[predicate] &lt; m_max_dim[predicate])</b>
+<i>1399</i>&nbsp;            {
+<b class="fc"><i>1400</i>&nbsp;                return false;</b>
+<i>1401</i>&nbsp;            }
+<i>1402</i>&nbsp;            else
+<i>1403</i>&nbsp;            {
+<b class="fc"><i>1404</i>&nbsp;                m_perform_predicates[predicate] = false;</b>
+<b class="fc"><i>1405</i>&nbsp;                m_predicate_count--;</b>
+<b class="fc"><i>1406</i>&nbsp;                return true;</b>
+<i>1407</i>&nbsp;            }
+<i>1408</i>&nbsp;        }
+<i>1409</i>&nbsp;        else
+<i>1410</i>&nbsp;        {
+<b class="fc"><i>1411</i>&nbsp;            m_perform_predicates[predicate] = false;</b>
+<b class="fc"><i>1412</i>&nbsp;            m_predicate_count--;</b>
+<b class="fc"><i>1413</i>&nbsp;            return true;</b>
+<i>1414</i>&nbsp;        }
+<i>1415</i>&nbsp;	}
+<i>1416</i>&nbsp;
+<i>1417</i>&nbsp;	// Sets the area-area predicates function.
+<i>1418</i>&nbsp;	private void setAreaAreaPredicates_() {
+<b class="fc"><i>1419</i>&nbsp;        m_predicates_half_edge = Predicates.AreaAreaPredicates;</b>
+<i>1420</i>&nbsp;
+<b class="fc"><i>1421</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorInterior] = 2;</b>
+<b class="fc"><i>1422</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorBoundary] = 1;</b>
+<b class="fc"><i>1423</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorExterior] = 2;</b>
+<b class="fc"><i>1424</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryInterior] = 1;</b>
+<b class="fc"><i>1425</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryBoundary] = 1;</b>
+<b class="fc"><i>1426</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryExterior] = 1;</b>
+<b class="fc"><i>1427</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorInterior] = 2;</b>
+<b class="fc"><i>1428</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorBoundary] = 1;</b>
+<b class="fc"><i>1429</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorExterior] = 2;</b>
+<i>1430</i>&nbsp;
+<i>1431</i>&nbsp;        // set predicates that are always true/false
+<b class="fc"><i>1432</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorExterior])</b>
+<i>1433</i>&nbsp;        {
+<b class="fc"><i>1434</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorExterior] = 2; // Always true</b>
+<b class="fc"><i>1435</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorExterior] = false;</b>
+<b class="fc"><i>1436</i>&nbsp;            m_predicate_count--;</b>
+<i>1437</i>&nbsp;        }
+<b class="fc"><i>1438</i>&nbsp;	}</b>
+<i>1439</i>&nbsp;
+<i>1440</i>&nbsp;	// Sets the area-line predicate function.
+<i>1441</i>&nbsp;	private void setAreaLinePredicates_() {
+<b class="fc"><i>1442</i>&nbsp;        m_predicates_half_edge = Predicates.AreaLinePredicates;</b>
+<b class="fc"><i>1443</i>&nbsp;        m_predicates_cluster = Predicates.AreaPointPredicates;</b>
+<i>1444</i>&nbsp;
+<b class="fc"><i>1445</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorInterior] = 1;</b>
+<b class="fc"><i>1446</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorBoundary] = 0;</b>
+<b class="fc"><i>1447</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorExterior] = 2;</b>
+<b class="fc"><i>1448</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryInterior] = 1;</b>
+<b class="fc"><i>1449</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryBoundary] = 0;</b>
+<b class="fc"><i>1450</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryExterior] = 1;</b>
+<b class="fc"><i>1451</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorInterior] = 1;</b>
+<b class="fc"><i>1452</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorBoundary] = 0;</b>
+<b class="fc"><i>1453</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorExterior] = 2;</b>
+<i>1454</i>&nbsp;
+<b class="fc"><i>1455</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorExterior])</b>
+<i>1456</i>&nbsp;        {
+<b class="fc"><i>1457</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorExterior] = 2; // Always true</b>
+<b class="fc"><i>1458</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorExterior] = false;</b>
+<b class="fc"><i>1459</i>&nbsp;            m_predicate_count--;</b>
+<i>1460</i>&nbsp;        }
+<b class="fc"><i>1461</i>&nbsp;	}</b>
+<i>1462</i>&nbsp;
+<i>1463</i>&nbsp;	// Sets the line-line predicates function.
+<i>1464</i>&nbsp;	private void setLineLinePredicates_() {
+<b class="fc"><i>1465</i>&nbsp;        m_predicates_half_edge = Predicates.LineLinePredicates;</b>
+<b class="fc"><i>1466</i>&nbsp;        m_predicates_cluster = Predicates.LinePointPredicates;</b>
+<i>1467</i>&nbsp;
+<b class="fc"><i>1468</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorInterior] = 1;</b>
+<b class="fc"><i>1469</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorBoundary] = 0;</b>
+<b class="fc"><i>1470</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorExterior] = 1;</b>
+<b class="fc"><i>1471</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryInterior] = 0;</b>
+<b class="fc"><i>1472</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryBoundary] = 0;</b>
+<b class="fc"><i>1473</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryExterior] = 0;</b>
+<b class="fc"><i>1474</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorInterior] = 1;</b>
+<b class="fc"><i>1475</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorBoundary] = 0;</b>
+<b class="fc"><i>1476</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorExterior] = 2;</b>
+<i>1477</i>&nbsp;
+<i>1478</i>&nbsp;        // set predicates that are always true/false
+<b class="fc"><i>1479</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorExterior])</b>
+<i>1480</i>&nbsp;        {
+<b class="fc"><i>1481</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorExterior] = 2; // Always true</b>
+<b class="fc"><i>1482</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorExterior] = false;</b>
+<b class="fc"><i>1483</i>&nbsp;            m_predicate_count--;</b>
+<i>1484</i>&nbsp;        }
+<b class="fc"><i>1485</i>&nbsp;	}</b>
+<i>1486</i>&nbsp;
+<i>1487</i>&nbsp;	// Sets the area-point predicate function.
+<i>1488</i>&nbsp;	private void setAreaPointPredicates_() {
+<b class="fc"><i>1489</i>&nbsp;        m_predicates_cluster = Predicates.AreaPointPredicates;</b>
+<i>1490</i>&nbsp;
+<b class="fc"><i>1491</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorInterior] = 0;</b>
+<b class="fc"><i>1492</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorBoundary] = -1;</b>
+<b class="fc"><i>1493</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorExterior] = 2;</b>
+<b class="fc"><i>1494</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryInterior] = 0;</b>
+<b class="fc"><i>1495</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<b class="fc"><i>1496</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryExterior] = 1;</b>
+<b class="fc"><i>1497</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorInterior] = 0;</b>
+<b class="fc"><i>1498</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorBoundary] = -1;</b>
+<b class="fc"><i>1499</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorExterior] = 2;</b>
+<i>1500</i>&nbsp;
+<i>1501</i>&nbsp;        // set predicates that are always true/false
+<b class="fc"><i>1502</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorBoundary])</b>
+<i>1503</i>&nbsp;        {
+<b class="fc"><i>1504</i>&nbsp;            m_matrix[MatrixPredicate.InteriorBoundary] = -1; // Always false</b>
+<b class="fc"><i>1505</i>&nbsp;            m_perform_predicates[MatrixPredicate.InteriorBoundary] = false;</b>
+<b class="fc"><i>1506</i>&nbsp;            m_predicate_count--;</b>
+<i>1507</i>&nbsp;        }
+<i>1508</i>&nbsp;
+<b class="fc"><i>1509</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryBoundary])</b>
+<i>1510</i>&nbsp;        {
+<b class="fc"><i>1511</i>&nbsp;            m_matrix[MatrixPredicate.BoundaryBoundary] = -1; // Always false</b>
+<b class="fc"><i>1512</i>&nbsp;            m_perform_predicates[MatrixPredicate.BoundaryBoundary] = false;</b>
+<b class="fc"><i>1513</i>&nbsp;            m_predicate_count--;</b>
+<i>1514</i>&nbsp;        }
+<i>1515</i>&nbsp;
+<b class="fc"><i>1516</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorBoundary])</b>
+<i>1517</i>&nbsp;        {
+<b class="fc"><i>1518</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorBoundary] = -1; // Always false</b>
+<b class="fc"><i>1519</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorBoundary] = false;</b>
+<b class="fc"><i>1520</i>&nbsp;            m_predicate_count--;</b>
+<i>1521</i>&nbsp;        }
+<i>1522</i>&nbsp;
+<b class="fc"><i>1523</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorExterior])</b>
+<i>1524</i>&nbsp;        {
+<b class="fc"><i>1525</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorExterior] = 2; // Always true</b>
+<b class="fc"><i>1526</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorExterior] = false;</b>
+<b class="fc"><i>1527</i>&nbsp;            m_predicate_count--;</b>
+<i>1528</i>&nbsp;        }
+<b class="fc"><i>1529</i>&nbsp;	}</b>
+<i>1530</i>&nbsp;
+<i>1531</i>&nbsp;	// Sets the line-point predicates function.
+<i>1532</i>&nbsp;	private void setLinePointPredicates_() {
+<b class="fc"><i>1533</i>&nbsp;        m_predicates_cluster = Predicates.LinePointPredicates;</b>
+<i>1534</i>&nbsp;
+<b class="fc"><i>1535</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorInterior] = 0;</b>
+<b class="fc"><i>1536</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorBoundary] = -1;</b>
+<b class="fc"><i>1537</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorExterior] = 1;</b>
+<b class="fc"><i>1538</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryInterior] = 0;</b>
+<b class="fc"><i>1539</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<b class="fc"><i>1540</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryExterior] = 0;</b>
+<b class="fc"><i>1541</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorInterior] = 0;</b>
+<b class="fc"><i>1542</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorBoundary] = -1;</b>
+<b class="fc"><i>1543</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorExterior] = 2;</b>
+<i>1544</i>&nbsp;
+<i>1545</i>&nbsp;        // set predicates that are always true/false
+<b class="fc"><i>1546</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorBoundary])</b>
+<i>1547</i>&nbsp;        {
+<b class="fc"><i>1548</i>&nbsp;            m_matrix[MatrixPredicate.InteriorBoundary] = -1; // Always false</b>
+<b class="fc"><i>1549</i>&nbsp;            m_perform_predicates[MatrixPredicate.InteriorBoundary] = false;</b>
+<b class="fc"><i>1550</i>&nbsp;            m_predicate_count--;</b>
+<i>1551</i>&nbsp;        }
+<i>1552</i>&nbsp;
+<b class="fc"><i>1553</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryBoundary])</b>
+<i>1554</i>&nbsp;        {
+<b class="fc"><i>1555</i>&nbsp;            m_matrix[MatrixPredicate.BoundaryBoundary] = -1; // Always false</b>
+<b class="fc"><i>1556</i>&nbsp;            m_perform_predicates[MatrixPredicate.BoundaryBoundary] = false;</b>
+<b class="fc"><i>1557</i>&nbsp;            m_predicate_count--;</b>
+<i>1558</i>&nbsp;        }
+<i>1559</i>&nbsp;
+<b class="fc"><i>1560</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorBoundary])</b>
+<i>1561</i>&nbsp;        {
+<b class="fc"><i>1562</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorBoundary] = -1; // Always false</b>
+<b class="fc"><i>1563</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorBoundary] = false;</b>
+<b class="fc"><i>1564</i>&nbsp;            m_predicate_count--;</b>
+<i>1565</i>&nbsp;        }
+<i>1566</i>&nbsp;
+<b class="fc"><i>1567</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorExterior])</b>
+<i>1568</i>&nbsp;        {
+<b class="fc"><i>1569</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorExterior] = 2; // Always true</b>
+<b class="fc"><i>1570</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorExterior] = false;</b>
+<b class="fc"><i>1571</i>&nbsp;            m_predicate_count--;</b>
+<i>1572</i>&nbsp;        }
+<b class="fc"><i>1573</i>&nbsp;	}</b>
+<i>1574</i>&nbsp;
+<i>1575</i>&nbsp;	// Sets the point-point predicates function.
+<i>1576</i>&nbsp;	private void setPointPointPredicates_() {
+<b class="fc"><i>1577</i>&nbsp;        m_predicates_cluster = Predicates.PointPointPredicates;</b>
+<i>1578</i>&nbsp;
+<b class="fc"><i>1579</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorInterior] = 0;</b>
+<b class="fc"><i>1580</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorBoundary] = -1;</b>
+<b class="fc"><i>1581</i>&nbsp;        m_max_dim[MatrixPredicate.InteriorExterior] = 0;</b>
+<b class="fc"><i>1582</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>1583</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<b class="fc"><i>1584</i>&nbsp;        m_max_dim[MatrixPredicate.BoundaryExterior] = -1;</b>
+<b class="fc"><i>1585</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorInterior] = 0;</b>
+<b class="fc"><i>1586</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorBoundary] = -1;</b>
+<b class="fc"><i>1587</i>&nbsp;        m_max_dim[MatrixPredicate.ExteriorExterior] = 2;</b>
+<i>1588</i>&nbsp;
+<i>1589</i>&nbsp;        // set predicates that are always true/false
+<b class="fc"><i>1590</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorBoundary])</b>
+<i>1591</i>&nbsp;        {
+<b class="fc"><i>1592</i>&nbsp;            m_matrix[MatrixPredicate.InteriorBoundary] = -1; // Always false</b>
+<b class="fc"><i>1593</i>&nbsp;            m_perform_predicates[MatrixPredicate.InteriorBoundary] = false;</b>
+<b class="fc"><i>1594</i>&nbsp;            m_predicate_count--;</b>
+<i>1595</i>&nbsp;        }
+<i>1596</i>&nbsp;
+<b class="fc"><i>1597</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryInterior])</b>
+<i>1598</i>&nbsp;        {
+<b class="fc"><i>1599</i>&nbsp;            m_matrix[MatrixPredicate.BoundaryInterior] = -1; // Always false</b>
+<b class="fc"><i>1600</i>&nbsp;            m_perform_predicates[MatrixPredicate.BoundaryInterior] = false;</b>
+<b class="fc"><i>1601</i>&nbsp;            m_predicate_count--;</b>
+<i>1602</i>&nbsp;        }
+<i>1603</i>&nbsp;
+<b class="fc"><i>1604</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryBoundary])</b>
+<i>1605</i>&nbsp;        {
+<b class="fc"><i>1606</i>&nbsp;            m_matrix[MatrixPredicate.BoundaryBoundary] = -1; // Always false</b>
+<b class="fc"><i>1607</i>&nbsp;            m_perform_predicates[MatrixPredicate.BoundaryBoundary] = false;</b>
+<b class="fc"><i>1608</i>&nbsp;            m_predicate_count--;</b>
+<i>1609</i>&nbsp;        }
+<i>1610</i>&nbsp;
+<b class="fc"><i>1611</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryExterior])</b>
+<i>1612</i>&nbsp;        {
+<b class="fc"><i>1613</i>&nbsp;            m_matrix[MatrixPredicate.BoundaryExterior] = -1; // Always false</b>
+<b class="fc"><i>1614</i>&nbsp;            m_perform_predicates[MatrixPredicate.BoundaryExterior] = false;</b>
+<b class="fc"><i>1615</i>&nbsp;            m_predicate_count--;</b>
+<i>1616</i>&nbsp;        }
+<i>1617</i>&nbsp;
+<b class="fc"><i>1618</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorBoundary])</b>
+<i>1619</i>&nbsp;        {
+<b class="fc"><i>1620</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorBoundary] = -1; // Always false</b>
+<b class="fc"><i>1621</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorBoundary] = false;</b>
+<b class="fc"><i>1622</i>&nbsp;            m_predicate_count--;</b>
+<i>1623</i>&nbsp;        }
+<i>1624</i>&nbsp;
+<b class="fc"><i>1625</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorExterior])</b>
+<i>1626</i>&nbsp;        {
+<b class="fc"><i>1627</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorExterior] = 2; // Always true</b>
+<b class="fc"><i>1628</i>&nbsp;            m_perform_predicates[MatrixPredicate.ExteriorExterior] = false;</b>
+<b class="fc"><i>1629</i>&nbsp;            m_predicate_count--;</b>
+<i>1630</i>&nbsp;        }
+<b class="fc"><i>1631</i>&nbsp;	}</b>
+<i>1632</i>&nbsp;
+<i>1633</i>&nbsp;	// Invokes the 9 relational predicates of area vs area.
+<i>1634</i>&nbsp;	private boolean areaAreaPredicates_(int half_edge, int id_a, int id_b) {
+<b class="fc"><i>1635</i>&nbsp;		boolean bRelationKnown = true;</b>
+<i>1636</i>&nbsp;
+<b class="fc"><i>1637</i>&nbsp;		if (m_perform_predicates[MatrixPredicate.InteriorInterior]) {</b>
+<b class="fc"><i>1638</i>&nbsp;			interiorAreaInteriorArea_(half_edge, id_a, id_b);</b>
+<b class="fc"><i>1639</i>&nbsp;			bRelationKnown &amp;= isPredicateKnown_(</b>
+<i>1640</i>&nbsp;					MatrixPredicate.InteriorInterior);
+<i>1641</i>&nbsp;		}
+<i>1642</i>&nbsp;
+<b class="fc"><i>1643</i>&nbsp;		if (m_perform_predicates[MatrixPredicate.InteriorBoundary]) {</b>
+<b class="fc"><i>1644</i>&nbsp;			interiorAreaBoundaryArea_(half_edge, id_a,</b>
+<i>1645</i>&nbsp;					MatrixPredicate.InteriorBoundary);
+<b class="fc"><i>1646</i>&nbsp;			bRelationKnown &amp;= isPredicateKnown_(</b>
+<i>1647</i>&nbsp;					MatrixPredicate.InteriorBoundary);
+<i>1648</i>&nbsp;		}
+<i>1649</i>&nbsp;
+<b class="fc"><i>1650</i>&nbsp;		if (m_perform_predicates[MatrixPredicate.InteriorExterior]) {</b>
+<b class="fc"><i>1651</i>&nbsp;			interiorAreaExteriorArea_(half_edge, id_a, id_b,</b>
+<i>1652</i>&nbsp;					MatrixPredicate.InteriorExterior);
+<b class="fc"><i>1653</i>&nbsp;			bRelationKnown &amp;= isPredicateKnown_(</b>
+<i>1654</i>&nbsp;					MatrixPredicate.InteriorExterior);
+<i>1655</i>&nbsp;		}
+<i>1656</i>&nbsp;
+<b class="fc"><i>1657</i>&nbsp;		if (m_perform_predicates[MatrixPredicate.BoundaryInterior]) {</b>
+<b class="fc"><i>1658</i>&nbsp;			interiorAreaBoundaryArea_(half_edge, id_b,</b>
+<i>1659</i>&nbsp;					MatrixPredicate.BoundaryInterior);
+<b class="fc"><i>1660</i>&nbsp;			bRelationKnown &amp;= isPredicateKnown_(</b>
+<i>1661</i>&nbsp;					MatrixPredicate.BoundaryInterior);
+<i>1662</i>&nbsp;		}
+<i>1663</i>&nbsp;
+<b class="fc"><i>1664</i>&nbsp;		if (m_perform_predicates[MatrixPredicate.BoundaryBoundary]) {</b>
+<b class="fc"><i>1665</i>&nbsp;			boundaryAreaBoundaryArea_(half_edge, id_a, id_b);</b>
+<b class="fc"><i>1666</i>&nbsp;			bRelationKnown &amp;= isPredicateKnown_(</b>
+<i>1667</i>&nbsp;					MatrixPredicate.BoundaryBoundary);
+<i>1668</i>&nbsp;		}
+<i>1669</i>&nbsp;
+<b class="fc"><i>1670</i>&nbsp;		if (m_perform_predicates[MatrixPredicate.BoundaryExterior]) {</b>
+<b class="fc"><i>1671</i>&nbsp;			boundaryAreaExteriorArea_(half_edge, id_a, id_b,</b>
+<i>1672</i>&nbsp;					MatrixPredicate.BoundaryExterior);
+<b class="fc"><i>1673</i>&nbsp;			bRelationKnown &amp;= isPredicateKnown_(</b>
+<i>1674</i>&nbsp;					MatrixPredicate.BoundaryExterior);
+<i>1675</i>&nbsp;		}
+<i>1676</i>&nbsp;
+<b class="fc"><i>1677</i>&nbsp;		if (m_perform_predicates[MatrixPredicate.ExteriorInterior]) {</b>
+<b class="fc"><i>1678</i>&nbsp;			interiorAreaExteriorArea_(half_edge, id_b, id_a,</b>
+<i>1679</i>&nbsp;					MatrixPredicate.ExteriorInterior);
+<b class="fc"><i>1680</i>&nbsp;			bRelationKnown &amp;= isPredicateKnown_(</b>
+<i>1681</i>&nbsp;					MatrixPredicate.ExteriorInterior);
+<i>1682</i>&nbsp;		}
+<i>1683</i>&nbsp;
+<b class="fc"><i>1684</i>&nbsp;		if (m_perform_predicates[MatrixPredicate.ExteriorBoundary]) {</b>
+<b class="fc"><i>1685</i>&nbsp;			boundaryAreaExteriorArea_(half_edge, id_b, id_a,</b>
+<i>1686</i>&nbsp;					MatrixPredicate.ExteriorBoundary);
+<b class="fc"><i>1687</i>&nbsp;			bRelationKnown &amp;= isPredicateKnown_(</b>
+<i>1688</i>&nbsp;					MatrixPredicate.ExteriorBoundary);
+<i>1689</i>&nbsp;		}
+<i>1690</i>&nbsp;
+<b class="fc"><i>1691</i>&nbsp;		return bRelationKnown;</b>
+<i>1692</i>&nbsp;	}
+<i>1693</i>&nbsp;
+<i>1694</i>&nbsp;	private void areaAreaDisjointPredicates_(Polygon polygon_a, Polygon polygon_b) {
+<b class="fc"><i>1695</i>&nbsp;        m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="fc"><i>1696</i>&nbsp;        m_matrix[MatrixPredicate.InteriorBoundary] = -1;</b>
+<b class="fc"><i>1697</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>1698</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<i>1699</i>&nbsp;
+<b class="fc"><i>1700</i>&nbsp;        areaGeomContainsOrDisjointPredicates_(polygon_a, m_perform_predicates[MatrixPredicate.InteriorExterior] ? MatrixPredicate.InteriorExterior : -1, m_scl.charAt(MatrixPredicate.InteriorExterior), m_perform_predicates[MatrixPredicate.BoundaryExterior] ? MatrixPredicate.BoundaryExterior : -1, m_scl.charAt(MatrixPredicate.BoundaryExterior));</b>
+<b class="fc"><i>1701</i>&nbsp;        areaGeomContainsOrDisjointPredicates_(polygon_b, m_perform_predicates[MatrixPredicate.ExteriorInterior] ? MatrixPredicate.ExteriorInterior : -1, m_scl.charAt(MatrixPredicate.ExteriorInterior), m_perform_predicates[MatrixPredicate.ExteriorBoundary] ? MatrixPredicate.ExteriorBoundary : -1, m_scl.charAt(MatrixPredicate.ExteriorBoundary));</b>
+<b class="fc"><i>1702</i>&nbsp;	}</b>
+<i>1703</i>&nbsp;
+<i>1704</i>&nbsp;    private void areaGeomContainsOrDisjointPredicates_(Polygon polygon, int matrix_interior, char c1, int matrix_boundary, char c2)
+<i>1705</i>&nbsp;    {
+<b class="fc"><i>1706</i>&nbsp;        if (matrix_interior != -1 || matrix_boundary != -1)</b>
+<i>1707</i>&nbsp;        {
+<b class="fc"><i>1708</i>&nbsp;            boolean has_area = ((c1 != &#39;T&#39; &amp;&amp; c1 != &#39;F&#39; &amp;&amp; matrix_interior != -1) || (c2 != &#39;T&#39; &amp;&amp; c2 != &#39;F&#39; &amp;&amp; matrix_boundary != -1) ? polygon.calculateArea2D() != 0 : true);</b>
+<i>1709</i>&nbsp;
+<b class="fc"><i>1710</i>&nbsp;            if (has_area)</b>
+<i>1711</i>&nbsp;            {
+<b class="fc"><i>1712</i>&nbsp;                if (matrix_interior != -1)</b>
+<b class="fc"><i>1713</i>&nbsp;                  m_matrix[matrix_interior] = 2;</b>
+<b class="fc"><i>1714</i>&nbsp;                if (matrix_boundary != -1)</b>
+<b class="fc"><i>1715</i>&nbsp;                  m_matrix[matrix_boundary] = 1;</b>
+<i>1716</i>&nbsp;            }
+<i>1717</i>&nbsp;            else
+<i>1718</i>&nbsp;            {
+<b class="fc"><i>1719</i>&nbsp;                if (matrix_boundary != -1)</b>
+<b class="fc"><i>1720</i>&nbsp;                  m_matrix[matrix_boundary] = -1;</b>
+<i>1721</i>&nbsp;
+<b class="fc"><i>1722</i>&nbsp;                if (matrix_interior != -1)</b>
+<i>1723</i>&nbsp;                {
+<b class="fc"><i>1724</i>&nbsp;                    Envelope2D env = new Envelope2D();</b>
+<b class="fc"><i>1725</i>&nbsp;                    polygon.queryEnvelope2D(env);</b>
+<b class="fc"><i>1726</i>&nbsp;                    m_matrix[matrix_interior] = (env.getHeight() == 0.0 &amp;&amp; env.getWidth() == 0.0 ? 0 : 1);</b>
+<i>1727</i>&nbsp;                }
+<i>1728</i>&nbsp;            }
+<i>1729</i>&nbsp;        }
+<b class="fc"><i>1730</i>&nbsp;    }</b>
+<i>1731</i>&nbsp;
+<i>1732</i>&nbsp;	private void areaAreaContainsPredicates_(Polygon polygon_b) {
+<b class="fc"><i>1733</i>&nbsp;        m_matrix[MatrixPredicate.InteriorExterior] = 2; // im assuming its a proper contains.</b>
+<b class="fc"><i>1734</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>1735</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<b class="fc"><i>1736</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryExterior] = 1;</b>
+<b class="fc"><i>1737</i>&nbsp;        m_matrix[MatrixPredicate.ExteriorInterior] = -1;</b>
+<b class="fc"><i>1738</i>&nbsp;        m_matrix[MatrixPredicate.ExteriorBoundary] = -1;</b>
+<i>1739</i>&nbsp;
+<b class="fc"><i>1740</i>&nbsp;        areaGeomContainsOrDisjointPredicates_(polygon_b, m_perform_predicates[MatrixPredicate.InteriorInterior] ? MatrixPredicate.InteriorInterior : -1, m_scl.charAt(MatrixPredicate.InteriorInterior), m_perform_predicates[MatrixPredicate.InteriorBoundary] ? MatrixPredicate.InteriorBoundary : -1, m_scl.charAt(MatrixPredicate.InteriorBoundary));</b>
+<i>1741</i>&nbsp;
+<i>1742</i>&nbsp;        // all other predicates should already be set by set_area_area_predicates
+<b class="fc"><i>1743</i>&nbsp;    }</b>
+<i>1744</i>&nbsp;
+<i>1745</i>&nbsp;	private void areaAreaWithinPredicates_(Polygon polygon_a) {
+<b class="nc"><i>1746</i>&nbsp;		areaAreaContainsPredicates_(polygon_a);</b>
+<b class="nc"><i>1747</i>&nbsp;		transposeMatrix_(m_matrix);</b>
+<b class="nc"><i>1748</i>&nbsp;	}</b>
+<i>1749</i>&nbsp;
+<i>1750</i>&nbsp;	private void areaLineDisjointPredicates_(Polygon polygon, Polyline polyline) {
+<b class="fc"><i>1751</i>&nbsp;        m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="fc"><i>1752</i>&nbsp;        m_matrix[MatrixPredicate.InteriorBoundary] = -1;</b>
+<b class="fc"><i>1753</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>1754</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<i>1755</i>&nbsp;
+<b class="fc"><i>1756</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorInterior])</b>
+<i>1757</i>&nbsp;        {
+<b class="nc"><i>1758</i>&nbsp;            char c = m_scl.charAt(MatrixPredicate.ExteriorInterior);</b>
+<b class="nc"><i>1759</i>&nbsp;            boolean b_has_length = (c != &#39;T&#39; &amp;&amp; c != &#39;F&#39; ? polyline.calculateLength2D() != 0 : true);</b>
+<b class="nc"><i>1760</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorInterior] = (b_has_length ? 1 : 0);</b>
+<i>1761</i>&nbsp;        }
+<i>1762</i>&nbsp;
+<b class="fc"><i>1763</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorBoundary])</b>
+<i>1764</i>&nbsp;        {
+<b class="nc"><i>1765</i>&nbsp;            boolean has_non_empty_boundary = Boundary.hasNonEmptyBoundary(polyline, null);</b>
+<b class="nc"><i>1766</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorBoundary] = has_non_empty_boundary ? 0 : -1;</b>
+<i>1767</i>&nbsp;        }
+<i>1768</i>&nbsp;
+<b class="fc"><i>1769</i>&nbsp;        areaGeomContainsOrDisjointPredicates_(polygon, m_perform_predicates[MatrixPredicate.InteriorExterior] ? MatrixPredicate.InteriorExterior : -1, m_scl.charAt(MatrixPredicate.InteriorExterior), m_perform_predicates[MatrixPredicate.BoundaryExterior] ? MatrixPredicate.BoundaryExterior : -1, m_scl.charAt(MatrixPredicate.BoundaryExterior));</b>
+<b class="fc"><i>1770</i>&nbsp;	}</b>
+<i>1771</i>&nbsp;
+<i>1772</i>&nbsp;	private void areaLineContainsPredicates_(Polygon polygon, Polyline polyline) {
+<b class="fc"><i>1773</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorInterior])</b>
+<i>1774</i>&nbsp;        {
+<b class="fc"><i>1775</i>&nbsp;            char c = m_scl.charAt(MatrixPredicate.InteriorInterior);</b>
+<b class="fc"><i>1776</i>&nbsp;            boolean b_has_length = (c != &#39;T&#39; &amp;&amp; c != &#39;F&#39; ? polyline.calculateLength2D() != 0 : true);</b>
+<b class="fc"><i>1777</i>&nbsp;            m_matrix[MatrixPredicate.InteriorInterior] = (b_has_length ? 1 : 0);</b>
+<i>1778</i>&nbsp;        }
+<i>1779</i>&nbsp;
+<b class="fc"><i>1780</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorBoundary])</b>
+<i>1781</i>&nbsp;        {
+<b class="fc"><i>1782</i>&nbsp;            boolean has_non_empty_boundary = Boundary.hasNonEmptyBoundary(polyline, null);</b>
+<b class="fc"><i>1783</i>&nbsp;            m_matrix[MatrixPredicate.InteriorBoundary] = has_non_empty_boundary ? 0 : -1;</b>
+<i>1784</i>&nbsp;        }
+<i>1785</i>&nbsp;
+<b class="fc"><i>1786</i>&nbsp;        m_matrix[MatrixPredicate.InteriorExterior] = 2; //assume polygon has area</b>
+<b class="fc"><i>1787</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>1788</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<b class="fc"><i>1789</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryExterior] = 1; //assume polygon has area</b>
+<b class="fc"><i>1790</i>&nbsp;        m_matrix[MatrixPredicate.ExteriorInterior] = -1;</b>
+<b class="fc"><i>1791</i>&nbsp;        m_matrix[MatrixPredicate.ExteriorBoundary] = -1;</b>
+<b class="fc"><i>1792</i>&nbsp;	}</b>
+<i>1793</i>&nbsp;
+<i>1794</i>&nbsp;	private void areaPointDisjointPredicates_(Polygon polygon) {
+<b class="fc"><i>1795</i>&nbsp;        m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="fc"><i>1796</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>1797</i>&nbsp;        m_matrix[MatrixPredicate.ExteriorInterior] = 0;</b>
+<i>1798</i>&nbsp;
+<b class="fc"><i>1799</i>&nbsp;        areaGeomContainsOrDisjointPredicates_(polygon, m_perform_predicates[MatrixPredicate.InteriorExterior] ? MatrixPredicate.InteriorExterior : -1, m_scl.charAt(MatrixPredicate.InteriorExterior), m_perform_predicates[MatrixPredicate.BoundaryExterior] ? MatrixPredicate.BoundaryExterior : -1, m_scl.charAt(MatrixPredicate.BoundaryExterior));</b>
+<b class="fc"><i>1800</i>&nbsp;	}</b>
+<i>1801</i>&nbsp;
+<i>1802</i>&nbsp;	private void areaPointContainsPredicates_(Polygon polygon) {
+<b class="fc"><i>1803</i>&nbsp;        m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<b class="fc"><i>1804</i>&nbsp;        m_matrix[MatrixPredicate.InteriorExterior] = 2; //assume polygon has area</b>
+<b class="fc"><i>1805</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>1806</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryExterior] = 1; //assume polygon has area</b>
+<b class="fc"><i>1807</i>&nbsp;        m_matrix[MatrixPredicate.ExteriorInterior] = -1;</b>
+<b class="fc"><i>1808</i>&nbsp;    }</b>
+<i>1809</i>&nbsp;
+<i>1810</i>&nbsp;	private void lineLineDisjointPredicates_(Polyline polyline_a,
+<i>1811</i>&nbsp;			Polyline polyline_b) {
+<b class="fc"><i>1812</i>&nbsp;        m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="fc"><i>1813</i>&nbsp;        m_matrix[MatrixPredicate.InteriorBoundary] = -1;</b>
+<b class="fc"><i>1814</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<b class="fc"><i>1815</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryBoundary] = -1;</b>
+<i>1816</i>&nbsp;
+<b class="fc"><i>1817</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorExterior])</b>
+<i>1818</i>&nbsp;        {
+<b class="fc"><i>1819</i>&nbsp;            char c = m_scl.charAt(MatrixPredicate.InteriorExterior);</b>
+<b class="fc"><i>1820</i>&nbsp;            boolean b_has_length = (c != &#39;T&#39; &amp;&amp; c != &#39;F&#39; ? polyline_a.calculateLength2D() != 0 : true);</b>
+<b class="fc"><i>1821</i>&nbsp;            m_matrix[MatrixPredicate.InteriorExterior] = (b_has_length ? 1 : 0);</b>
+<i>1822</i>&nbsp;        }
+<i>1823</i>&nbsp;
+<b class="fc"><i>1824</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryExterior])</b>
+<i>1825</i>&nbsp;        {
+<b class="fc"><i>1826</i>&nbsp;            boolean has_non_empty_boundary_a = Boundary.hasNonEmptyBoundary(polyline_a, null);</b>
+<b class="fc"><i>1827</i>&nbsp;            m_matrix[MatrixPredicate.BoundaryExterior] = has_non_empty_boundary_a ? 0 : -1;</b>
+<i>1828</i>&nbsp;        }
+<i>1829</i>&nbsp;
+<b class="fc"><i>1830</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorInterior])</b>
+<i>1831</i>&nbsp;        {
+<b class="fc"><i>1832</i>&nbsp;            char c = m_scl.charAt(MatrixPredicate.ExteriorInterior);</b>
+<b class="fc"><i>1833</i>&nbsp;            boolean b_has_length = (c != &#39;T&#39; &amp;&amp; c != &#39;F&#39; ? polyline_b.calculateLength2D() != 0 : true);</b>
+<b class="fc"><i>1834</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorInterior] = (b_has_length ? 1 : 0);</b>
+<i>1835</i>&nbsp;        }
+<i>1836</i>&nbsp;
+<b class="fc"><i>1837</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorBoundary])</b>
+<i>1838</i>&nbsp;        {
+<b class="fc"><i>1839</i>&nbsp;            boolean has_non_empty_boundary_b = Boundary.hasNonEmptyBoundary(polyline_b, null);</b>
+<b class="fc"><i>1840</i>&nbsp;            m_matrix[MatrixPredicate.ExteriorBoundary] = has_non_empty_boundary_b ? 0 : -1;</b>
+<i>1841</i>&nbsp;        }
+<b class="fc"><i>1842</i>&nbsp;	}</b>
+<i>1843</i>&nbsp;
+<i>1844</i>&nbsp;	private void linePointDisjointPredicates_(Polyline polyline) {
+<b class="fc"><i>1845</i>&nbsp;        m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="fc"><i>1846</i>&nbsp;        m_matrix[MatrixPredicate.BoundaryInterior] = -1;</b>
+<i>1847</i>&nbsp;
+<b class="fc"><i>1848</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorExterior])</b>
+<i>1849</i>&nbsp;        {
+<b class="fc"><i>1850</i>&nbsp;            char c = m_scl.charAt(MatrixPredicate.InteriorExterior);</b>
+<b class="fc"><i>1851</i>&nbsp;            boolean b_has_length = (c != &#39;T&#39; &amp;&amp; c != &#39;F&#39; ? polyline.calculateLength2D() != 0 : true);</b>
+<b class="fc"><i>1852</i>&nbsp;            m_matrix[MatrixPredicate.InteriorExterior] = (b_has_length ? 1 : 0);</b>
+<i>1853</i>&nbsp;        }
+<i>1854</i>&nbsp;
+<b class="fc"><i>1855</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryExterior])</b>
+<i>1856</i>&nbsp;        {
+<b class="fc"><i>1857</i>&nbsp;            boolean has_non_empty_boundary = Boundary.hasNonEmptyBoundary(polyline, null);</b>
+<b class="fc"><i>1858</i>&nbsp;            m_matrix[MatrixPredicate.BoundaryExterior] = (has_non_empty_boundary ? 0 : -1);</b>
+<i>1859</i>&nbsp;        }
+<i>1860</i>&nbsp;
+<b class="fc"><i>1861</i>&nbsp;        m_matrix[MatrixPredicate.ExteriorInterior] = 0;</b>
+<b class="fc"><i>1862</i>&nbsp;	}</b>
+<i>1863</i>&nbsp;
+<i>1864</i>&nbsp;	private void pointPointDisjointPredicates_() {
+<b class="fc"><i>1865</i>&nbsp;		m_matrix[MatrixPredicate.InteriorInterior] = -1;</b>
+<b class="fc"><i>1866</i>&nbsp;		m_matrix[MatrixPredicate.InteriorExterior] = 0;</b>
+<b class="fc"><i>1867</i>&nbsp;		m_matrix[MatrixPredicate.ExteriorInterior] = 0;</b>
+<b class="fc"><i>1868</i>&nbsp;	}</b>
+<i>1869</i>&nbsp;
+<i>1870</i>&nbsp;	// Invokes the 9 relational predicates of area vs Line.
+<i>1871</i>&nbsp;	private boolean areaLinePredicates_(int half_edge, int id_a, int id_b) {
+<b class="fc"><i>1872</i>&nbsp;        boolean bRelationKnown = true;</b>
+<i>1873</i>&nbsp;
+<b class="fc"><i>1874</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorInterior])</b>
+<i>1875</i>&nbsp;        {
+<b class="fc"><i>1876</i>&nbsp;            interiorAreaInteriorLine_(half_edge, id_a, id_b);</b>
+<b class="fc"><i>1877</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorInterior);</b>
+<i>1878</i>&nbsp;        }
+<i>1879</i>&nbsp;
+<b class="fc"><i>1880</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorBoundary])</b>
+<i>1881</i>&nbsp;        {
+<b class="fc"><i>1882</i>&nbsp;            interiorAreaBoundaryLine_(half_edge, id_a, id_b, m_cluster_index_b);</b>
+<b class="fc"><i>1883</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorBoundary);</b>
+<i>1884</i>&nbsp;        }
+<i>1885</i>&nbsp;
+<b class="fc"><i>1886</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorExterior])</b>
+<i>1887</i>&nbsp;        {
+<b class="fc"><i>1888</i>&nbsp;            interiorAreaExteriorLine_(half_edge, id_a, id_b);</b>
+<b class="fc"><i>1889</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorExterior);</b>
+<i>1890</i>&nbsp;        }
+<i>1891</i>&nbsp;
+<b class="fc"><i>1892</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryInterior])</b>
+<i>1893</i>&nbsp;        {
+<b class="fc"><i>1894</i>&nbsp;            boundaryAreaInteriorLine_(half_edge, id_a, id_b, m_cluster_index_b);</b>
+<b class="fc"><i>1895</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryInterior);</b>
+<i>1896</i>&nbsp;        }
+<i>1897</i>&nbsp;
+<b class="fc"><i>1898</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryBoundary])</b>
+<i>1899</i>&nbsp;        {
+<b class="fc"><i>1900</i>&nbsp;            boundaryAreaBoundaryLine_(half_edge, id_a, id_b, m_cluster_index_b);</b>
+<b class="fc"><i>1901</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryBoundary);</b>
+<i>1902</i>&nbsp;        }
+<i>1903</i>&nbsp;
+<b class="fc"><i>1904</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryExterior])</b>
+<i>1905</i>&nbsp;        {
+<b class="fc"><i>1906</i>&nbsp;            boundaryAreaExteriorLine_(half_edge, id_a, id_b);</b>
+<b class="fc"><i>1907</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryExterior);</b>
+<i>1908</i>&nbsp;        }
+<i>1909</i>&nbsp;
+<b class="fc"><i>1910</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorInterior])</b>
+<i>1911</i>&nbsp;        {
+<b class="fc"><i>1912</i>&nbsp;            exteriorAreaInteriorLine_(half_edge, id_a);</b>
+<b class="fc"><i>1913</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.ExteriorInterior);</b>
+<i>1914</i>&nbsp;        }
+<i>1915</i>&nbsp;
+<b class="fc"><i>1916</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorBoundary])</b>
+<i>1917</i>&nbsp;        {
+<b class="fc"><i>1918</i>&nbsp;            exteriorAreaBoundaryLine_(half_edge, id_a, id_b, m_cluster_index_b);</b>
+<b class="fc"><i>1919</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.ExteriorBoundary);</b>
+<i>1920</i>&nbsp;        }
+<i>1921</i>&nbsp;
+<b class="fc"><i>1922</i>&nbsp;        return bRelationKnown;</b>
+<i>1923</i>&nbsp;	}
+<i>1924</i>&nbsp;
+<i>1925</i>&nbsp;	// Invokes the 9 relational predicates of Line vs Line.
+<i>1926</i>&nbsp;	private boolean lineLinePredicates_(int half_edge, int id_a, int id_b) {
+<b class="fc"><i>1927</i>&nbsp;        boolean bRelationKnown = true;</b>
+<i>1928</i>&nbsp;
+<b class="fc"><i>1929</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorInterior])</b>
+<i>1930</i>&nbsp;        {
+<b class="fc"><i>1931</i>&nbsp;            interiorLineInteriorLine_(half_edge, id_a, id_b, m_cluster_index_a, m_cluster_index_b);</b>
+<b class="fc"><i>1932</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorInterior);</b>
+<i>1933</i>&nbsp;        }
+<i>1934</i>&nbsp;
+<b class="fc"><i>1935</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorBoundary])</b>
+<i>1936</i>&nbsp;        {
+<b class="fc"><i>1937</i>&nbsp;            interiorLineBoundaryLine_(half_edge, id_a, id_b, m_cluster_index_a, m_cluster_index_b, MatrixPredicate.InteriorBoundary);</b>
+<b class="fc"><i>1938</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorBoundary);</b>
+<i>1939</i>&nbsp;        }
+<i>1940</i>&nbsp;
+<b class="fc"><i>1941</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorExterior])</b>
+<i>1942</i>&nbsp;        {
+<b class="fc"><i>1943</i>&nbsp;            interiorLineExteriorLine_(half_edge, id_a, id_b, MatrixPredicate.InteriorExterior);</b>
+<b class="fc"><i>1944</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorExterior);</b>
+<i>1945</i>&nbsp;        }
+<i>1946</i>&nbsp;
+<b class="fc"><i>1947</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryInterior])</b>
+<i>1948</i>&nbsp;        {
+<b class="fc"><i>1949</i>&nbsp;            interiorLineBoundaryLine_(half_edge, id_b, id_a, m_cluster_index_b, m_cluster_index_a, MatrixPredicate.BoundaryInterior);</b>
+<b class="fc"><i>1950</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryInterior);</b>
+<i>1951</i>&nbsp;        }
+<i>1952</i>&nbsp;
+<b class="fc"><i>1953</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryBoundary])</b>
+<i>1954</i>&nbsp;        {
+<b class="fc"><i>1955</i>&nbsp;            boundaryLineBoundaryLine_(half_edge, id_a, id_b, m_cluster_index_a, m_cluster_index_b);</b>
+<b class="fc"><i>1956</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryBoundary);</b>
+<i>1957</i>&nbsp;        }
+<i>1958</i>&nbsp;
+<b class="fc"><i>1959</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryExterior])</b>
+<i>1960</i>&nbsp;        {
+<b class="fc"><i>1961</i>&nbsp;            boundaryLineExteriorLine_(half_edge, id_a, id_b, m_cluster_index_a, MatrixPredicate.BoundaryExterior);</b>
+<b class="fc"><i>1962</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryExterior);</b>
+<i>1963</i>&nbsp;        }
+<i>1964</i>&nbsp;
+<b class="fc"><i>1965</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorInterior])</b>
+<i>1966</i>&nbsp;        {
+<b class="fc"><i>1967</i>&nbsp;            interiorLineExteriorLine_(half_edge, id_b, id_a, MatrixPredicate.ExteriorInterior);</b>
+<b class="fc"><i>1968</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.ExteriorInterior);</b>
+<i>1969</i>&nbsp;        }
+<i>1970</i>&nbsp;
+<b class="fc"><i>1971</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorBoundary])</b>
+<i>1972</i>&nbsp;        {
+<b class="fc"><i>1973</i>&nbsp;            boundaryLineExteriorLine_(half_edge, id_b, id_a, m_cluster_index_b, MatrixPredicate.ExteriorBoundary);</b>
+<b class="fc"><i>1974</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.ExteriorBoundary);</b>
+<i>1975</i>&nbsp;        }
+<i>1976</i>&nbsp;
+<b class="fc"><i>1977</i>&nbsp;        return bRelationKnown;</b>
+<i>1978</i>&nbsp;	}
+<i>1979</i>&nbsp;
+<i>1980</i>&nbsp;	// Invokes the 9 relational predicates of area vs Point.
+<i>1981</i>&nbsp;	private boolean areaPointPredicates_(int cluster, int id_a, int id_b) {
+<b class="fc"><i>1982</i>&nbsp;        boolean bRelationKnown = true;</b>
+<i>1983</i>&nbsp;
+<b class="fc"><i>1984</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorInterior])</b>
+<i>1985</i>&nbsp;        {
+<b class="fc"><i>1986</i>&nbsp;            interiorAreaInteriorPoint_(cluster, id_a);</b>
+<b class="fc"><i>1987</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorInterior);</b>
+<i>1988</i>&nbsp;        }
+<i>1989</i>&nbsp;
+<b class="fc"><i>1990</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorExterior])</b>
+<i>1991</i>&nbsp;        {
+<b class="fc"><i>1992</i>&nbsp;            interiorAreaExteriorPoint_(cluster, id_a);</b>
+<b class="fc"><i>1993</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorExterior);</b>
+<i>1994</i>&nbsp;        }
+<i>1995</i>&nbsp;
+<b class="fc"><i>1996</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryInterior])</b>
+<i>1997</i>&nbsp;        {
+<b class="fc"><i>1998</i>&nbsp;            boundaryAreaInteriorPoint_(cluster, id_a, id_b);</b>
+<b class="fc"><i>1999</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryInterior);</b>
+<i>2000</i>&nbsp;        }
+<i>2001</i>&nbsp;
+<b class="fc"><i>2002</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryExterior])</b>
+<i>2003</i>&nbsp;        {
+<b class="fc"><i>2004</i>&nbsp;            boundaryAreaExteriorPoint_(cluster, id_a);</b>
+<b class="fc"><i>2005</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryExterior);</b>
+<i>2006</i>&nbsp;        }
+<i>2007</i>&nbsp;
+<b class="fc"><i>2008</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorInterior])</b>
+<i>2009</i>&nbsp;        {
+<b class="fc"><i>2010</i>&nbsp;            exteriorAreaInteriorPoint_(cluster, id_a);</b>
+<b class="fc"><i>2011</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.ExteriorInterior);</b>
+<i>2012</i>&nbsp;        }
+<i>2013</i>&nbsp;
+<b class="fc"><i>2014</i>&nbsp;        return bRelationKnown;</b>
+<i>2015</i>&nbsp;	}
+<i>2016</i>&nbsp;
+<i>2017</i>&nbsp;	// Invokes the 9 relational predicates of Line vs Point.
+<i>2018</i>&nbsp;	private boolean linePointPredicates_(int cluster, int id_a, int id_b) {
+<b class="fc"><i>2019</i>&nbsp;        boolean bRelationKnown = true;</b>
+<i>2020</i>&nbsp;
+<b class="fc"><i>2021</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorInterior])</b>
+<i>2022</i>&nbsp;        {
+<b class="fc"><i>2023</i>&nbsp;            interiorLineInteriorPoint_(cluster, id_a, id_b, m_cluster_index_a);</b>
+<b class="fc"><i>2024</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorInterior);</b>
+<i>2025</i>&nbsp;        }
+<i>2026</i>&nbsp;
+<b class="fc"><i>2027</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorExterior])</b>
+<i>2028</i>&nbsp;        {
+<b class="fc"><i>2029</i>&nbsp;            interiorLineExteriorPoint_(cluster, id_a, id_b, m_cluster_index_a);</b>
+<b class="fc"><i>2030</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorExterior);</b>
+<i>2031</i>&nbsp;        }
+<i>2032</i>&nbsp;
+<b class="fc"><i>2033</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryInterior])</b>
+<i>2034</i>&nbsp;        {
+<b class="fc"><i>2035</i>&nbsp;            boundaryLineInteriorPoint_(cluster, id_a, id_b, m_cluster_index_a);</b>
+<b class="fc"><i>2036</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryInterior);</b>
+<i>2037</i>&nbsp;        }
+<i>2038</i>&nbsp;
+<b class="fc"><i>2039</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.BoundaryExterior])</b>
+<i>2040</i>&nbsp;        {
+<b class="fc"><i>2041</i>&nbsp;            boundaryLineExteriorPoint_(cluster, id_a, id_b, m_cluster_index_a);</b>
+<b class="fc"><i>2042</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.BoundaryExterior);</b>
+<i>2043</i>&nbsp;        }
+<i>2044</i>&nbsp;
+<b class="fc"><i>2045</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorInterior])</b>
+<i>2046</i>&nbsp;        {
+<b class="fc"><i>2047</i>&nbsp;            exteriorLineInteriorPoint_(cluster, id_a, id_b);</b>
+<b class="fc"><i>2048</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.ExteriorInterior);</b>
+<i>2049</i>&nbsp;        }
+<i>2050</i>&nbsp;
+<b class="fc"><i>2051</i>&nbsp;        return bRelationKnown;</b>
+<i>2052</i>&nbsp;	}
+<i>2053</i>&nbsp;
+<i>2054</i>&nbsp;	// Invokes the 9 relational predicates of Point vs Point.
+<i>2055</i>&nbsp;	private boolean pointPointPredicates_(int cluster, int id_a, int id_b) {
+<b class="fc"><i>2056</i>&nbsp;        boolean bRelationKnown = true;</b>
+<i>2057</i>&nbsp;
+<b class="fc"><i>2058</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorInterior])</b>
+<i>2059</i>&nbsp;        {
+<b class="fc"><i>2060</i>&nbsp;            interiorPointInteriorPoint_(cluster, id_a, id_b);</b>
+<b class="fc"><i>2061</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorInterior);</b>
+<i>2062</i>&nbsp;        }
+<i>2063</i>&nbsp;
+<b class="fc"><i>2064</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.InteriorExterior])</b>
+<i>2065</i>&nbsp;        {
+<b class="fc"><i>2066</i>&nbsp;            interiorPointExteriorPoint_(cluster, id_a, id_b, MatrixPredicate.InteriorExterior);</b>
+<b class="fc"><i>2067</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.InteriorExterior);</b>
+<i>2068</i>&nbsp;        }
+<i>2069</i>&nbsp;
+<b class="fc"><i>2070</i>&nbsp;        if (m_perform_predicates[MatrixPredicate.ExteriorInterior])</b>
+<i>2071</i>&nbsp;        {
+<b class="fc"><i>2072</i>&nbsp;            interiorPointExteriorPoint_(cluster, id_b, id_a, MatrixPredicate.ExteriorInterior);</b>
+<b class="fc"><i>2073</i>&nbsp;            bRelationKnown &amp;= isPredicateKnown_(MatrixPredicate.ExteriorInterior);</b>
+<i>2074</i>&nbsp;        }
+<i>2075</i>&nbsp;
+<b class="fc"><i>2076</i>&nbsp;        return bRelationKnown;</b>
+<i>2077</i>&nbsp;	}
+<i>2078</i>&nbsp;
+<i>2079</i>&nbsp;	// Relational predicate to determine if the interior of area A intersects
+<i>2080</i>&nbsp;	// with the interior of area B.
+<i>2081</i>&nbsp;	private void interiorAreaInteriorArea_(int half_edge, int id_a, int id_b) {
+<b class="fc"><i>2082</i>&nbsp;		if (m_matrix[MatrixPredicate.InteriorInterior] == 2)</b>
+<b class="nc"><i>2083</i>&nbsp;			return;</b>
+<i>2084</i>&nbsp;
+<b class="fc"><i>2085</i>&nbsp;		int faceParentage = m_topo_graph.getHalfEdgeFaceParentage(half_edge);</b>
+<i>2086</i>&nbsp;
+<b class="fc"><i>2087</i>&nbsp;		if ((faceParentage &amp; id_a) != 0 &amp;&amp; (faceParentage &amp; id_b) != 0)</b>
+<b class="fc"><i>2088</i>&nbsp;			m_matrix[MatrixPredicate.InteriorInterior] = 2;</b>
+<b class="fc"><i>2089</i>&nbsp;	}</b>
+<i>2090</i>&nbsp;
+<i>2091</i>&nbsp;	// Relational predicate to determine if the interior of area A intersects
+<i>2092</i>&nbsp;	// with the boundary of area B.
+<i>2093</i>&nbsp;	private void interiorAreaBoundaryArea_(int half_edge, int id_a,
+<i>2094</i>&nbsp;			int predicate) {
+<b class="fc"><i>2095</i>&nbsp;		if (m_matrix[predicate] == 1)</b>
+<b class="nc"><i>2096</i>&nbsp;			return;</b>
+<i>2097</i>&nbsp;
+<b class="fc"><i>2098</i>&nbsp;		int faceParentage = m_topo_graph.getHalfEdgeFaceParentage(half_edge);</b>
+<b class="fc"><i>2099</i>&nbsp;		int twinFaceParentage = m_topo_graph</b>
+<b class="fc"><i>2100</i>&nbsp;				.getHalfEdgeFaceParentage(m_topo_graph</b>
+<b class="fc"><i>2101</i>&nbsp;						.getHalfEdgeTwin(half_edge));</b>
+<i>2102</i>&nbsp;
+<b class="fc"><i>2103</i>&nbsp;		if ((faceParentage &amp; id_a) != 0 &amp;&amp; (twinFaceParentage &amp; id_a) != 0)</b>
+<b class="fc"><i>2104</i>&nbsp;			m_matrix[predicate] = 1;</b>
+<b class="fc"><i>2105</i>&nbsp;	}</b>
+<i>2106</i>&nbsp;
+<i>2107</i>&nbsp;	// Relational predicate to determine if the interior of area A intersects
+<i>2108</i>&nbsp;	// with the exterior of area B.
+<i>2109</i>&nbsp;	private void interiorAreaExteriorArea_(int half_edge, int id_a, int id_b,
+<i>2110</i>&nbsp;			int predicate) {
+<b class="fc"><i>2111</i>&nbsp;		if (m_matrix[predicate] == 2)</b>
+<b class="nc"><i>2112</i>&nbsp;			return;</b>
+<i>2113</i>&nbsp;
+<b class="fc"><i>2114</i>&nbsp;		int faceParentage = m_topo_graph.getHalfEdgeFaceParentage(half_edge);</b>
+<i>2115</i>&nbsp;
+<b class="fc"><i>2116</i>&nbsp;		if ((faceParentage &amp; id_a) != 0 &amp;&amp; (faceParentage &amp; id_b) == 0)</b>
+<b class="fc"><i>2117</i>&nbsp;			m_matrix[predicate] = 2;</b>
+<i>2118</i>&nbsp;
+<b class="fc"><i>2119</i>&nbsp;	}</b>
+<i>2120</i>&nbsp;
+<i>2121</i>&nbsp;	// Relational predicate to determine if the boundary of area A intersects
+<i>2122</i>&nbsp;	// with the boundary of area B.
+<i>2123</i>&nbsp;	private void boundaryAreaBoundaryArea_(int half_edge, int id_a, int id_b) {
+<b class="fc"><i>2124</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryBoundary] == 1)</b>
+<b class="nc"><i>2125</i>&nbsp;			return;</b>
+<i>2126</i>&nbsp;
+<b class="fc"><i>2127</i>&nbsp;		int parentage = m_topo_graph.getHalfEdgeParentage(half_edge);</b>
+<i>2128</i>&nbsp;
+<b class="fc"><i>2129</i>&nbsp;		if ((parentage &amp; id_a) != 0 &amp;&amp; (parentage &amp; id_b) != 0) {</b>
+<b class="fc"><i>2130</i>&nbsp;			m_matrix[MatrixPredicate.BoundaryBoundary] = 1;</b>
+<b class="fc"><i>2131</i>&nbsp;			return;</b>
+<i>2132</i>&nbsp;		}
+<i>2133</i>&nbsp;
+<b class="fc"><i>2134</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryBoundary] != 0) {</b>
+<b class="fc"><i>2135</i>&nbsp;			if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2136</i>&nbsp;					.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2137</i>&nbsp;					m_visited_index) != 1) {
+<b class="fc"><i>2138</i>&nbsp;				int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2139</i>&nbsp;				int clusterParentage = m_topo_graph</b>
+<b class="fc"><i>2140</i>&nbsp;						.getClusterParentage(cluster);</b>
+<i>2141</i>&nbsp;
+<b class="fc"><i>2142</i>&nbsp;				if ((clusterParentage &amp; id_a) != 0</b>
+<i>2143</i>&nbsp;						&amp;&amp; (clusterParentage &amp; id_b) != 0) {
+<b class="fc"><i>2144</i>&nbsp;					m_matrix[MatrixPredicate.BoundaryBoundary] = 0;</b>
+<i>2145</i>&nbsp;				}
+<i>2146</i>&nbsp;			}
+<i>2147</i>&nbsp;		}
+<b class="fc"><i>2148</i>&nbsp;	}</b>
+<i>2149</i>&nbsp;
+<i>2150</i>&nbsp;	// Relational predicate to determine if the boundary of area A intersects
+<i>2151</i>&nbsp;	// with the exterior of area B.
+<i>2152</i>&nbsp;	private void boundaryAreaExteriorArea_(int half_edge, int id_a, int id_b,
+<i>2153</i>&nbsp;			int predicate) {
+<b class="fc"><i>2154</i>&nbsp;		if (m_matrix[predicate] == 1)</b>
+<b class="nc"><i>2155</i>&nbsp;			return;</b>
+<i>2156</i>&nbsp;
+<b class="fc"><i>2157</i>&nbsp;		int faceParentage = m_topo_graph.getHalfEdgeFaceParentage(half_edge);</b>
+<b class="fc"><i>2158</i>&nbsp;		int twinFaceParentage = m_topo_graph</b>
+<b class="fc"><i>2159</i>&nbsp;				.getHalfEdgeFaceParentage(m_topo_graph</b>
+<b class="fc"><i>2160</i>&nbsp;						.getHalfEdgeTwin(half_edge));</b>
+<i>2161</i>&nbsp;
+<b class="fc"><i>2162</i>&nbsp;		if ((faceParentage &amp; id_b) == 0 &amp;&amp; (twinFaceParentage &amp; id_b) == 0)</b>
+<b class="fc"><i>2163</i>&nbsp;			m_matrix[predicate] = 1;</b>
+<b class="fc"><i>2164</i>&nbsp;	}</b>
+<i>2165</i>&nbsp;
+<i>2166</i>&nbsp;	// Relational predicate to determine if the interior of area A intersects
+<i>2167</i>&nbsp;	// with the interior of Line B.
+<i>2168</i>&nbsp;	private void interiorAreaInteriorLine_(int half_edge, int id_a, int id_b) {
+<b class="fc"><i>2169</i>&nbsp;		if (m_matrix[MatrixPredicate.InteriorInterior] == 1)</b>
+<b class="nc"><i>2170</i>&nbsp;			return;</b>
+<i>2171</i>&nbsp;
+<b class="fc"><i>2172</i>&nbsp;		int faceParentage = m_topo_graph.getHalfEdgeFaceParentage(half_edge);</b>
+<b class="fc"><i>2173</i>&nbsp;		int twinFaceParentage = m_topo_graph</b>
+<b class="fc"><i>2174</i>&nbsp;				.getHalfEdgeFaceParentage(m_topo_graph</b>
+<b class="fc"><i>2175</i>&nbsp;						.getHalfEdgeTwin(half_edge));</b>
+<i>2176</i>&nbsp;
+<b class="fc"><i>2177</i>&nbsp;		if ((faceParentage &amp; id_a) != 0 &amp;&amp; (twinFaceParentage &amp; id_a) != 0)</b>
+<b class="fc"><i>2178</i>&nbsp;			m_matrix[MatrixPredicate.InteriorInterior] = 1;</b>
+<b class="fc"><i>2179</i>&nbsp;	}</b>
+<i>2180</i>&nbsp;
+<i>2181</i>&nbsp;	// Relational predicate to determine if the interior of area A intersects
+<i>2182</i>&nbsp;	// with the boundary of Line B.
+<i>2183</i>&nbsp;	private void interiorAreaBoundaryLine_(int half_edge, int id_a, int id_b,
+<i>2184</i>&nbsp;			int cluster_index_b) {
+<b class="fc"><i>2185</i>&nbsp;		if (m_matrix[MatrixPredicate.InteriorBoundary] == 0)</b>
+<b class="nc"><i>2186</i>&nbsp;			return;</b>
+<i>2187</i>&nbsp;
+<b class="fc"><i>2188</i>&nbsp;		if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2189</i>&nbsp;				.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2190</i>&nbsp;				m_visited_index) != 1) {
+<b class="fc"><i>2191</i>&nbsp;			int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2192</i>&nbsp;			int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2193</i>&nbsp;
+<b class="fc"><i>2194</i>&nbsp;			if ((clusterParentage &amp; id_a) == 0) {</b>
+<b class="fc"><i>2195</i>&nbsp;				int faceParentage = m_topo_graph</b>
+<b class="fc"><i>2196</i>&nbsp;						.getHalfEdgeFaceParentage(half_edge);</b>
+<i>2197</i>&nbsp;
+<b class="fc"><i>2198</i>&nbsp;				if ((faceParentage &amp; id_a) != 0) {</b>
+<b class="fc"><i>2199</i>&nbsp;					int index = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2200</i>&nbsp;							cluster_index_b);
+<i>2201</i>&nbsp;
+<b class="fc"><i>2202</i>&nbsp;					if ((clusterParentage &amp; id_b) != 0 &amp;&amp; (index % 2 != 0)) {</b>
+<b class="fc"><i>2203</i>&nbsp;						assert (index != -1);</b>
+<b class="fc"><i>2204</i>&nbsp;						m_matrix[MatrixPredicate.InteriorBoundary] = 0;</b>
+<i>2205</i>&nbsp;					}
+<i>2206</i>&nbsp;				}
+<i>2207</i>&nbsp;			}
+<i>2208</i>&nbsp;		}
+<b class="fc"><i>2209</i>&nbsp;	}</b>
+<i>2210</i>&nbsp;
+<i>2211</i>&nbsp;    private void interiorAreaExteriorLine_(int half_edge, int id_a, int id_b)
+<i>2212</i>&nbsp;    {
+<b class="fc"><i>2213</i>&nbsp;        if (m_matrix[MatrixPredicate.InteriorExterior] == 2)</b>
+<b class="nc"><i>2214</i>&nbsp;            return;</b>
+<i>2215</i>&nbsp;
+<b class="fc"><i>2216</i>&nbsp;        int half_edge_parentage = m_topo_graph.getHalfEdgeParentage(half_edge);</b>
+<i>2217</i>&nbsp;
+<b class="fc"><i>2218</i>&nbsp;        if ((half_edge_parentage &amp; id_a) != 0)</b>
+<i>2219</i>&nbsp;        {//half edge of polygon
+<b class="fc"><i>2220</i>&nbsp;            m_matrix[MatrixPredicate.InteriorExterior] = 2;</b>
+<i>2221</i>&nbsp;        }
+<b class="fc"><i>2222</i>&nbsp;    }</b>
+<i>2223</i>&nbsp;
+<i>2224</i>&nbsp;	// Relational predicate to determine if the boundary of area A intersects
+<i>2225</i>&nbsp;	// with the interior of Line B.
+<i>2226</i>&nbsp;	private void boundaryAreaInteriorLine_(int half_edge, int id_a, int id_b,
+<i>2227</i>&nbsp;			int cluster_index_b) {
+<b class="fc"><i>2228</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryInterior] == 1)</b>
+<b class="nc"><i>2229</i>&nbsp;			return;</b>
+<i>2230</i>&nbsp;
+<b class="fc"><i>2231</i>&nbsp;		int parentage = m_topo_graph.getHalfEdgeParentage(half_edge);</b>
+<i>2232</i>&nbsp;
+<b class="fc"><i>2233</i>&nbsp;		if ((parentage &amp; id_a) != 0 &amp;&amp; (parentage &amp; id_b) != 0) {</b>
+<b class="fc"><i>2234</i>&nbsp;			m_matrix[MatrixPredicate.BoundaryInterior] = 1;</b>
+<b class="fc"><i>2235</i>&nbsp;			return;</b>
+<i>2236</i>&nbsp;		}
+<i>2237</i>&nbsp;
+<b class="fc"><i>2238</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryInterior] != 0) {</b>
+<b class="fc"><i>2239</i>&nbsp;			if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2240</i>&nbsp;					.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2241</i>&nbsp;					m_visited_index) != 1) {
+<b class="fc"><i>2242</i>&nbsp;				int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2243</i>&nbsp;				int clusterParentage = m_topo_graph</b>
+<b class="fc"><i>2244</i>&nbsp;						.getClusterParentage(cluster);</b>
+<i>2245</i>&nbsp;
+<b class="fc"><i>2246</i>&nbsp;				if ((clusterParentage &amp; id_a) != 0) {</b>
+<b class="fc"><i>2247</i>&nbsp;					int index = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2248</i>&nbsp;							cluster_index_b);
+<i>2249</i>&nbsp;
+<b class="fc"><i>2250</i>&nbsp;					if ((clusterParentage &amp; id_b) != 0 &amp;&amp; (index % 2 == 0)) {</b>
+<b class="fc"><i>2251</i>&nbsp;						assert (index != -1);</b>
+<b class="fc"><i>2252</i>&nbsp;						m_matrix[MatrixPredicate.BoundaryInterior] = 0;</b>
+<i>2253</i>&nbsp;					}
+<i>2254</i>&nbsp;				}
+<i>2255</i>&nbsp;			}
+<i>2256</i>&nbsp;		}
+<b class="fc"><i>2257</i>&nbsp;	}</b>
+<i>2258</i>&nbsp;
+<i>2259</i>&nbsp;	// Relational predicate to determine if the boundary of area A intersects
+<i>2260</i>&nbsp;	// with the boundary of Line B.
+<i>2261</i>&nbsp;	private void boundaryAreaBoundaryLine_(int half_edge, int id_a, int id_b,
+<i>2262</i>&nbsp;			int cluster_index_b) {
+<b class="fc"><i>2263</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryBoundary] == 0)</b>
+<b class="nc"><i>2264</i>&nbsp;			return;</b>
+<i>2265</i>&nbsp;
+<b class="fc"><i>2266</i>&nbsp;		if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2267</i>&nbsp;				.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2268</i>&nbsp;				m_visited_index) != 1) {
+<b class="fc"><i>2269</i>&nbsp;			int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2270</i>&nbsp;			int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2271</i>&nbsp;
+<b class="fc"><i>2272</i>&nbsp;			if ((clusterParentage &amp; id_a) != 0) {</b>
+<b class="fc"><i>2273</i>&nbsp;				int index = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2274</i>&nbsp;						cluster_index_b);
+<i>2275</i>&nbsp;
+<b class="fc"><i>2276</i>&nbsp;				if ((clusterParentage &amp; id_b) != 0 &amp;&amp; (index % 2 != 0)) {</b>
+<b class="fc"><i>2277</i>&nbsp;					assert (index != -1);</b>
+<b class="fc"><i>2278</i>&nbsp;					m_matrix[MatrixPredicate.BoundaryBoundary] = 0;</b>
+<i>2279</i>&nbsp;				}
+<i>2280</i>&nbsp;			}
+<i>2281</i>&nbsp;		}
+<b class="fc"><i>2282</i>&nbsp;	}</b>
+<i>2283</i>&nbsp;
+<i>2284</i>&nbsp;	// Relational predicate to determine if the boundary of area A intersects
+<i>2285</i>&nbsp;	// with the exterior of Line B.
+<i>2286</i>&nbsp;	private void boundaryAreaExteriorLine_(int half_edge, int id_a, int id_b) {
+<b class="fc"><i>2287</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryExterior] == 1)</b>
+<b class="nc"><i>2288</i>&nbsp;			return;</b>
+<i>2289</i>&nbsp;
+<b class="fc"><i>2290</i>&nbsp;		int parentage = m_topo_graph.getHalfEdgeParentage(half_edge);</b>
+<i>2291</i>&nbsp;
+<b class="fc"><i>2292</i>&nbsp;		if ((parentage &amp; id_a) != 0 &amp;&amp; (parentage &amp; id_b) == 0)</b>
+<b class="fc"><i>2293</i>&nbsp;			m_matrix[MatrixPredicate.BoundaryExterior] = 1;</b>
+<i>2294</i>&nbsp;
+<b class="fc"><i>2295</i>&nbsp;	}</b>
+<i>2296</i>&nbsp;
+<i>2297</i>&nbsp;	// Relational predicate to determine if the exterior of area A intersects
+<i>2298</i>&nbsp;	// with the interior of Line B.
+<i>2299</i>&nbsp;	private void exteriorAreaInteriorLine_(int half_edge, int id_a) {
+<b class="fc"><i>2300</i>&nbsp;		if (m_matrix[MatrixPredicate.ExteriorInterior] == 1)</b>
+<b class="nc"><i>2301</i>&nbsp;			return;</b>
+<i>2302</i>&nbsp;
+<b class="fc"><i>2303</i>&nbsp;		int faceParentage = m_topo_graph.getHalfEdgeFaceParentage(half_edge);</b>
+<b class="fc"><i>2304</i>&nbsp;		int twinFaceParentage = m_topo_graph</b>
+<b class="fc"><i>2305</i>&nbsp;				.getHalfEdgeFaceParentage(m_topo_graph</b>
+<b class="fc"><i>2306</i>&nbsp;						.getHalfEdgeTwin(half_edge));</b>
+<i>2307</i>&nbsp;
+<b class="fc"><i>2308</i>&nbsp;		if ((faceParentage &amp; id_a) == 0 &amp;&amp; (twinFaceParentage &amp; id_a) == 0)</b>
+<b class="fc"><i>2309</i>&nbsp;			m_matrix[MatrixPredicate.ExteriorInterior] = 1;</b>
+<b class="fc"><i>2310</i>&nbsp;	}</b>
+<i>2311</i>&nbsp;
+<i>2312</i>&nbsp;	// Relational predicate to determine if the exterior of area A intersects
+<i>2313</i>&nbsp;	// with the boundary of Line B.
+<i>2314</i>&nbsp;	private void exteriorAreaBoundaryLine_(int half_edge, int id_a, int id_b,
+<i>2315</i>&nbsp;			int cluster_index_b) {
+<b class="fc"><i>2316</i>&nbsp;		if (m_matrix[MatrixPredicate.ExteriorBoundary] == 0)</b>
+<b class="nc"><i>2317</i>&nbsp;			return;</b>
+<i>2318</i>&nbsp;
+<b class="fc"><i>2319</i>&nbsp;		if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2320</i>&nbsp;				.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2321</i>&nbsp;				m_visited_index) != 1) {
+<b class="fc"><i>2322</i>&nbsp;			int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2323</i>&nbsp;			int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2324</i>&nbsp;
+<b class="fc"><i>2325</i>&nbsp;			if ((clusterParentage &amp; id_a) == 0) {</b>
+<b class="fc"><i>2326</i>&nbsp;				int faceParentage = m_topo_graph</b>
+<b class="fc"><i>2327</i>&nbsp;						.getHalfEdgeFaceParentage(half_edge);</b>
+<i>2328</i>&nbsp;
+<b class="fc"><i>2329</i>&nbsp;				if ((faceParentage &amp; id_a) == 0) {</b>
+<b class="fc"><i>2330</i>&nbsp;					assert ((m_topo_graph.getHalfEdgeParentage(m_topo_graph</b>
+<b class="fc"><i>2331</i>&nbsp;							.getHalfEdgeTwin(half_edge)) &amp; id_a) == 0);</b>
+<i>2332</i>&nbsp;
+<b class="fc"><i>2333</i>&nbsp;					int index = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2334</i>&nbsp;							cluster_index_b);
+<i>2335</i>&nbsp;
+<b class="fc"><i>2336</i>&nbsp;					if ((clusterParentage &amp; id_b) != 0 &amp;&amp; (index % 2 != 0)) {</b>
+<b class="fc"><i>2337</i>&nbsp;						assert (index != -1);</b>
+<b class="fc"><i>2338</i>&nbsp;						m_matrix[MatrixPredicate.ExteriorBoundary] = 0;</b>
+<i>2339</i>&nbsp;					}
+<i>2340</i>&nbsp;				}
+<i>2341</i>&nbsp;			}
+<i>2342</i>&nbsp;		}
+<b class="fc"><i>2343</i>&nbsp;	}</b>
+<i>2344</i>&nbsp;
+<i>2345</i>&nbsp;	// Relational predicate to determine if the interior of Line A intersects
+<i>2346</i>&nbsp;	// with the interior of Line B.
+<i>2347</i>&nbsp;	private void interiorLineInteriorLine_(int half_edge, int id_a, int id_b,
+<i>2348</i>&nbsp;			int cluster_index_a, int cluster_index_b) {
+<b class="fc"><i>2349</i>&nbsp;		if (m_matrix[MatrixPredicate.InteriorInterior] == 1)</b>
+<b class="nc"><i>2350</i>&nbsp;			return;</b>
+<i>2351</i>&nbsp;
+<b class="fc"><i>2352</i>&nbsp;		int parentage = m_topo_graph.getHalfEdgeParentage(half_edge);</b>
+<i>2353</i>&nbsp;
+<b class="fc"><i>2354</i>&nbsp;		if ((parentage &amp; id_a) != 0 &amp;&amp; (parentage &amp; id_b) != 0) {</b>
+<b class="fc"><i>2355</i>&nbsp;			m_matrix[MatrixPredicate.InteriorInterior] = 1;</b>
+<b class="fc"><i>2356</i>&nbsp;			return;</b>
+<i>2357</i>&nbsp;		}
+<i>2358</i>&nbsp;
+<b class="fc"><i>2359</i>&nbsp;		if (m_matrix[MatrixPredicate.InteriorInterior] != 0) {</b>
+<b class="fc"><i>2360</i>&nbsp;			if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2361</i>&nbsp;					.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2362</i>&nbsp;					m_visited_index) != 1) {
+<b class="fc"><i>2363</i>&nbsp;				int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2364</i>&nbsp;				int clusterParentage = m_topo_graph</b>
+<b class="fc"><i>2365</i>&nbsp;						.getClusterParentage(cluster);</b>
+<i>2366</i>&nbsp;
+<b class="fc"><i>2367</i>&nbsp;				if ((clusterParentage &amp; id_a) != 0</b>
+<i>2368</i>&nbsp;						&amp;&amp; (clusterParentage &amp; id_b) != 0) {
+<b class="fc"><i>2369</i>&nbsp;					int index_a = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2370</i>&nbsp;							cluster_index_a);
+<b class="fc"><i>2371</i>&nbsp;					int index_b = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2372</i>&nbsp;							cluster_index_b);
+<b class="fc"><i>2373</i>&nbsp;					assert (index_a != -1);</b>
+<b class="fc"><i>2374</i>&nbsp;					assert (index_b != -1);</b>
+<i>2375</i>&nbsp;
+<b class="fc"><i>2376</i>&nbsp;					if ((index_a % 2 == 0) &amp;&amp; (index_b % 2 == 0)) {</b>
+<b class="fc"><i>2377</i>&nbsp;						assert ((m_topo_graph.getClusterParentage(cluster) &amp; id_a) != 0 &amp;&amp; (m_topo_graph</b>
+<b class="fc"><i>2378</i>&nbsp;								.getClusterParentage(cluster) &amp; id_b) != 0);</b>
+<b class="fc"><i>2379</i>&nbsp;						m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<i>2380</i>&nbsp;					}
+<i>2381</i>&nbsp;				}
+<i>2382</i>&nbsp;			}
+<i>2383</i>&nbsp;		}
+<b class="fc"><i>2384</i>&nbsp;	}</b>
+<i>2385</i>&nbsp;
+<i>2386</i>&nbsp;	// Relational predicate to determine of the interior of LineA intersects
+<i>2387</i>&nbsp;	// with the boundary of Line B.
+<i>2388</i>&nbsp;	private void interiorLineBoundaryLine_(int half_edge, int id_a, int id_b,
+<i>2389</i>&nbsp;			int cluster_index_a, int cluster_index_b, int predicate) {
+<b class="fc"><i>2390</i>&nbsp;		if (m_matrix[predicate] == 0)</b>
+<b class="nc"><i>2391</i>&nbsp;			return;</b>
+<i>2392</i>&nbsp;
+<b class="fc"><i>2393</i>&nbsp;		if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2394</i>&nbsp;				.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2395</i>&nbsp;				m_visited_index) != 1) {
+<b class="fc"><i>2396</i>&nbsp;			int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2397</i>&nbsp;			int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2398</i>&nbsp;
+<b class="fc"><i>2399</i>&nbsp;			if ((clusterParentage &amp; id_a) != 0</b>
+<i>2400</i>&nbsp;					&amp;&amp; (clusterParentage &amp; id_b) != 0) {
+<b class="fc"><i>2401</i>&nbsp;				int index_a = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2402</i>&nbsp;						cluster_index_a);
+<b class="fc"><i>2403</i>&nbsp;				int index_b = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2404</i>&nbsp;						cluster_index_b);
+<b class="fc"><i>2405</i>&nbsp;				assert (index_a != -1);</b>
+<b class="fc"><i>2406</i>&nbsp;				assert (index_b != -1);</b>
+<i>2407</i>&nbsp;
+<b class="fc"><i>2408</i>&nbsp;				if ((index_a % 2 == 0) &amp;&amp; (index_b % 2 != 0)) {</b>
+<b class="fc"><i>2409</i>&nbsp;					assert ((m_topo_graph.getClusterParentage(cluster) &amp; id_a) != 0 &amp;&amp; (m_topo_graph</b>
+<b class="fc"><i>2410</i>&nbsp;							.getClusterParentage(cluster) &amp; id_b) != 0);</b>
+<b class="fc"><i>2411</i>&nbsp;					m_matrix[predicate] = 0;</b>
+<i>2412</i>&nbsp;				}
+<i>2413</i>&nbsp;			}
+<i>2414</i>&nbsp;		}
+<b class="fc"><i>2415</i>&nbsp;	}</b>
+<i>2416</i>&nbsp;
+<i>2417</i>&nbsp;	// Relational predicate to determine if the interior of Line A intersects
+<i>2418</i>&nbsp;	// with the exterior of Line B.
+<i>2419</i>&nbsp;	private void interiorLineExteriorLine_(int half_edge, int id_a, int id_b,
+<i>2420</i>&nbsp;			int predicate) {
+<b class="fc"><i>2421</i>&nbsp;		if (m_matrix[predicate] == 1)</b>
+<b class="nc"><i>2422</i>&nbsp;			return;</b>
+<i>2423</i>&nbsp;
+<b class="fc"><i>2424</i>&nbsp;		int parentage = m_topo_graph.getHalfEdgeParentage(half_edge);</b>
+<i>2425</i>&nbsp;
+<b class="fc"><i>2426</i>&nbsp;		if ((parentage &amp; id_a) != 0 &amp;&amp; (parentage &amp; id_b) == 0)</b>
+<b class="fc"><i>2427</i>&nbsp;			m_matrix[predicate] = 1;</b>
+<b class="fc"><i>2428</i>&nbsp;	}</b>
+<i>2429</i>&nbsp;
+<i>2430</i>&nbsp;	// Relational predicate to determine if the boundary of Line A intersects
+<i>2431</i>&nbsp;	// with the boundary of Line B.
+<i>2432</i>&nbsp;	private void boundaryLineBoundaryLine_(int half_edge, int id_a, int id_b,
+<i>2433</i>&nbsp;			int cluster_index_a, int cluster_index_b) {
+<b class="fc"><i>2434</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryBoundary] == 0)</b>
+<b class="nc"><i>2435</i>&nbsp;			return;</b>
+<i>2436</i>&nbsp;
+<b class="fc"><i>2437</i>&nbsp;		if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2438</i>&nbsp;				.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2439</i>&nbsp;				m_visited_index) != 1) {
+<b class="fc"><i>2440</i>&nbsp;			int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2441</i>&nbsp;			int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2442</i>&nbsp;
+<b class="fc"><i>2443</i>&nbsp;			if ((clusterParentage &amp; id_a) != 0</b>
+<i>2444</i>&nbsp;					&amp;&amp; (clusterParentage &amp; id_b) != 0) {
+<b class="fc"><i>2445</i>&nbsp;				int index_a = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2446</i>&nbsp;						cluster_index_a);
+<b class="fc"><i>2447</i>&nbsp;				int index_b = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2448</i>&nbsp;						cluster_index_b);
+<b class="fc"><i>2449</i>&nbsp;				assert (index_a != -1);</b>
+<b class="fc"><i>2450</i>&nbsp;				assert (index_b != -1);</b>
+<i>2451</i>&nbsp;
+<b class="fc"><i>2452</i>&nbsp;				if ((index_a % 2 != 0) &amp;&amp; (index_b % 2 != 0)) {</b>
+<b class="fc"><i>2453</i>&nbsp;					assert ((m_topo_graph.getClusterParentage(cluster) &amp; id_a) != 0 &amp;&amp; (m_topo_graph</b>
+<b class="fc"><i>2454</i>&nbsp;							.getClusterParentage(cluster) &amp; id_b) != 0);</b>
+<b class="fc"><i>2455</i>&nbsp;					m_matrix[MatrixPredicate.BoundaryBoundary] = 0;</b>
+<i>2456</i>&nbsp;				}
+<i>2457</i>&nbsp;			}
+<i>2458</i>&nbsp;		}
+<b class="fc"><i>2459</i>&nbsp;	}</b>
+<i>2460</i>&nbsp;
+<i>2461</i>&nbsp;	// Relational predicate to determine if the boundary of Line A intersects
+<i>2462</i>&nbsp;	// with the exterior of Line B.
+<i>2463</i>&nbsp;	private void boundaryLineExteriorLine_(int half_edge, int id_a, int id_b,
+<i>2464</i>&nbsp;			int cluster_index_a, int predicate) {
+<b class="fc"><i>2465</i>&nbsp;		if (m_matrix[predicate] == 0)</b>
+<b class="nc"><i>2466</i>&nbsp;			return;</b>
+<i>2467</i>&nbsp;
+<b class="fc"><i>2468</i>&nbsp;		if (m_topo_graph.getHalfEdgeUserIndex(m_topo_graph</b>
+<b class="fc"><i>2469</i>&nbsp;				.getHalfEdgePrev(m_topo_graph.getHalfEdgeTwin(half_edge)),</b>
+<i>2470</i>&nbsp;				m_visited_index) != 1) {
+<b class="fc"><i>2471</i>&nbsp;			int cluster = m_topo_graph.getHalfEdgeTo(half_edge);</b>
+<b class="fc"><i>2472</i>&nbsp;			int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2473</i>&nbsp;
+<b class="fc"><i>2474</i>&nbsp;			if ((clusterParentage &amp; id_b) == 0) {</b>
+<b class="fc"><i>2475</i>&nbsp;				int index = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2476</i>&nbsp;						cluster_index_a);
+<b class="fc"><i>2477</i>&nbsp;				assert (index != -1);</b>
+<i>2478</i>&nbsp;
+<b class="fc"><i>2479</i>&nbsp;				if (index % 2 != 0) {</b>
+<b class="fc"><i>2480</i>&nbsp;					assert ((m_topo_graph.getClusterParentage(cluster) &amp; id_a) != 0);</b>
+<b class="fc"><i>2481</i>&nbsp;					m_matrix[predicate] = 0;</b>
+<i>2482</i>&nbsp;				}
+<i>2483</i>&nbsp;			}
+<i>2484</i>&nbsp;		}
+<b class="fc"><i>2485</i>&nbsp;	}</b>
+<i>2486</i>&nbsp;
+<i>2487</i>&nbsp;	// Relational predicate to determine if the interior of area A intersects
+<i>2488</i>&nbsp;	// with the interior of Point B.
+<i>2489</i>&nbsp;	private void interiorAreaInteriorPoint_(int cluster, int id_a) {
+<b class="fc"><i>2490</i>&nbsp;		if (m_matrix[MatrixPredicate.InteriorInterior] == 0)</b>
+<b class="nc"><i>2491</i>&nbsp;			return;</b>
+<i>2492</i>&nbsp;
+<b class="fc"><i>2493</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2494</i>&nbsp;
+<b class="fc"><i>2495</i>&nbsp;		if ((clusterParentage &amp; id_a) == 0) {</b>
+<b class="fc"><i>2496</i>&nbsp;			int chain = m_topo_graph.getClusterChain(cluster);</b>
+<b class="fc"><i>2497</i>&nbsp;			int chainParentage = m_topo_graph.getChainParentage(chain);</b>
+<i>2498</i>&nbsp;
+<b class="fc"><i>2499</i>&nbsp;			if ((chainParentage &amp; id_a) != 0) {</b>
+<b class="fc"><i>2500</i>&nbsp;				m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<i>2501</i>&nbsp;			}
+<i>2502</i>&nbsp;		}
+<b class="fc"><i>2503</i>&nbsp;	}</b>
+<i>2504</i>&nbsp;
+<i>2505</i>&nbsp;    private void interiorAreaExteriorPoint_(int cluster, int id_a)
+<i>2506</i>&nbsp;    {
+<b class="fc"><i>2507</i>&nbsp;        if (m_matrix[MatrixPredicate.InteriorExterior] == 2)</b>
+<b class="nc"><i>2508</i>&nbsp;            return;</b>
+<i>2509</i>&nbsp;
+<b class="fc"><i>2510</i>&nbsp;        int cluster_parentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2511</i>&nbsp;
+<b class="fc"><i>2512</i>&nbsp;        if ((cluster_parentage &amp; id_a) != 0)</b>
+<i>2513</i>&nbsp;        {
+<b class="fc"><i>2514</i>&nbsp;            m_matrix[MatrixPredicate.InteriorExterior] = 2;</b>
+<i>2515</i>&nbsp;        }
+<b class="fc"><i>2516</i>&nbsp;    }</b>
+<i>2517</i>&nbsp;
+<i>2518</i>&nbsp;	// Relational predicate to determine if the boundary of area A intersects
+<i>2519</i>&nbsp;	// with the interior of Point B.
+<i>2520</i>&nbsp;	private void boundaryAreaInteriorPoint_(int cluster, int id_a, int id_b) {
+<b class="fc"><i>2521</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryInterior] == 0)</b>
+<b class="nc"><i>2522</i>&nbsp;			return;</b>
+<i>2523</i>&nbsp;
+<b class="fc"><i>2524</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2525</i>&nbsp;
+<b class="fc"><i>2526</i>&nbsp;		if ((clusterParentage &amp; id_a) != 0 &amp;&amp; (clusterParentage &amp; id_b) != 0) {</b>
+<b class="fc"><i>2527</i>&nbsp;			m_matrix[MatrixPredicate.BoundaryInterior] = 0;</b>
+<i>2528</i>&nbsp;		}
+<b class="fc"><i>2529</i>&nbsp;	}</b>
+<i>2530</i>&nbsp;
+<i>2531</i>&nbsp;    private void boundaryAreaExteriorPoint_(int cluster, int id_a)
+<i>2532</i>&nbsp;    {
+<b class="fc"><i>2533</i>&nbsp;        if (m_matrix[MatrixPredicate.BoundaryExterior] == 1)</b>
+<b class="nc"><i>2534</i>&nbsp;            return;</b>
+<i>2535</i>&nbsp;
+<b class="fc"><i>2536</i>&nbsp;        int cluster_parentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2537</i>&nbsp;
+<b class="fc"><i>2538</i>&nbsp;        if ((cluster_parentage &amp; id_a) != 0)</b>
+<i>2539</i>&nbsp;        {
+<b class="fc"><i>2540</i>&nbsp;            m_matrix[MatrixPredicate.BoundaryExterior] = 1;</b>
+<i>2541</i>&nbsp;        }
+<b class="fc"><i>2542</i>&nbsp;    }</b>
+<i>2543</i>&nbsp;
+<i>2544</i>&nbsp;	// Relational predicate to determine if the exterior of area A intersects
+<i>2545</i>&nbsp;	// with the interior of Point B.
+<i>2546</i>&nbsp;	private void exteriorAreaInteriorPoint_(int cluster, int id_a) {
+<b class="fc"><i>2547</i>&nbsp;		if (m_matrix[MatrixPredicate.ExteriorInterior] == 0)</b>
+<b class="nc"><i>2548</i>&nbsp;			return;</b>
+<i>2549</i>&nbsp;
+<b class="fc"><i>2550</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2551</i>&nbsp;
+<b class="fc"><i>2552</i>&nbsp;		if ((clusterParentage &amp; id_a) == 0) {</b>
+<b class="fc"><i>2553</i>&nbsp;			int chain = m_topo_graph.getClusterChain(cluster);</b>
+<b class="fc"><i>2554</i>&nbsp;			int chainParentage = m_topo_graph.getChainParentage(chain);</b>
+<i>2555</i>&nbsp;
+<b class="fc"><i>2556</i>&nbsp;			if ((chainParentage &amp; id_a) == 0) {</b>
+<b class="fc"><i>2557</i>&nbsp;				m_matrix[MatrixPredicate.ExteriorInterior] = 0;</b>
+<i>2558</i>&nbsp;			}
+<i>2559</i>&nbsp;		}
+<b class="fc"><i>2560</i>&nbsp;	}</b>
+<i>2561</i>&nbsp;
+<i>2562</i>&nbsp;	// Relational predicate to determine if the interior of Line A intersects
+<i>2563</i>&nbsp;	// with the interior of Point B.
+<i>2564</i>&nbsp;	private void interiorLineInteriorPoint_(int cluster, int id_a, int id_b,
+<i>2565</i>&nbsp;			int cluster_index_a) {
+<b class="fc"><i>2566</i>&nbsp;		if (m_matrix[MatrixPredicate.InteriorInterior] == 0)</b>
+<b class="nc"><i>2567</i>&nbsp;			return;</b>
+<i>2568</i>&nbsp;
+<b class="fc"><i>2569</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2570</i>&nbsp;
+<b class="fc"><i>2571</i>&nbsp;		if ((clusterParentage &amp; id_a) != 0 &amp;&amp; (clusterParentage &amp; id_b) != 0) {</b>
+<b class="fc"><i>2572</i>&nbsp;			int index = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2573</i>&nbsp;					cluster_index_a);
+<i>2574</i>&nbsp;
+<b class="fc"><i>2575</i>&nbsp;			if (index % 2 == 0) {</b>
+<b class="fc"><i>2576</i>&nbsp;				m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<i>2577</i>&nbsp;			}
+<i>2578</i>&nbsp;		}
+<b class="fc"><i>2579</i>&nbsp;	}</b>
+<i>2580</i>&nbsp;
+<i>2581</i>&nbsp;    private void interiorLineExteriorPoint_(int cluster, int id_a, int id_b, int cluster_index_a)
+<i>2582</i>&nbsp;    {
+<b class="fc"><i>2583</i>&nbsp;        if (m_matrix[MatrixPredicate.InteriorExterior] == 1)</b>
+<b class="nc"><i>2584</i>&nbsp;            return;</b>
+<i>2585</i>&nbsp;
+<b class="fc"><i>2586</i>&nbsp;        int half_edge_a = m_topo_graph.getClusterHalfEdge(cluster);</b>
+<i>2587</i>&nbsp;
+<b class="fc"><i>2588</i>&nbsp;        if (half_edge_a != -1)</b>
+<i>2589</i>&nbsp;        {
+<b class="fc"><i>2590</i>&nbsp;            m_matrix[MatrixPredicate.InteriorExterior] = 1;</b>
+<b class="fc"><i>2591</i>&nbsp;            return;</b>
+<i>2592</i>&nbsp;        }
+<i>2593</i>&nbsp;
+<b class="fc"><i>2594</i>&nbsp;        if (m_matrix[MatrixPredicate.InteriorExterior] != 0)</b>
+<i>2595</i>&nbsp;        {
+<b class="fc"><i>2596</i>&nbsp;            int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2597</i>&nbsp;
+<b class="fc"><i>2598</i>&nbsp;            if ((clusterParentage &amp; id_b) == 0)</b>
+<i>2599</i>&nbsp;            {
+<b class="fc"><i>2600</i>&nbsp;                assert(m_topo_graph.getClusterUserIndex(cluster, cluster_index_a) % 2 == 0);</b>
+<b class="fc"><i>2601</i>&nbsp;                m_matrix[MatrixPredicate.InteriorExterior] = 0;</b>
+<b class="fc"><i>2602</i>&nbsp;                return;</b>
+<i>2603</i>&nbsp;            }
+<i>2604</i>&nbsp;        }
+<i>2605</i>&nbsp;
+<b class="fc"><i>2606</i>&nbsp;        return;</b>
+<i>2607</i>&nbsp;    }
+<i>2608</i>&nbsp;
+<i>2609</i>&nbsp;	// Relational predicate to determine if the boundary of Line A intersects
+<i>2610</i>&nbsp;	// with the interior of Point B.
+<i>2611</i>&nbsp;	private void boundaryLineInteriorPoint_(int cluster, int id_a, int id_b,
+<i>2612</i>&nbsp;			int cluster_index_a) {
+<b class="fc"><i>2613</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryInterior] == 0)</b>
+<b class="nc"><i>2614</i>&nbsp;			return;</b>
+<i>2615</i>&nbsp;
+<b class="fc"><i>2616</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2617</i>&nbsp;
+<b class="fc"><i>2618</i>&nbsp;		if ((clusterParentage &amp; id_a) != 0 &amp;&amp; (clusterParentage &amp; id_b) != 0) {</b>
+<b class="fc"><i>2619</i>&nbsp;			int index = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2620</i>&nbsp;					cluster_index_a);
+<i>2621</i>&nbsp;
+<b class="fc"><i>2622</i>&nbsp;			if (index % 2 != 0) {</b>
+<b class="fc"><i>2623</i>&nbsp;				m_matrix[MatrixPredicate.BoundaryInterior] = 0;</b>
+<i>2624</i>&nbsp;			}
+<i>2625</i>&nbsp;		}
+<b class="fc"><i>2626</i>&nbsp;	}</b>
+<i>2627</i>&nbsp;
+<i>2628</i>&nbsp;	// Relational predicate to determine if the boundary of Line A intersects
+<i>2629</i>&nbsp;	// with the exterior of Point B.
+<i>2630</i>&nbsp;	private void boundaryLineExteriorPoint_(int cluster, int id_a, int id_b,
+<i>2631</i>&nbsp;			int cluster_index_a) {
+<b class="fc"><i>2632</i>&nbsp;		if (m_matrix[MatrixPredicate.BoundaryExterior] == 0)</b>
+<b class="nc"><i>2633</i>&nbsp;			return;</b>
+<i>2634</i>&nbsp;
+<b class="fc"><i>2635</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2636</i>&nbsp;
+<b class="fc"><i>2637</i>&nbsp;		if ((clusterParentage &amp; id_a) != 0 &amp;&amp; (clusterParentage &amp; id_b) == 0) {</b>
+<b class="fc"><i>2638</i>&nbsp;			int index = m_topo_graph.getClusterUserIndex(cluster,</b>
+<i>2639</i>&nbsp;					cluster_index_a);
+<i>2640</i>&nbsp;
+<b class="fc"><i>2641</i>&nbsp;			if (index % 2 != 0) {</b>
+<b class="fc"><i>2642</i>&nbsp;				m_matrix[MatrixPredicate.BoundaryExterior] = 0;</b>
+<i>2643</i>&nbsp;			}
+<i>2644</i>&nbsp;		}
+<b class="fc"><i>2645</i>&nbsp;	}</b>
+<i>2646</i>&nbsp;
+<i>2647</i>&nbsp;	// Relational predicate to determine if the exterior of Line A intersects
+<i>2648</i>&nbsp;	// with the interior of Point B.
+<i>2649</i>&nbsp;	private void exteriorLineInteriorPoint_(int cluster, int id_a, int id_b) {
+<b class="fc"><i>2650</i>&nbsp;		if (m_matrix[MatrixPredicate.ExteriorInterior] == 0)</b>
+<b class="nc"><i>2651</i>&nbsp;			return;</b>
+<i>2652</i>&nbsp;
+<b class="fc"><i>2653</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2654</i>&nbsp;
+<b class="fc"><i>2655</i>&nbsp;		if ((clusterParentage &amp; id_a) == 0 &amp;&amp; (clusterParentage &amp; id_b) != 0) {</b>
+<b class="fc"><i>2656</i>&nbsp;			m_matrix[MatrixPredicate.ExteriorInterior] = 0;</b>
+<i>2657</i>&nbsp;		}
+<b class="fc"><i>2658</i>&nbsp;	}</b>
+<i>2659</i>&nbsp;
+<i>2660</i>&nbsp;	// Relational predicate to determine if the interior of Point A intersects
+<i>2661</i>&nbsp;	// with the interior of Point B.
+<i>2662</i>&nbsp;	private void interiorPointInteriorPoint_(int cluster, int id_a, int id_b) {
+<b class="fc"><i>2663</i>&nbsp;		if (m_matrix[MatrixPredicate.InteriorInterior] == 0)</b>
+<b class="nc"><i>2664</i>&nbsp;			return;</b>
+<i>2665</i>&nbsp;
+<b class="fc"><i>2666</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2667</i>&nbsp;
+<b class="fc"><i>2668</i>&nbsp;		if ((clusterParentage &amp; id_a) != 0 &amp;&amp; (clusterParentage &amp; id_b) != 0) {</b>
+<b class="fc"><i>2669</i>&nbsp;			m_matrix[MatrixPredicate.InteriorInterior] = 0;</b>
+<i>2670</i>&nbsp;		}
+<b class="fc"><i>2671</i>&nbsp;	}</b>
+<i>2672</i>&nbsp;
+<i>2673</i>&nbsp;	// Relational predicate to determine if the interior of Point A intersects
+<i>2674</i>&nbsp;	// with the exterior of Point B.
+<i>2675</i>&nbsp;	private void interiorPointExteriorPoint_(int cluster, int id_a, int id_b,
+<i>2676</i>&nbsp;			int predicate) {
+<b class="fc"><i>2677</i>&nbsp;		if (m_matrix[predicate] == 0)</b>
+<b class="nc"><i>2678</i>&nbsp;			return;</b>
+<i>2679</i>&nbsp;
+<b class="fc"><i>2680</i>&nbsp;		int clusterParentage = m_topo_graph.getClusterParentage(cluster);</b>
+<i>2681</i>&nbsp;
+<b class="fc"><i>2682</i>&nbsp;		if ((clusterParentage &amp; id_a) != 0 &amp;&amp; (clusterParentage &amp; id_b) == 0) {</b>
+<b class="fc"><i>2683</i>&nbsp;			m_matrix[predicate] = 0;</b>
+<i>2684</i>&nbsp;		}
+<b class="fc"><i>2685</i>&nbsp;	}</b>
+<i>2686</i>&nbsp;
+<i>2687</i>&nbsp;	// Computes the 9 intersection relationships of boundary, interior, and
+<i>2688</i>&nbsp;	// exterior of geometry_a vs geometry_b using the Topo_graph for area/area,
+<i>2689</i>&nbsp;	// area/Line, and Line/Line relations
+<i>2690</i>&nbsp;	private void computeMatrixTopoGraphHalfEdges_(int geometry_a, int geometry_b) {
+<b class="fc"><i>2691</i>&nbsp;		boolean bRelationKnown = false;</b>
+<i>2692</i>&nbsp;
+<b class="fc"><i>2693</i>&nbsp;		int id_a = m_topo_graph.getGeometryID(geometry_a);</b>
+<b class="fc"><i>2694</i>&nbsp;		int id_b = m_topo_graph.getGeometryID(geometry_b);</b>
+<i>2695</i>&nbsp;
+<b class="fc"><i>2696</i>&nbsp;		m_visited_index = m_topo_graph.createUserIndexForHalfEdges();</b>
+<i>2697</i>&nbsp;
+<b class="fc"><i>2698</i>&nbsp;		for (int cluster = m_topo_graph.getFirstCluster(); cluster != -1; cluster = m_topo_graph</b>
+<b class="fc"><i>2699</i>&nbsp;				.getNextCluster(cluster)) {</b>
+<b class="fc"><i>2700</i>&nbsp;			int first_half_edge = m_topo_graph.getClusterHalfEdge(cluster);</b>
+<b class="fc"><i>2701</i>&nbsp;            if (first_half_edge == -1)</b>
+<i>2702</i>&nbsp;            {
+<b class="fc"><i>2703</i>&nbsp;                if (m_predicates_cluster != -1)</b>
+<i>2704</i>&nbsp;                {
+<i>2705</i>&nbsp;                    // Treat cluster as an interior point
+<b class="fc"><i>2706</i>&nbsp;                    switch (m_predicates_cluster)</b>
+<i>2707</i>&nbsp;                    {
+<i>2708</i>&nbsp;                        case Predicates.AreaPointPredicates:
+<b class="fc"><i>2709</i>&nbsp;                            bRelationKnown = areaPointPredicates_(cluster, id_a, id_b);</b>
+<b class="fc"><i>2710</i>&nbsp;                            break;</b>
+<i>2711</i>&nbsp;                        case Predicates.LinePointPredicates:
+<b class="fc"><i>2712</i>&nbsp;                            bRelationKnown = linePointPredicates_(cluster, id_a, id_b);</b>
+<b class="fc"><i>2713</i>&nbsp;                            break;</b>
+<i>2714</i>&nbsp;                        default:
+<b class="nc"><i>2715</i>&nbsp;                            throw GeometryException.GeometryInternalError();</b>
+<i>2716</i>&nbsp;                    }
+<i>2717</i>&nbsp;                }
+<i>2718</i>&nbsp;
+<i>2719</i>&nbsp;                continue;
+<i>2720</i>&nbsp;            }
+<i>2721</i>&nbsp;
+<b class="fc"><i>2722</i>&nbsp;			int next_half_edge = first_half_edge;</b>
+<i>2723</i>&nbsp;
+<i>2724</i>&nbsp;			do {
+<b class="fc"><i>2725</i>&nbsp;				int half_edge = next_half_edge;</b>
+<b class="fc"><i>2726</i>&nbsp;				int visited = m_topo_graph.getHalfEdgeUserIndex(half_edge,</b>
+<i>2727</i>&nbsp;						m_visited_index);
+<i>2728</i>&nbsp;
+<b class="fc"><i>2729</i>&nbsp;				if (visited != 1) {</b>
+<i>2730</i>&nbsp;					do {
+<i>2731</i>&nbsp;						// Invoke relational predicates
+<b class="fc"><i>2732</i>&nbsp;						switch (m_predicates_half_edge) {</b>
+<i>2733</i>&nbsp;						case Predicates.AreaAreaPredicates:
+<b class="fc"><i>2734</i>&nbsp;							bRelationKnown = areaAreaPredicates_(half_edge,</b>
+<i>2735</i>&nbsp;									id_a, id_b);
+<b class="fc"><i>2736</i>&nbsp;							break;</b>
+<i>2737</i>&nbsp;						case Predicates.AreaLinePredicates:
+<b class="fc"><i>2738</i>&nbsp;							bRelationKnown = areaLinePredicates_(half_edge,</b>
+<i>2739</i>&nbsp;									id_a, id_b);
+<b class="fc"><i>2740</i>&nbsp;							break;</b>
+<i>2741</i>&nbsp;						case Predicates.LineLinePredicates:
+<b class="fc"><i>2742</i>&nbsp;							bRelationKnown = lineLinePredicates_(half_edge,</b>
+<i>2743</i>&nbsp;									id_a, id_b);
+<b class="fc"><i>2744</i>&nbsp;							break;</b>
+<i>2745</i>&nbsp;						default:
+<b class="nc"><i>2746</i>&nbsp;							throw GeometryException.GeometryInternalError();</b>
+<i>2747</i>&nbsp;						}
+<i>2748</i>&nbsp;
+<b class="fc"><i>2749</i>&nbsp;						if (bRelationKnown)</b>
+<b class="fc"><i>2750</i>&nbsp;							break;</b>
+<i>2751</i>&nbsp;
+<b class="fc"><i>2752</i>&nbsp;						m_topo_graph.setHalfEdgeUserIndex(half_edge,</b>
+<i>2753</i>&nbsp;								m_visited_index, 1);
+<b class="fc"><i>2754</i>&nbsp;						half_edge = m_topo_graph.getHalfEdgeNext(half_edge);</b>
+<b class="fc"><i>2755</i>&nbsp;					} while (half_edge != next_half_edge &amp;&amp; !bRelationKnown);</b>
+<i>2756</i>&nbsp;				}
+<i>2757</i>&nbsp;
+<b class="fc"><i>2758</i>&nbsp;				if (bRelationKnown)</b>
+<b class="fc"><i>2759</i>&nbsp;					break;</b>
+<i>2760</i>&nbsp;
+<b class="fc"><i>2761</i>&nbsp;				next_half_edge = m_topo_graph.getHalfEdgeNext(m_topo_graph</b>
+<b class="fc"><i>2762</i>&nbsp;						.getHalfEdgeTwin(half_edge));</b>
+<b class="fc"><i>2763</i>&nbsp;			} while (next_half_edge != first_half_edge);</b>
+<i>2764</i>&nbsp;
+<b class="fc"><i>2765</i>&nbsp;			if (bRelationKnown)</b>
+<b class="fc"><i>2766</i>&nbsp;				break;</b>
+<i>2767</i>&nbsp;		}
+<i>2768</i>&nbsp;
+<b class="fc"><i>2769</i>&nbsp;		if (!bRelationKnown)</b>
+<b class="fc"><i>2770</i>&nbsp;			setRemainingPredicatesToFalse_();</b>
+<i>2771</i>&nbsp;
+<b class="fc"><i>2772</i>&nbsp;		m_topo_graph.deleteUserIndexForHalfEdges(m_visited_index);</b>
+<b class="fc"><i>2773</i>&nbsp;	}</b>
+<i>2774</i>&nbsp;
+<i>2775</i>&nbsp;	// Computes the 9 intersection relationships of boundary, interior, and
+<i>2776</i>&nbsp;	// exterior of geometry_a vs geometry_b using the Topo_graph for area/Point,
+<i>2777</i>&nbsp;	// Line/Point, and Point/Point relations
+<i>2778</i>&nbsp;	private void computeMatrixTopoGraphClusters_(int geometry_a, int geometry_b) {
+<b class="fc"><i>2779</i>&nbsp;		boolean bRelationKnown = false;</b>
+<i>2780</i>&nbsp;
+<b class="fc"><i>2781</i>&nbsp;		int id_a = m_topo_graph.getGeometryID(geometry_a);</b>
+<b class="fc"><i>2782</i>&nbsp;		int id_b = m_topo_graph.getGeometryID(geometry_b);</b>
+<i>2783</i>&nbsp;
+<b class="fc"><i>2784</i>&nbsp;		for (int cluster = m_topo_graph.getFirstCluster(); cluster != -1; cluster = m_topo_graph</b>
+<b class="fc"><i>2785</i>&nbsp;				.getNextCluster(cluster)) {</b>
+<i>2786</i>&nbsp;			// Invoke relational predicates
+<b class="fc"><i>2787</i>&nbsp;			switch (m_predicates_cluster) {</b>
+<i>2788</i>&nbsp;			case Predicates.AreaPointPredicates:
+<b class="fc"><i>2789</i>&nbsp;				bRelationKnown = areaPointPredicates_(cluster, id_a, id_b);</b>
+<b class="fc"><i>2790</i>&nbsp;				break;</b>
+<i>2791</i>&nbsp;			case Predicates.LinePointPredicates:
+<b class="fc"><i>2792</i>&nbsp;				bRelationKnown = linePointPredicates_(cluster, id_a, id_b);</b>
+<b class="fc"><i>2793</i>&nbsp;				break;</b>
+<i>2794</i>&nbsp;			case Predicates.PointPointPredicates:
+<b class="fc"><i>2795</i>&nbsp;				bRelationKnown = pointPointPredicates_(cluster, id_a, id_b);</b>
+<b class="fc"><i>2796</i>&nbsp;				break;</b>
+<i>2797</i>&nbsp;			default:
+<b class="nc"><i>2798</i>&nbsp;				throw GeometryException.GeometryInternalError();</b>
+<i>2799</i>&nbsp;			}
+<i>2800</i>&nbsp;
+<b class="fc"><i>2801</i>&nbsp;			if (bRelationKnown)</b>
+<b class="fc"><i>2802</i>&nbsp;				break;</b>
+<i>2803</i>&nbsp;		}
+<i>2804</i>&nbsp;
+<b class="fc"><i>2805</i>&nbsp;		if (!bRelationKnown)</b>
+<b class="fc"><i>2806</i>&nbsp;			setRemainingPredicatesToFalse_();</b>
+<b class="fc"><i>2807</i>&nbsp;	}</b>
+<i>2808</i>&nbsp;
+<i>2809</i>&nbsp;	// Call this method to set the edit shape, if the edit shape has been
+<i>2810</i>&nbsp;	// cracked and clustered already.
+<i>2811</i>&nbsp;	private void setEditShape_(EditShape shape, ProgressTracker progressTracker) {
+<b class="fc"><i>2812</i>&nbsp;		m_topo_graph.setEditShape(shape, progressTracker);</b>
+<b class="fc"><i>2813</i>&nbsp;	}</b>
+<i>2814</i>&nbsp;
+<i>2815</i>&nbsp;	private void setEditShapeCrackAndCluster_(EditShape shape,
+<i>2816</i>&nbsp;			double tolerance, ProgressTracker progress_tracker) {
+<b class="fc"><i>2817</i>&nbsp;		editShapeCrackAndCluster_(shape, tolerance, progress_tracker);</b>
+<b class="fc"><i>2818</i>&nbsp;		setEditShape_(shape, progress_tracker);</b>
+<b class="fc"><i>2819</i>&nbsp;	}</b>
+<i>2820</i>&nbsp;
+<i>2821</i>&nbsp;	private void editShapeCrackAndCluster_(EditShape shape, double tolerance,
+<i>2822</i>&nbsp;			ProgressTracker progress_tracker) {
+<b class="fc"><i>2823</i>&nbsp;		CrackAndCluster.execute(shape, tolerance, progress_tracker, false); //do not filter degenerate segments.</b>
+<b class="fc"><i>2824</i>&nbsp;        shape.filterClosePoints(0, true, true);//remove degeneracies from polygon geometries.</b>
+<b class="fc"><i>2825</i>&nbsp;		for (int geometry = shape.getFirstGeometry(); geometry != -1; geometry = shape</b>
+<b class="fc"><i>2826</i>&nbsp;				.getNextGeometry(geometry)) {</b>
+<b class="fc"><i>2827</i>&nbsp;			if (shape.getGeometryType(geometry) == Geometry.Type.Polygon</b>
+<b class="fc"><i>2828</i>&nbsp;					.value())</b>
+<b class="fc"><i>2829</i>&nbsp;				Simplificator.execute(shape, geometry, -1, false, progress_tracker);</b>
+<i>2830</i>&nbsp;		}
+<b class="fc"><i>2831</i>&nbsp;	}</b>
+<i>2832</i>&nbsp;
+<i>2833</i>&nbsp;	// Upgrades the geometry to a feature geometry.
+<i>2834</i>&nbsp;	private static Geometry convertGeometry_(Geometry geometry, double tolerance) {
+<b class="fc"><i>2835</i>&nbsp;		int gt = geometry.getType().value();</b>
+<i>2836</i>&nbsp;
+<b class="fc"><i>2837</i>&nbsp;		if (Geometry.isSegment(gt)) {</b>
+<b class="nc"><i>2838</i>&nbsp;			Polyline polyline = new Polyline(geometry.getDescription());</b>
+<b class="nc"><i>2839</i>&nbsp;			polyline.addSegment((Segment) geometry, true);</b>
+<b class="nc"><i>2840</i>&nbsp;			return polyline;</b>
+<i>2841</i>&nbsp;		}
+<i>2842</i>&nbsp;
+<b class="fc"><i>2843</i>&nbsp;		if (gt == Geometry.GeometryType.Envelope) {</b>
+<b class="nc"><i>2844</i>&nbsp;			Envelope envelope = (Envelope) (geometry);</b>
+<b class="nc"><i>2845</i>&nbsp;			Envelope2D env = new Envelope2D();</b>
+<b class="nc"><i>2846</i>&nbsp;			geometry.queryEnvelope2D(env);</b>
+<i>2847</i>&nbsp;
+<b class="nc"><i>2848</i>&nbsp;			if (env.getHeight() &lt;= tolerance &amp;&amp; env.getWidth() &lt;= tolerance) {// treat</b>
+<i>2849</i>&nbsp;																				// as
+<i>2850</i>&nbsp;																				// point
+<b class="nc"><i>2851</i>&nbsp;				Point point = new Point(geometry.getDescription());</b>
+<b class="nc"><i>2852</i>&nbsp;				envelope.getCenter(point);</b>
+<b class="nc"><i>2853</i>&nbsp;				return point;</b>
+<i>2854</i>&nbsp;			}
+<i>2855</i>&nbsp;
+<b class="nc"><i>2856</i>&nbsp;			if (env.getHeight() &lt;= tolerance || env.getWidth() &lt;= tolerance) {// treat</b>
+<i>2857</i>&nbsp;																				// as
+<i>2858</i>&nbsp;																				// line
+<b class="nc"><i>2859</i>&nbsp;				Polyline polyline = new Polyline(geometry.getDescription());</b>
+<b class="nc"><i>2860</i>&nbsp;				Point p = new Point();</b>
+<b class="nc"><i>2861</i>&nbsp;				envelope.queryCornerByVal(0, p);</b>
+<b class="nc"><i>2862</i>&nbsp;				polyline.startPath(p);</b>
+<b class="nc"><i>2863</i>&nbsp;				envelope.queryCornerByVal(2, p);</b>
+<b class="nc"><i>2864</i>&nbsp;				polyline.lineTo(p);</b>
+<b class="nc"><i>2865</i>&nbsp;				return polyline;</b>
+<i>2866</i>&nbsp;			}
+<i>2867</i>&nbsp;
+<i>2868</i>&nbsp;			// treat as polygon
+<b class="nc"><i>2869</i>&nbsp;			Polygon polygon = new Polygon(geometry.getDescription());</b>
+<b class="nc"><i>2870</i>&nbsp;			polygon.addEnvelope(envelope, false);</b>
+<b class="nc"><i>2871</i>&nbsp;			return polygon;</b>
+<i>2872</i>&nbsp;		}
+<i>2873</i>&nbsp;
+<b class="fc"><i>2874</i>&nbsp;		return geometry;</b>
+<i>2875</i>&nbsp;	}
+<i>2876</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

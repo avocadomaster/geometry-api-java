@@ -1,0 +1,210 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OGCMultiPoint</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry.ogc</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OGCMultiPoint (com.esri.core.geometry.ogc)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OGCMultiPoint</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    57.1%
+  </span>
+  <span class="absValue">
+    (8/ 14)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    54.8%
+  </span>
+  <span class="absValue">
+    (17/ 31)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2017 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;package com.esri.core.geometry.ogc;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;import java.nio.ByteBuffer;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;import com.esri.core.geometry.Geometry;
+<i>30</i>&nbsp;import com.esri.core.geometry.GeometryEngine;
+<i>31</i>&nbsp;import com.esri.core.geometry.MultiPoint;
+<i>32</i>&nbsp;import com.esri.core.geometry.Operator;
+<i>33</i>&nbsp;import com.esri.core.geometry.OperatorExportToWkb;
+<i>34</i>&nbsp;import com.esri.core.geometry.OperatorFactoryLocal;
+<i>35</i>&nbsp;import com.esri.core.geometry.Point;
+<i>36</i>&nbsp;import com.esri.core.geometry.SpatialReference;
+<i>37</i>&nbsp;import com.esri.core.geometry.WkbExportFlags;
+<i>38</i>&nbsp;import com.esri.core.geometry.WktExportFlags;
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;public class OGCMultiPoint extends OGCGeometryCollection {
+<i>41</i>&nbsp;	public int numGeometries() {
+<b class="fc"><i>42</i>&nbsp;		return multiPoint.getPointCount();</b>
+<i>43</i>&nbsp;	}
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;	@Override
+<i>46</i>&nbsp;	public String asText() {
+<b class="fc"><i>47</i>&nbsp;		return GeometryEngine.geometryToWkt(getEsriGeometry(),</b>
+<i>48</i>&nbsp;				WktExportFlags.wktExportMultiPoint);
+<i>49</i>&nbsp;	}
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;	@Override
+<i>52</i>&nbsp;	public ByteBuffer asBinary() {
+<i>53</i>&nbsp;		OperatorExportToWkb op = (OperatorExportToWkb) OperatorFactoryLocal
+<b class="fc"><i>54</i>&nbsp;				.getInstance().getOperator(Operator.Type.ExportToWkb);</b>
+<b class="fc"><i>55</i>&nbsp;		return op.execute(WkbExportFlags.wkbExportMultiPoint,</b>
+<b class="fc"><i>56</i>&nbsp;				getEsriGeometry(), null);</b>
+<i>57</i>&nbsp;	}
+<i>58</i>&nbsp;
+<i>59</i>&nbsp;	public OGCGeometry geometryN(int n) {
+<b class="fc"><i>60</i>&nbsp;		return OGCGeometry.createFromEsriGeometry(multiPoint.getPoint(n),</b>
+<i>61</i>&nbsp;				esriSR);
+<i>62</i>&nbsp;	}
+<i>63</i>&nbsp;
+<i>64</i>&nbsp;	@Override
+<i>65</i>&nbsp;	public String geometryType() {
+<b class="fc"><i>66</i>&nbsp;		return &quot;MultiPoint&quot;;</b>
+<i>67</i>&nbsp;	}
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;	/**
+<i>70</i>&nbsp;	 * 
+<i>71</i>&nbsp;	 * @param mp
+<i>72</i>&nbsp;	 *            MultiPoint instance will be referenced by this OGC class
+<i>73</i>&nbsp;	 */
+<b class="fc"><i>74</i>&nbsp;	public OGCMultiPoint(MultiPoint mp, SpatialReference sr) {</b>
+<b class="fc"><i>75</i>&nbsp;		multiPoint = mp;</b>
+<b class="fc"><i>76</i>&nbsp;		esriSR = sr;</b>
+<b class="fc"><i>77</i>&nbsp;	}</b>
+<i>78</i>&nbsp;
+<b class="fc"><i>79</i>&nbsp;	public OGCMultiPoint(Point startPoint, SpatialReference sr) {</b>
+<b class="fc"><i>80</i>&nbsp;		multiPoint = new MultiPoint();</b>
+<b class="fc"><i>81</i>&nbsp;		multiPoint.add((Point) startPoint);</b>
+<b class="fc"><i>82</i>&nbsp;		esriSR = sr;</b>
+<b class="fc"><i>83</i>&nbsp;	}</b>
+<i>84</i>&nbsp;
+<b class="nc"><i>85</i>&nbsp;	public OGCMultiPoint(OGCPoint startPoint, OGCPoint endPoint) {</b>
+<b class="nc"><i>86</i>&nbsp;		multiPoint = new MultiPoint();</b>
+<b class="nc"><i>87</i>&nbsp;		multiPoint.add((Point) startPoint.getEsriGeometry());</b>
+<b class="nc"><i>88</i>&nbsp;		multiPoint.add((Point) endPoint.getEsriGeometry());</b>
+<b class="nc"><i>89</i>&nbsp;		esriSR = startPoint.esriSR;</b>
+<b class="nc"><i>90</i>&nbsp;	}</b>
+<i>91</i>&nbsp;
+<b class="nc"><i>92</i>&nbsp;	public OGCMultiPoint(SpatialReference sr) {</b>
+<b class="nc"><i>93</i>&nbsp;		esriSR = sr;</b>
+<b class="nc"><i>94</i>&nbsp;		multiPoint = new MultiPoint();</b>
+<b class="nc"><i>95</i>&nbsp;	}</b>
+<i>96</i>&nbsp;
+<i>97</i>&nbsp;	@Override
+<i>98</i>&nbsp;	public OGCGeometry boundary() {
+<b class="nc"><i>99</i>&nbsp;		return new OGCMultiPoint((MultiPoint) multiPoint.createInstance(),</b>
+<i>100</i>&nbsp;				esriSR);// return empty multipoint
+<i>101</i>&nbsp;	}
+<i>102</i>&nbsp;
+<i>103</i>&nbsp;	@Override
+<i>104</i>&nbsp;	public OGCGeometry locateAlong(double mValue) {
+<i>105</i>&nbsp;		// TODO Auto-generated method stub
+<b class="nc"><i>106</i>&nbsp;		throw new UnsupportedOperationException();</b>
+<i>107</i>&nbsp;	}
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;	@Override
+<i>110</i>&nbsp;	public OGCGeometry locateBetween(double mStart, double mEnd) {
+<i>111</i>&nbsp;		// TODO Auto-generated method stub
+<b class="nc"><i>112</i>&nbsp;		throw new UnsupportedOperationException();</b>
+<i>113</i>&nbsp;	}
+<i>114</i>&nbsp;
+<i>115</i>&nbsp;	@Override
+<i>116</i>&nbsp;	public Geometry getEsriGeometry() {
+<b class="fc"><i>117</i>&nbsp;		return multiPoint;</b>
+<i>118</i>&nbsp;	}
+<i>119</i>&nbsp;
+<i>120</i>&nbsp;	@Override
+<i>121</i>&nbsp;	public OGCGeometry convertToMulti()
+<i>122</i>&nbsp;	{
+<b class="nc"><i>123</i>&nbsp;		return this;</b>
+<i>124</i>&nbsp;	}
+<i>125</i>&nbsp;	
+<i>126</i>&nbsp;	private com.esri.core.geometry.MultiPoint multiPoint;
+<i>127</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,885 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OperatorExportToGeoJsonCursor</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OperatorExportToGeoJsonCursor (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OperatorExportToGeoJsonCursor</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (24/ 28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84%
+  </span>
+  <span class="absValue">
+    (340/ 405)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;/*
+<i>25</i>&nbsp; Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>26</i>&nbsp; you may not use this file except in compliance with the License.
+<i>27</i>&nbsp; You may obtain a copy of the License at
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;	http://www.apache.org/licenses/LICENSE-2.0
+<i>30</i>&nbsp;
+<i>31</i>&nbsp; Unless required by applicable law or agreed to in writing, software
+<i>32</i>&nbsp; distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>33</i>&nbsp; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>34</i>&nbsp; See the License for the specific language governing permissions and
+<i>35</i>&nbsp; limitations under the License.
+<i>36</i>&nbsp;
+<i>37</i>&nbsp; For additional information, contact:
+<i>38</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>39</i>&nbsp; Attn: Contracts Dept
+<i>40</i>&nbsp; 380 New York Street
+<i>41</i>&nbsp; Redlands, California, USA 92373
+<i>42</i>&nbsp;
+<i>43</i>&nbsp; email: contracts@esri.com
+<i>44</i>&nbsp; */
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;package com.esri.core.geometry;
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;import com.esri.core.geometry.VertexDescription.Semantics;
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;class OperatorExportToGeoJsonCursor extends JsonCursor {
+<i>51</i>&nbsp;	GeometryCursor m_inputGeometryCursor;
+<i>52</i>&nbsp;	SpatialReference m_spatialReference;
+<i>53</i>&nbsp;	int m_index;
+<i>54</i>&nbsp;	int m_export_flags;
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;	public OperatorExportToGeoJsonCursor(int export_flags, SpatialReference spatialReference,
+<b class="nc"><i>57</i>&nbsp;			GeometryCursor geometryCursor) {</b>
+<b class="nc"><i>58</i>&nbsp;		m_index = -1;</b>
+<b class="nc"><i>59</i>&nbsp;		if (geometryCursor == null)</b>
+<b class="nc"><i>60</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>61</i>&nbsp;
+<b class="nc"><i>62</i>&nbsp;		m_export_flags = export_flags;</b>
+<b class="nc"><i>63</i>&nbsp;		m_spatialReference = spatialReference;</b>
+<b class="nc"><i>64</i>&nbsp;		m_inputGeometryCursor = geometryCursor;</b>
+<b class="nc"><i>65</i>&nbsp;	}</b>
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;	@Override
+<i>68</i>&nbsp;	public int getID() {
+<b class="nc"><i>69</i>&nbsp;		return m_index;</b>
+<i>70</i>&nbsp;	}
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;	@Override
+<i>73</i>&nbsp;	public String next() {
+<i>74</i>&nbsp;		Geometry geometry;
+<b class="nc"><i>75</i>&nbsp;		if ((geometry = m_inputGeometryCursor.next()) != null) {</b>
+<b class="nc"><i>76</i>&nbsp;			m_index = m_inputGeometryCursor.getGeometryID();</b>
+<b class="nc"><i>77</i>&nbsp;			return exportToGeoJson(m_export_flags, geometry, m_spatialReference);</b>
+<i>78</i>&nbsp;		}
+<b class="nc"><i>79</i>&nbsp;		return null;</b>
+<i>80</i>&nbsp;	}
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;	// Mirrors wkt
+<i>83</i>&nbsp;	static String exportToGeoJson(int export_flags, Geometry geometry, SpatialReference spatial_reference) {
+<i>84</i>&nbsp;
+<b class="fc"><i>85</i>&nbsp;		if (geometry == null)</b>
+<b class="nc"><i>86</i>&nbsp;			throw new IllegalArgumentException(&quot;&quot;);</b>
+<i>87</i>&nbsp;
+<b class="fc"><i>88</i>&nbsp;		JsonWriter json_writer = new JsonStringWriter();</b>
+<i>89</i>&nbsp;
+<b class="fc"><i>90</i>&nbsp;		json_writer.startObject();</b>
+<i>91</i>&nbsp;
+<b class="fc"><i>92</i>&nbsp;		exportGeometryToGeoJson_(export_flags, geometry, json_writer);</b>
+<i>93</i>&nbsp;
+<b class="fc"><i>94</i>&nbsp;		if ((export_flags &amp; GeoJsonExportFlags.geoJsonExportSkipCRS) == 0) {</b>
+<b class="fc"><i>95</i>&nbsp;			json_writer.addFieldName(&quot;crs&quot;);</b>
+<b class="fc"><i>96</i>&nbsp;			exportSpatialReference(export_flags, spatial_reference, json_writer);</b>
+<i>97</i>&nbsp;		}
+<i>98</i>&nbsp;
+<b class="fc"><i>99</i>&nbsp;		json_writer.endObject();</b>
+<i>100</i>&nbsp;
+<b class="fc"><i>101</i>&nbsp;		return (String) json_writer.getJson();</b>
+<i>102</i>&nbsp;	}
+<i>103</i>&nbsp;
+<i>104</i>&nbsp;	static String exportSpatialReference(int export_flags, SpatialReference spatial_reference) {
+<b class="fc"><i>105</i>&nbsp;		if (spatial_reference == null || (export_flags &amp; GeoJsonExportFlags.geoJsonExportSkipCRS) != 0)</b>
+<b class="nc"><i>106</i>&nbsp;			throw new IllegalArgumentException(&quot;&quot;);</b>
+<i>107</i>&nbsp;
+<b class="fc"><i>108</i>&nbsp;		JsonWriter json_writer = new JsonStringWriter();</b>
+<b class="fc"><i>109</i>&nbsp;		exportSpatialReference(export_flags, spatial_reference, json_writer);</b>
+<i>110</i>&nbsp;
+<b class="fc"><i>111</i>&nbsp;		return (String) json_writer.getJson();</b>
+<i>112</i>&nbsp;	}
+<i>113</i>&nbsp;
+<i>114</i>&nbsp;	private static void exportGeometryToGeoJson_(int export_flags, Geometry geometry, JsonWriter json_writer) {
+<b class="fc"><i>115</i>&nbsp;		int type = geometry.getType().value();</b>
+<b class="fc"><i>116</i>&nbsp;		switch (type) {</b>
+<i>117</i>&nbsp;		case Geometry.GeometryType.Polygon:
+<b class="fc"><i>118</i>&nbsp;			exportPolygonToGeoJson_(export_flags, (Polygon) geometry, json_writer);</b>
+<b class="fc"><i>119</i>&nbsp;			return;</b>
+<i>120</i>&nbsp;
+<i>121</i>&nbsp;		case Geometry.GeometryType.Polyline:
+<b class="fc"><i>122</i>&nbsp;			exportPolylineToGeoJson_(export_flags, (Polyline) geometry, json_writer);</b>
+<b class="fc"><i>123</i>&nbsp;			return;</b>
+<i>124</i>&nbsp;
+<i>125</i>&nbsp;		case Geometry.GeometryType.MultiPoint:
+<b class="fc"><i>126</i>&nbsp;			exportMultiPointToGeoJson_(export_flags, (MultiPoint) geometry, json_writer);</b>
+<b class="fc"><i>127</i>&nbsp;			return;</b>
+<i>128</i>&nbsp;
+<i>129</i>&nbsp;		case Geometry.GeometryType.Point:
+<b class="fc"><i>130</i>&nbsp;			exportPointToGeoJson_(export_flags, (Point) geometry, json_writer);</b>
+<b class="fc"><i>131</i>&nbsp;			return;</b>
+<i>132</i>&nbsp;
+<i>133</i>&nbsp;		case Geometry.GeometryType.Envelope:
+<b class="fc"><i>134</i>&nbsp;			exportEnvelopeToGeoJson_(export_flags, (Envelope) geometry,</b>
+<i>135</i>&nbsp;					json_writer);
+<b class="fc"><i>136</i>&nbsp;			return;</b>
+<i>137</i>&nbsp;
+<i>138</i>&nbsp;		default:
+<b class="nc"><i>139</i>&nbsp;			throw new RuntimeException(&quot;not implemented for this geometry type&quot;);</b>
+<i>140</i>&nbsp;		}
+<i>141</i>&nbsp;	}
+<i>142</i>&nbsp;
+<i>143</i>&nbsp;	private static void exportSpatialReference(int export_flags, SpatialReference spatial_reference,
+<i>144</i>&nbsp;			JsonWriter json_writer) {
+<b class="fc"><i>145</i>&nbsp;		if (spatial_reference != null) {</b>
+<b class="fc"><i>146</i>&nbsp;			int wkid = spatial_reference.getLatestID();</b>
+<i>147</i>&nbsp;
+<b class="fc"><i>148</i>&nbsp;			if (wkid &lt;= 0)</b>
+<b class="fc"><i>149</i>&nbsp;				throw new GeometryException(&quot;invalid call&quot;);</b>
+<i>150</i>&nbsp;
+<b class="fc"><i>151</i>&nbsp;			json_writer.startObject();</b>
+<i>152</i>&nbsp;
+<b class="fc"><i>153</i>&nbsp;			json_writer.addFieldName(&quot;type&quot;);</b>
+<i>154</i>&nbsp;
+<b class="fc"><i>155</i>&nbsp;			json_writer.addValueString(&quot;name&quot;);</b>
+<i>156</i>&nbsp;
+<b class="fc"><i>157</i>&nbsp;			json_writer.addFieldName(&quot;properties&quot;);</b>
+<b class="fc"><i>158</i>&nbsp;			json_writer.startObject();</b>
+<i>159</i>&nbsp;
+<b class="fc"><i>160</i>&nbsp;			json_writer.addFieldName(&quot;name&quot;);</b>
+<i>161</i>&nbsp;
+<b class="fc"><i>162</i>&nbsp;			String authority = ((SpatialReferenceImpl) spatial_reference).getAuthority();</b>
+<b class="fc"><i>163</i>&nbsp;			authority = authority.toUpperCase();</b>
+<b class="fc"><i>164</i>&nbsp;			StringBuilder crs_identifier = new StringBuilder(authority);</b>
+<b class="fc"><i>165</i>&nbsp;			crs_identifier.append(&#39;:&#39;);</b>
+<b class="fc"><i>166</i>&nbsp;			crs_identifier.append(wkid);</b>
+<b class="fc"><i>167</i>&nbsp;			json_writer.addValueString(crs_identifier.toString());</b>
+<i>168</i>&nbsp;
+<b class="fc"><i>169</i>&nbsp;			json_writer.endObject();</b>
+<i>170</i>&nbsp;
+<b class="fc"><i>171</i>&nbsp;			json_writer.endObject();</b>
+<b class="fc"><i>172</i>&nbsp;		} else {</b>
+<b class="fc"><i>173</i>&nbsp;			json_writer.addValueNull();</b>
+<i>174</i>&nbsp;		}
+<b class="fc"><i>175</i>&nbsp;	}</b>
+<i>176</i>&nbsp;
+<i>177</i>&nbsp;	// Mirrors wkt
+<i>178</i>&nbsp;	private static void exportPolygonToGeoJson_(int export_flags, Polygon polygon, JsonWriter json_writer) {
+<b class="fc"><i>179</i>&nbsp;		MultiPathImpl polygon_impl = (MultiPathImpl) (polygon._getImpl());</b>
+<i>180</i>&nbsp;
+<b class="fc"><i>181</i>&nbsp;		if ((export_flags &amp; GeoJsonExportFlags.geoJsonExportFailIfNotSimple) != 0) {</b>
+<b class="nc"><i>182</i>&nbsp;			int simple = polygon_impl.getIsSimple(0.0);</b>
+<i>183</i>&nbsp;
+<b class="nc"><i>184</i>&nbsp;			if (simple != MultiPathImpl.GeometryXSimple.Strong)</b>
+<b class="nc"><i>185</i>&nbsp;				throw new GeometryException(&quot;corrupted geometry&quot;);</b>
+<i>186</i>&nbsp;		}
+<i>187</i>&nbsp;
+<b class="fc"><i>188</i>&nbsp;		int point_count = polygon.getPointCount();</b>
+<b class="fc"><i>189</i>&nbsp;		int polygon_count = polygon_impl.getOGCPolygonCount();</b>
+<i>190</i>&nbsp;
+<b class="fc"><i>191</i>&nbsp;		if (point_count &gt; 0 &amp;&amp; polygon_count == 0)</b>
+<b class="nc"><i>192</i>&nbsp;			throw new GeometryException(&quot;corrupted geometry&quot;);</b>
+<i>193</i>&nbsp;
+<b class="fc"><i>194</i>&nbsp;		int precision = 17 - (31 &amp; (export_flags &gt;&gt; 13));</b>
+<b class="fc"><i>195</i>&nbsp;		boolean bFixedPoint = (GeoJsonExportFlags.geoJsonExportPrecisionFixedPoint &amp; export_flags) != 0;</b>
+<b class="fc"><i>196</i>&nbsp;		boolean b_export_zs = polygon_impl.hasAttribute(VertexDescription.Semantics.Z)</b>
+<i>197</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripZs) == 0;
+<b class="fc"><i>198</i>&nbsp;		boolean b_export_ms = polygon_impl.hasAttribute(VertexDescription.Semantics.M)</b>
+<i>199</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripMs) == 0;
+<i>200</i>&nbsp;
+<b class="fc"><i>201</i>&nbsp;		if (!b_export_zs &amp;&amp; b_export_ms)</b>
+<b class="nc"><i>202</i>&nbsp;			throw new IllegalArgumentException(&quot;invalid argument&quot;);</b>
+<i>203</i>&nbsp;
+<b class="fc"><i>204</i>&nbsp;		int path_count = 0;</b>
+<b class="fc"><i>205</i>&nbsp;		AttributeStreamOfDbl position = null;</b>
+<b class="fc"><i>206</i>&nbsp;		AttributeStreamOfDbl zs = null;</b>
+<b class="fc"><i>207</i>&nbsp;		AttributeStreamOfDbl ms = null;</b>
+<b class="fc"><i>208</i>&nbsp;		AttributeStreamOfInt8 path_flags = null;</b>
+<b class="fc"><i>209</i>&nbsp;		AttributeStreamOfInt32 paths = null;</b>
+<i>210</i>&nbsp;
+<b class="fc"><i>211</i>&nbsp;		if (point_count &gt; 0) {</b>
+<b class="fc"><i>212</i>&nbsp;			position = (AttributeStreamOfDbl) polygon_impl.getAttributeStreamRef(Semantics.POSITION);</b>
+<b class="fc"><i>213</i>&nbsp;			path_flags = polygon_impl.getPathFlagsStreamRef();</b>
+<b class="fc"><i>214</i>&nbsp;			paths = polygon_impl.getPathStreamRef();</b>
+<b class="fc"><i>215</i>&nbsp;			path_count = polygon_impl.getPathCount();</b>
+<i>216</i>&nbsp;
+<b class="fc"><i>217</i>&nbsp;			if (b_export_zs) {</b>
+<b class="fc"><i>218</i>&nbsp;				if (polygon_impl._attributeStreamIsAllocated(Semantics.Z))</b>
+<b class="fc"><i>219</i>&nbsp;					zs = (AttributeStreamOfDbl) polygon_impl.getAttributeStreamRef(Semantics.Z);</b>
+<i>220</i>&nbsp;			}
+<i>221</i>&nbsp;
+<b class="fc"><i>222</i>&nbsp;			if (b_export_ms) {</b>
+<b class="nc"><i>223</i>&nbsp;				if (polygon_impl._attributeStreamIsAllocated(Semantics.M))</b>
+<b class="nc"><i>224</i>&nbsp;					ms = (AttributeStreamOfDbl) polygon_impl.getAttributeStreamRef(Semantics.M);</b>
+<i>225</i>&nbsp;			}
+<i>226</i>&nbsp;		}
+<i>227</i>&nbsp;
+<b class="fc"><i>228</i>&nbsp;		if ((export_flags &amp; GeoJsonExportFlags.geoJsonExportPreferMultiGeometry) == 0 &amp;&amp; polygon_count &lt;= 1)</b>
+<b class="fc"><i>229</i>&nbsp;			polygonTaggedText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, paths, path_count,</b>
+<i>230</i>&nbsp;					json_writer);
+<i>231</i>&nbsp;		else
+<b class="fc"><i>232</i>&nbsp;			multiPolygonTaggedText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, path_flags,</b>
+<i>233</i>&nbsp;					paths, polygon_count, path_count, json_writer);
+<b class="fc"><i>234</i>&nbsp;	}</b>
+<i>235</i>&nbsp;
+<i>236</i>&nbsp;	// Mirrors wkt
+<i>237</i>&nbsp;	private static void exportPolylineToGeoJson_(int export_flags, Polyline polyline, JsonWriter json_writer) {
+<b class="fc"><i>238</i>&nbsp;		MultiPathImpl polyline_impl = (MultiPathImpl) polyline._getImpl();</b>
+<i>239</i>&nbsp;
+<b class="fc"><i>240</i>&nbsp;		int point_count = polyline_impl.getPointCount();</b>
+<b class="fc"><i>241</i>&nbsp;		int path_count = polyline_impl.getPathCount();</b>
+<i>242</i>&nbsp;
+<b class="fc"><i>243</i>&nbsp;		if (point_count &gt; 0 &amp;&amp; path_count == 0)</b>
+<b class="nc"><i>244</i>&nbsp;			throw new GeometryException(&quot;corrupted geometry&quot;);</b>
+<i>245</i>&nbsp;
+<b class="fc"><i>246</i>&nbsp;		int precision = 17 - (31 &amp; (export_flags &gt;&gt; 13));</b>
+<b class="fc"><i>247</i>&nbsp;		boolean bFixedPoint = (GeoJsonExportFlags.geoJsonExportPrecisionFixedPoint &amp; export_flags) != 0;</b>
+<b class="fc"><i>248</i>&nbsp;		boolean b_export_zs = polyline_impl.hasAttribute(VertexDescription.Semantics.Z)</b>
+<i>249</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripZs) == 0;
+<b class="fc"><i>250</i>&nbsp;		boolean b_export_ms = polyline_impl.hasAttribute(VertexDescription.Semantics.M)</b>
+<i>251</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripMs) == 0;
+<i>252</i>&nbsp;
+<b class="fc"><i>253</i>&nbsp;		if (!b_export_zs &amp;&amp; b_export_ms)</b>
+<b class="nc"><i>254</i>&nbsp;			throw new IllegalArgumentException(&quot;invalid argument&quot;);</b>
+<i>255</i>&nbsp;
+<b class="fc"><i>256</i>&nbsp;		AttributeStreamOfDbl position = null;</b>
+<b class="fc"><i>257</i>&nbsp;		AttributeStreamOfDbl zs = null;</b>
+<b class="fc"><i>258</i>&nbsp;		AttributeStreamOfDbl ms = null;</b>
+<b class="fc"><i>259</i>&nbsp;		AttributeStreamOfInt8 path_flags = null;</b>
+<b class="fc"><i>260</i>&nbsp;		AttributeStreamOfInt32 paths = null;</b>
+<i>261</i>&nbsp;
+<b class="fc"><i>262</i>&nbsp;		if (point_count &gt; 0) {</b>
+<b class="fc"><i>263</i>&nbsp;			position = (AttributeStreamOfDbl) polyline_impl.getAttributeStreamRef(Semantics.POSITION);</b>
+<b class="fc"><i>264</i>&nbsp;			path_flags = polyline_impl.getPathFlagsStreamRef();</b>
+<b class="fc"><i>265</i>&nbsp;			paths = polyline_impl.getPathStreamRef();</b>
+<i>266</i>&nbsp;
+<b class="fc"><i>267</i>&nbsp;			if (b_export_zs) {</b>
+<b class="fc"><i>268</i>&nbsp;				if (polyline_impl._attributeStreamIsAllocated(Semantics.Z))</b>
+<b class="fc"><i>269</i>&nbsp;					zs = (AttributeStreamOfDbl) polyline_impl.getAttributeStreamRef(Semantics.Z);</b>
+<i>270</i>&nbsp;			}
+<i>271</i>&nbsp;
+<b class="fc"><i>272</i>&nbsp;			if (b_export_ms) {</b>
+<b class="nc"><i>273</i>&nbsp;				if (polyline_impl._attributeStreamIsAllocated(Semantics.M))</b>
+<b class="nc"><i>274</i>&nbsp;					ms = (AttributeStreamOfDbl) polyline_impl.getAttributeStreamRef(Semantics.M);</b>
+<i>275</i>&nbsp;			}
+<i>276</i>&nbsp;		}
+<i>277</i>&nbsp;
+<b class="fc"><i>278</i>&nbsp;		if ((export_flags &amp; GeoJsonExportFlags.geoJsonExportPreferMultiGeometry) == 0 &amp;&amp; path_count &lt;= 1)</b>
+<b class="fc"><i>279</i>&nbsp;			lineStringTaggedText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, path_flags, paths,</b>
+<i>280</i>&nbsp;					json_writer);
+<i>281</i>&nbsp;		else
+<b class="fc"><i>282</i>&nbsp;			multiLineStringTaggedText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, path_flags,</b>
+<i>283</i>&nbsp;					paths, path_count, json_writer);
+<b class="fc"><i>284</i>&nbsp;	}</b>
+<i>285</i>&nbsp;
+<i>286</i>&nbsp;	// Mirrors wkt
+<i>287</i>&nbsp;	private static void exportMultiPointToGeoJson_(int export_flags, MultiPoint multipoint, JsonWriter json_writer) {
+<b class="fc"><i>288</i>&nbsp;		MultiPointImpl multipoint_impl = (MultiPointImpl) multipoint._getImpl();</b>
+<i>289</i>&nbsp;
+<b class="fc"><i>290</i>&nbsp;		int point_count = multipoint_impl.getPointCount();</b>
+<i>291</i>&nbsp;
+<b class="fc"><i>292</i>&nbsp;		int precision = 17 - (31 &amp; (export_flags &gt;&gt; 13));</b>
+<b class="fc"><i>293</i>&nbsp;		boolean bFixedPoint = (GeoJsonExportFlags.geoJsonExportPrecisionFixedPoint &amp; export_flags) != 0;</b>
+<b class="fc"><i>294</i>&nbsp;		boolean b_export_zs = multipoint_impl.hasAttribute(VertexDescription.Semantics.Z)</b>
+<i>295</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripZs) == 0;
+<b class="fc"><i>296</i>&nbsp;		boolean b_export_ms = multipoint_impl.hasAttribute(VertexDescription.Semantics.M)</b>
+<i>297</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripMs) == 0;
+<i>298</i>&nbsp;
+<b class="fc"><i>299</i>&nbsp;		if (!b_export_zs &amp;&amp; b_export_ms)</b>
+<b class="nc"><i>300</i>&nbsp;			throw new IllegalArgumentException(&quot;invalid argument&quot;);</b>
+<i>301</i>&nbsp;
+<b class="fc"><i>302</i>&nbsp;		AttributeStreamOfDbl position = null;</b>
+<b class="fc"><i>303</i>&nbsp;		AttributeStreamOfDbl zs = null;</b>
+<b class="fc"><i>304</i>&nbsp;		AttributeStreamOfDbl ms = null;</b>
+<i>305</i>&nbsp;
+<b class="fc"><i>306</i>&nbsp;		if (point_count &gt; 0) {</b>
+<b class="fc"><i>307</i>&nbsp;			position = (AttributeStreamOfDbl) multipoint_impl.getAttributeStreamRef(Semantics.POSITION);</b>
+<i>308</i>&nbsp;
+<b class="fc"><i>309</i>&nbsp;			if (b_export_zs) {</b>
+<b class="fc"><i>310</i>&nbsp;				if (multipoint_impl._attributeStreamIsAllocated(Semantics.Z))</b>
+<b class="fc"><i>311</i>&nbsp;					zs = (AttributeStreamOfDbl) multipoint_impl.getAttributeStreamRef(Semantics.Z);</b>
+<i>312</i>&nbsp;			}
+<i>313</i>&nbsp;
+<b class="fc"><i>314</i>&nbsp;			if (b_export_ms) {</b>
+<b class="fc"><i>315</i>&nbsp;				if (multipoint_impl._attributeStreamIsAllocated(Semantics.M))</b>
+<b class="fc"><i>316</i>&nbsp;					ms = (AttributeStreamOfDbl) multipoint_impl.getAttributeStreamRef(Semantics.M);</b>
+<i>317</i>&nbsp;			}
+<i>318</i>&nbsp;		}
+<i>319</i>&nbsp;
+<b class="fc"><i>320</i>&nbsp;		multiPointTaggedText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, point_count,</b>
+<i>321</i>&nbsp;				json_writer);
+<b class="fc"><i>322</i>&nbsp;	}</b>
+<i>323</i>&nbsp;
+<i>324</i>&nbsp;	// Mirrors wkt
+<i>325</i>&nbsp;	private static void exportPointToGeoJson_(int export_flags, Point point, JsonWriter json_writer) {
+<b class="fc"><i>326</i>&nbsp;		int precision = 17 - (31 &amp; (export_flags &gt;&gt; 13));</b>
+<b class="fc"><i>327</i>&nbsp;		boolean bFixedPoint = (GeoJsonExportFlags.geoJsonExportPrecisionFixedPoint &amp; export_flags) != 0;</b>
+<b class="fc"><i>328</i>&nbsp;		boolean b_export_zs = point.hasAttribute(VertexDescription.Semantics.Z)</b>
+<i>329</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripZs) == 0;
+<b class="fc"><i>330</i>&nbsp;		boolean b_export_ms = point.hasAttribute(VertexDescription.Semantics.M)</b>
+<i>331</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripMs) == 0;
+<i>332</i>&nbsp;
+<b class="fc"><i>333</i>&nbsp;		if (!b_export_zs &amp;&amp; b_export_ms)</b>
+<b class="nc"><i>334</i>&nbsp;			throw new IllegalArgumentException(&quot;invalid argument&quot;);</b>
+<i>335</i>&nbsp;
+<b class="fc"><i>336</i>&nbsp;		double x = NumberUtils.NaN();</b>
+<b class="fc"><i>337</i>&nbsp;		double y = NumberUtils.NaN();</b>
+<b class="fc"><i>338</i>&nbsp;		double z = NumberUtils.NaN();</b>
+<b class="fc"><i>339</i>&nbsp;		double m = NumberUtils.NaN();</b>
+<i>340</i>&nbsp;
+<b class="fc"><i>341</i>&nbsp;		if (!point.isEmpty()) {</b>
+<b class="fc"><i>342</i>&nbsp;			x = point.getX();</b>
+<b class="fc"><i>343</i>&nbsp;			y = point.getY();</b>
+<i>344</i>&nbsp;
+<b class="fc"><i>345</i>&nbsp;			if (b_export_zs)</b>
+<b class="fc"><i>346</i>&nbsp;				z = point.getZ();</b>
+<i>347</i>&nbsp;
+<b class="fc"><i>348</i>&nbsp;			if (b_export_ms)</b>
+<b class="fc"><i>349</i>&nbsp;				m = point.getM();</b>
+<i>350</i>&nbsp;		}
+<i>351</i>&nbsp;
+<b class="fc"><i>352</i>&nbsp;		if ((export_flags &amp; GeoJsonExportFlags.geoJsonExportPreferMultiGeometry) == 0)</b>
+<b class="fc"><i>353</i>&nbsp;			pointTaggedText_(precision, bFixedPoint, b_export_zs, b_export_ms, x, y, z, m, json_writer);</b>
+<i>354</i>&nbsp;		else
+<b class="fc"><i>355</i>&nbsp;			multiPointTaggedTextFromPoint_(precision, bFixedPoint, b_export_zs, b_export_ms, x, y, z, m, json_writer);</b>
+<b class="fc"><i>356</i>&nbsp;	}</b>
+<i>357</i>&nbsp;
+<i>358</i>&nbsp;	// Mirrors wkt
+<i>359</i>&nbsp;	private static void exportEnvelopeToGeoJson_(int export_flags, Envelope envelope, JsonWriter json_writer) {
+<b class="fc"><i>360</i>&nbsp;		int precision = 17 - (31 &amp; (export_flags &gt;&gt; 13));</b>
+<b class="fc"><i>361</i>&nbsp;		boolean bFixedPoint = (GeoJsonExportFlags.geoJsonExportPrecisionFixedPoint &amp; export_flags) != 0;</b>
+<b class="fc"><i>362</i>&nbsp;		boolean b_export_zs = envelope.hasAttribute(VertexDescription.Semantics.Z)</b>
+<i>363</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripZs) == 0;
+<b class="fc"><i>364</i>&nbsp;		boolean b_export_ms = envelope.hasAttribute(VertexDescription.Semantics.M)</b>
+<i>365</i>&nbsp;				&amp;&amp; (export_flags &amp; GeoJsonExportFlags.geoJsonExportStripMs) == 0;
+<i>366</i>&nbsp;
+<b class="fc"><i>367</i>&nbsp;		if (!b_export_zs &amp;&amp; b_export_ms)</b>
+<b class="nc"><i>368</i>&nbsp;			throw new IllegalArgumentException(&quot;invalid argument&quot;);</b>
+<i>369</i>&nbsp;
+<b class="fc"><i>370</i>&nbsp;		double xmin = NumberUtils.NaN();</b>
+<b class="fc"><i>371</i>&nbsp;		double ymin = NumberUtils.NaN();</b>
+<b class="fc"><i>372</i>&nbsp;		double xmax = NumberUtils.NaN();</b>
+<b class="fc"><i>373</i>&nbsp;		double ymax = NumberUtils.NaN();</b>
+<b class="fc"><i>374</i>&nbsp;		double zmin = NumberUtils.NaN();</b>
+<b class="fc"><i>375</i>&nbsp;		double zmax = NumberUtils.NaN();</b>
+<b class="fc"><i>376</i>&nbsp;		double mmin = NumberUtils.NaN();</b>
+<b class="fc"><i>377</i>&nbsp;		double mmax = NumberUtils.NaN();</b>
+<i>378</i>&nbsp;
+<b class="fc"><i>379</i>&nbsp;		if (!envelope.isEmpty()) {</b>
+<b class="fc"><i>380</i>&nbsp;			xmin = envelope.getXMin();</b>
+<b class="fc"><i>381</i>&nbsp;			ymin = envelope.getYMin();</b>
+<b class="fc"><i>382</i>&nbsp;			xmax = envelope.getXMax();</b>
+<b class="fc"><i>383</i>&nbsp;			ymax = envelope.getYMax();</b>
+<i>384</i>&nbsp;
+<i>385</i>&nbsp;			Envelope1D interval;
+<i>386</i>&nbsp;
+<b class="fc"><i>387</i>&nbsp;			if (b_export_zs) {</b>
+<b class="nc"><i>388</i>&nbsp;				interval = envelope.queryInterval(Semantics.Z, 0);</b>
+<b class="nc"><i>389</i>&nbsp;				zmin = interval.vmin;</b>
+<b class="nc"><i>390</i>&nbsp;				zmax = interval.vmax;</b>
+<i>391</i>&nbsp;			}
+<i>392</i>&nbsp;
+<b class="fc"><i>393</i>&nbsp;			if (b_export_ms) {</b>
+<b class="nc"><i>394</i>&nbsp;				interval = envelope.queryInterval(Semantics.M, 0);</b>
+<b class="nc"><i>395</i>&nbsp;				mmin = interval.vmin;</b>
+<b class="nc"><i>396</i>&nbsp;				mmax = interval.vmax;</b>
+<i>397</i>&nbsp;			}
+<i>398</i>&nbsp;		}
+<i>399</i>&nbsp;
+<b class="fc"><i>400</i>&nbsp;		if ((export_flags &amp; GeoJsonExportFlags.geoJsonExportPreferMultiGeometry) == 0)</b>
+<b class="fc"><i>401</i>&nbsp;			polygonTaggedTextFromEnvelope_(precision, bFixedPoint, b_export_zs, b_export_ms, xmin, ymin, xmax, ymax,</b>
+<i>402</i>&nbsp;					zmin, zmax, mmin, mmax, json_writer);
+<i>403</i>&nbsp;		else
+<b class="nc"><i>404</i>&nbsp;			multiPolygonTaggedTextFromEnvelope_(precision, bFixedPoint, b_export_zs, b_export_ms, xmin, ymin, xmax,</b>
+<i>405</i>&nbsp;					ymax, zmin, zmax, mmin, mmax, json_writer);
+<b class="fc"><i>406</i>&nbsp;	}</b>
+<i>407</i>&nbsp;
+<i>408</i>&nbsp;	// Mirrors wkt
+<i>409</i>&nbsp;	private static void multiPolygonTaggedText_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>410</i>&nbsp;			boolean b_export_ms, AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position,
+<i>411</i>&nbsp;			AttributeStreamOfInt8 path_flags, AttributeStreamOfInt32 paths, int polygon_count, int path_count,
+<i>412</i>&nbsp;			JsonWriter json_writer) {
+<b class="fc"><i>413</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="fc"><i>414</i>&nbsp;		json_writer.addValueString(&quot;MultiPolygon&quot;);</b>
+<i>415</i>&nbsp;
+<b class="fc"><i>416</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>417</i>&nbsp;
+<b class="fc"><i>418</i>&nbsp;		if (position == null) {</b>
+<b class="fc"><i>419</i>&nbsp;			json_writer.startArray();</b>
+<b class="fc"><i>420</i>&nbsp;			json_writer.endArray();</b>
+<b class="fc"><i>421</i>&nbsp;			return;</b>
+<i>422</i>&nbsp;		}
+<i>423</i>&nbsp;
+<b class="fc"><i>424</i>&nbsp;		json_writer.startArray();</b>
+<i>425</i>&nbsp;
+<b class="fc"><i>426</i>&nbsp;		multiPolygonText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, path_flags, paths,</b>
+<i>427</i>&nbsp;				polygon_count, path_count, json_writer);
+<i>428</i>&nbsp;
+<b class="fc"><i>429</i>&nbsp;		json_writer.endArray();</b>
+<b class="fc"><i>430</i>&nbsp;	}</b>
+<i>431</i>&nbsp;
+<i>432</i>&nbsp;	// Mirrors wkt
+<i>433</i>&nbsp;	private static void multiPolygonTaggedTextFromEnvelope_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>434</i>&nbsp;			boolean b_export_ms, double xmin, double ymin, double xmax, double ymax, double zmin, double zmax,
+<i>435</i>&nbsp;			double mmin, double mmax, JsonWriter json_writer) {
+<b class="nc"><i>436</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="nc"><i>437</i>&nbsp;		json_writer.addValueString(&quot;MultiPolygon&quot;);</b>
+<i>438</i>&nbsp;
+<b class="nc"><i>439</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>440</i>&nbsp;
+<b class="nc"><i>441</i>&nbsp;		if (NumberUtils.isNaN(xmin)) {</b>
+<b class="nc"><i>442</i>&nbsp;			json_writer.startArray();</b>
+<b class="nc"><i>443</i>&nbsp;			json_writer.endArray();</b>
+<b class="nc"><i>444</i>&nbsp;			return;</b>
+<i>445</i>&nbsp;		}
+<i>446</i>&nbsp;
+<b class="nc"><i>447</i>&nbsp;		json_writer.startArray();</b>
+<i>448</i>&nbsp;
+<b class="nc"><i>449</i>&nbsp;		writeEnvelopeAsGeoJsonPolygon_(precision, bFixedPoint, b_export_zs, b_export_ms, xmin, ymin, xmax, ymax, zmin,</b>
+<i>450</i>&nbsp;				zmax, mmin, mmax, json_writer);
+<i>451</i>&nbsp;
+<b class="nc"><i>452</i>&nbsp;		json_writer.endArray();</b>
+<b class="nc"><i>453</i>&nbsp;	}</b>
+<i>454</i>&nbsp;
+<i>455</i>&nbsp;	// Mirrors wkt
+<i>456</i>&nbsp;	private static void multiLineStringTaggedText_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>457</i>&nbsp;			boolean b_export_ms, AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position,
+<i>458</i>&nbsp;			AttributeStreamOfInt8 path_flags, AttributeStreamOfInt32 paths, int path_count, JsonWriter json_writer) {
+<b class="fc"><i>459</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="fc"><i>460</i>&nbsp;		json_writer.addValueString(&quot;MultiLineString&quot;);</b>
+<i>461</i>&nbsp;
+<b class="fc"><i>462</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>463</i>&nbsp;
+<b class="fc"><i>464</i>&nbsp;		if (position == null) {</b>
+<b class="nc"><i>465</i>&nbsp;			json_writer.startArray();</b>
+<b class="nc"><i>466</i>&nbsp;			json_writer.endArray();</b>
+<b class="nc"><i>467</i>&nbsp;			return;</b>
+<i>468</i>&nbsp;		}
+<i>469</i>&nbsp;
+<b class="fc"><i>470</i>&nbsp;		json_writer.startArray();</b>
+<i>471</i>&nbsp;
+<b class="fc"><i>472</i>&nbsp;		multiLineStringText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, path_flags, paths,</b>
+<i>473</i>&nbsp;				path_count, json_writer);
+<i>474</i>&nbsp;
+<b class="fc"><i>475</i>&nbsp;		json_writer.endArray();</b>
+<b class="fc"><i>476</i>&nbsp;	}</b>
+<i>477</i>&nbsp;
+<i>478</i>&nbsp;	// Mirrors wkt
+<i>479</i>&nbsp;	private static void multiPointTaggedText_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>480</i>&nbsp;			boolean b_export_ms, AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position,
+<i>481</i>&nbsp;			int point_count, JsonWriter json_writer) {
+<b class="fc"><i>482</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="fc"><i>483</i>&nbsp;		json_writer.addValueString(&quot;MultiPoint&quot;);</b>
+<i>484</i>&nbsp;
+<b class="fc"><i>485</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>486</i>&nbsp;
+<b class="fc"><i>487</i>&nbsp;		if (position == null) {</b>
+<b class="fc"><i>488</i>&nbsp;			json_writer.startArray();</b>
+<b class="fc"><i>489</i>&nbsp;			json_writer.endArray();</b>
+<b class="fc"><i>490</i>&nbsp;			return;</b>
+<i>491</i>&nbsp;		}
+<i>492</i>&nbsp;
+<b class="fc"><i>493</i>&nbsp;		lineStringText_(false, false, precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, 0,</b>
+<i>494</i>&nbsp;				point_count, json_writer);
+<b class="fc"><i>495</i>&nbsp;	}</b>
+<i>496</i>&nbsp;
+<i>497</i>&nbsp;	// Mirrors wkt
+<i>498</i>&nbsp;	private static void multiPointTaggedTextFromPoint_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>499</i>&nbsp;			boolean b_export_ms, double x, double y, double z, double m, JsonWriter json_writer) {
+<b class="fc"><i>500</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="fc"><i>501</i>&nbsp;		json_writer.addValueString(&quot;MultiPoint&quot;);</b>
+<i>502</i>&nbsp;
+<b class="fc"><i>503</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>504</i>&nbsp;
+<b class="fc"><i>505</i>&nbsp;		if (NumberUtils.isNaN(x)) {</b>
+<b class="fc"><i>506</i>&nbsp;			json_writer.startArray();</b>
+<b class="fc"><i>507</i>&nbsp;			json_writer.endArray();</b>
+<b class="fc"><i>508</i>&nbsp;			return;</b>
+<i>509</i>&nbsp;		}
+<i>510</i>&nbsp;
+<b class="fc"><i>511</i>&nbsp;		json_writer.startArray();</b>
+<i>512</i>&nbsp;
+<b class="fc"><i>513</i>&nbsp;		pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, x, y, z, m, json_writer);</b>
+<i>514</i>&nbsp;
+<b class="fc"><i>515</i>&nbsp;		json_writer.endArray();</b>
+<b class="fc"><i>516</i>&nbsp;	}</b>
+<i>517</i>&nbsp;
+<i>518</i>&nbsp;	// Mirrors wkt
+<i>519</i>&nbsp;	private static void polygonTaggedText_(int precision, boolean bFixedPoint, boolean b_export_zs, boolean b_export_ms,
+<i>520</i>&nbsp;			AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position,
+<i>521</i>&nbsp;			AttributeStreamOfInt32 paths, int path_count, JsonWriter json_writer) {
+<b class="fc"><i>522</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="fc"><i>523</i>&nbsp;		json_writer.addValueString(&quot;Polygon&quot;);</b>
+<i>524</i>&nbsp;
+<b class="fc"><i>525</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>526</i>&nbsp;
+<b class="fc"><i>527</i>&nbsp;		if (position == null) {</b>
+<b class="fc"><i>528</i>&nbsp;			json_writer.startArray();</b>
+<b class="fc"><i>529</i>&nbsp;			json_writer.endArray();</b>
+<b class="fc"><i>530</i>&nbsp;			return;</b>
+<i>531</i>&nbsp;		}
+<i>532</i>&nbsp;
+<b class="fc"><i>533</i>&nbsp;		polygonText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, paths, 0, path_count,</b>
+<i>534</i>&nbsp;				json_writer);
+<b class="fc"><i>535</i>&nbsp;	}</b>
+<i>536</i>&nbsp;
+<i>537</i>&nbsp;	// Mirrors wkt
+<i>538</i>&nbsp;	private static void polygonTaggedTextFromEnvelope_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>539</i>&nbsp;			boolean b_export_ms, double xmin, double ymin, double xmax, double ymax, double zmin, double zmax,
+<i>540</i>&nbsp;			double mmin, double mmax, JsonWriter json_writer) {
+<b class="fc"><i>541</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="fc"><i>542</i>&nbsp;		json_writer.addValueString(&quot;Polygon&quot;);</b>
+<i>543</i>&nbsp;
+<b class="fc"><i>544</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>545</i>&nbsp;
+<b class="fc"><i>546</i>&nbsp;		if (NumberUtils.isNaN(xmin)) {</b>
+<b class="fc"><i>547</i>&nbsp;			json_writer.startArray();</b>
+<b class="fc"><i>548</i>&nbsp;			json_writer.endArray();</b>
+<b class="fc"><i>549</i>&nbsp;			return;</b>
+<i>550</i>&nbsp;		}
+<i>551</i>&nbsp;
+<b class="fc"><i>552</i>&nbsp;		writeEnvelopeAsGeoJsonPolygon_(precision, bFixedPoint, b_export_zs, b_export_ms, xmin, ymin, xmax, ymax, zmin,</b>
+<i>553</i>&nbsp;				zmax, mmin, mmax, json_writer);
+<b class="fc"><i>554</i>&nbsp;	}</b>
+<i>555</i>&nbsp;
+<i>556</i>&nbsp;	// Mirrors wkt
+<i>557</i>&nbsp;	private static void lineStringTaggedText_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>558</i>&nbsp;			boolean b_export_ms, AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position,
+<i>559</i>&nbsp;			AttributeStreamOfInt8 path_flags, AttributeStreamOfInt32 paths, JsonWriter json_writer) {
+<b class="fc"><i>560</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="fc"><i>561</i>&nbsp;		json_writer.addValueString(&quot;LineString&quot;);</b>
+<i>562</i>&nbsp;
+<b class="fc"><i>563</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>564</i>&nbsp;
+<b class="fc"><i>565</i>&nbsp;		if (position == null) {</b>
+<b class="fc"><i>566</i>&nbsp;			json_writer.startArray();</b>
+<b class="fc"><i>567</i>&nbsp;			json_writer.endArray();</b>
+<b class="fc"><i>568</i>&nbsp;			return;</b>
+<i>569</i>&nbsp;		}
+<i>570</i>&nbsp;
+<b class="fc"><i>571</i>&nbsp;		boolean b_closed = ((path_flags.read(0) &amp; PathFlags.enumClosed) != 0);</b>
+<i>572</i>&nbsp;
+<b class="fc"><i>573</i>&nbsp;		lineStringText_(false, b_closed, precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, 0,</b>
+<b class="fc"><i>574</i>&nbsp;				paths.read(1), json_writer);</b>
+<b class="fc"><i>575</i>&nbsp;	}</b>
+<i>576</i>&nbsp;
+<i>577</i>&nbsp;	// Mirrors wkt
+<i>578</i>&nbsp;	private static void pointTaggedText_(int precision, boolean bFixedPoint, boolean b_export_zs, boolean b_export_ms,
+<i>579</i>&nbsp;			double x, double y, double z, double m, JsonWriter json_writer) {
+<b class="fc"><i>580</i>&nbsp;		json_writer.addFieldName(&quot;type&quot;);</b>
+<b class="fc"><i>581</i>&nbsp;		json_writer.addValueString(&quot;Point&quot;);</b>
+<i>582</i>&nbsp;
+<b class="fc"><i>583</i>&nbsp;		json_writer.addFieldName(&quot;coordinates&quot;);</b>
+<i>584</i>&nbsp;
+<b class="fc"><i>585</i>&nbsp;		if (NumberUtils.isNaN(x)) {</b>
+<b class="fc"><i>586</i>&nbsp;			json_writer.startArray();</b>
+<b class="fc"><i>587</i>&nbsp;			json_writer.endArray();</b>
+<i>588</i>&nbsp;
+<b class="fc"><i>589</i>&nbsp;			return;</b>
+<i>590</i>&nbsp;		}
+<i>591</i>&nbsp;
+<b class="fc"><i>592</i>&nbsp;		pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, x, y, z, m, json_writer);</b>
+<b class="fc"><i>593</i>&nbsp;	}</b>
+<i>594</i>&nbsp;
+<i>595</i>&nbsp;	// Mirrors wkt
+<i>596</i>&nbsp;	private static void multiPolygonText_(int precision, boolean bFixedPoint, boolean b_export_zs, boolean b_export_ms,
+<i>597</i>&nbsp;			AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position,
+<i>598</i>&nbsp;			AttributeStreamOfInt8 path_flags, AttributeStreamOfInt32 paths, int polygon_count, int path_count,
+<i>599</i>&nbsp;			JsonWriter json_writer) {
+<b class="fc"><i>600</i>&nbsp;		int polygon_start = 0;</b>
+<b class="fc"><i>601</i>&nbsp;		int polygon_end = 1;</b>
+<i>602</i>&nbsp;
+<b class="fc"><i>603</i>&nbsp;		while (polygon_end &lt; path_count &amp;&amp; ((int) path_flags.read(polygon_end) &amp; PathFlags.enumOGCStartPolygon) == 0)</b>
+<b class="fc"><i>604</i>&nbsp;			polygon_end++;</b>
+<i>605</i>&nbsp;
+<b class="fc"><i>606</i>&nbsp;		polygonText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, paths, polygon_start,</b>
+<i>607</i>&nbsp;				polygon_end, json_writer);
+<i>608</i>&nbsp;
+<b class="fc"><i>609</i>&nbsp;		for (int ipolygon = 1; ipolygon &lt; polygon_count; ipolygon++) {</b>
+<b class="fc"><i>610</i>&nbsp;			polygon_start = polygon_end;</b>
+<b class="fc"><i>611</i>&nbsp;			polygon_end++;</b>
+<i>612</i>&nbsp;
+<b class="fc"><i>613</i>&nbsp;			while (polygon_end &lt; path_count</b>
+<b class="fc"><i>614</i>&nbsp;					&amp;&amp; ((int) path_flags.read(polygon_end) &amp; PathFlags.enumOGCStartPolygon) == 0)</b>
+<b class="fc"><i>615</i>&nbsp;				polygon_end++;</b>
+<i>616</i>&nbsp;
+<b class="fc"><i>617</i>&nbsp;			polygonText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, paths, polygon_start,</b>
+<i>618</i>&nbsp;					polygon_end, json_writer);
+<i>619</i>&nbsp;		}
+<b class="fc"><i>620</i>&nbsp;	}</b>
+<i>621</i>&nbsp;
+<i>622</i>&nbsp;	// Mirrors wkt
+<i>623</i>&nbsp;	private static void multiLineStringText_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>624</i>&nbsp;			boolean b_export_ms, AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position,
+<i>625</i>&nbsp;			AttributeStreamOfInt8 path_flags, AttributeStreamOfInt32 paths, int path_count, JsonWriter json_writer) {
+<b class="fc"><i>626</i>&nbsp;		boolean b_closed = ((path_flags.read(0) &amp; PathFlags.enumClosed) != 0);</b>
+<i>627</i>&nbsp;
+<b class="fc"><i>628</i>&nbsp;		lineStringText_(false, b_closed, precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, 0,</b>
+<b class="fc"><i>629</i>&nbsp;				paths.read(1), json_writer);</b>
+<i>630</i>&nbsp;
+<b class="fc"><i>631</i>&nbsp;		for (int path = 1; path &lt; path_count; path++) {</b>
+<b class="fc"><i>632</i>&nbsp;			b_closed = ((path_flags.read(path) &amp; PathFlags.enumClosed) != 0);</b>
+<i>633</i>&nbsp;
+<b class="fc"><i>634</i>&nbsp;			int istart = paths.read(path);</b>
+<b class="fc"><i>635</i>&nbsp;			int iend = paths.read(path + 1);</b>
+<b class="fc"><i>636</i>&nbsp;			lineStringText_(false, b_closed, precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, istart,</b>
+<i>637</i>&nbsp;					iend, json_writer);
+<i>638</i>&nbsp;		}
+<b class="fc"><i>639</i>&nbsp;	}</b>
+<i>640</i>&nbsp;
+<i>641</i>&nbsp;	// Mirrors wkt
+<i>642</i>&nbsp;	private static void polygonText_(int precision, boolean bFixedPoint, boolean b_export_zs, boolean b_export_ms,
+<i>643</i>&nbsp;			AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position,
+<i>644</i>&nbsp;			AttributeStreamOfInt32 paths, int polygon_start, int polygon_end, JsonWriter json_writer) {
+<b class="fc"><i>645</i>&nbsp;		json_writer.startArray();</b>
+<i>646</i>&nbsp;
+<b class="fc"><i>647</i>&nbsp;		int istart = paths.read(polygon_start);</b>
+<b class="fc"><i>648</i>&nbsp;		int iend = paths.read(polygon_start + 1);</b>
+<b class="fc"><i>649</i>&nbsp;		lineStringText_(true, true, precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, istart, iend,</b>
+<i>650</i>&nbsp;				json_writer);
+<i>651</i>&nbsp;
+<b class="fc"><i>652</i>&nbsp;		for (int path = polygon_start + 1; path &lt; polygon_end; path++) {</b>
+<b class="fc"><i>653</i>&nbsp;			istart = paths.read(path);</b>
+<b class="fc"><i>654</i>&nbsp;			iend = paths.read(path + 1);</b>
+<b class="fc"><i>655</i>&nbsp;			lineStringText_(true, true, precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, istart,</b>
+<i>656</i>&nbsp;					iend, json_writer);
+<i>657</i>&nbsp;		}
+<i>658</i>&nbsp;
+<b class="fc"><i>659</i>&nbsp;		json_writer.endArray();</b>
+<b class="fc"><i>660</i>&nbsp;	}</b>
+<i>661</i>&nbsp;
+<i>662</i>&nbsp;	// Mirrors wkt
+<i>663</i>&nbsp;	private static void lineStringText_(boolean bRing, boolean b_closed, int precision, boolean bFixedPoint,
+<i>664</i>&nbsp;			boolean b_export_zs, boolean b_export_ms, AttributeStreamOfDbl zs, AttributeStreamOfDbl ms,
+<i>665</i>&nbsp;			AttributeStreamOfDbl position, int istart, int iend, JsonWriter json_writer) {
+<b class="fc"><i>666</i>&nbsp;		if (istart == iend) {</b>
+<b class="nc"><i>667</i>&nbsp;			json_writer.startArray();</b>
+<b class="nc"><i>668</i>&nbsp;			json_writer.endArray();</b>
+<b class="nc"><i>669</i>&nbsp;			return;</b>
+<i>670</i>&nbsp;		}
+<i>671</i>&nbsp;
+<b class="fc"><i>672</i>&nbsp;		json_writer.startArray();</b>
+<i>673</i>&nbsp;
+<b class="fc"><i>674</i>&nbsp;		if (bRing) {</b>
+<b class="fc"><i>675</i>&nbsp;			pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, istart, json_writer);</b>
+<i>676</i>&nbsp;
+<b class="fc"><i>677</i>&nbsp;			for (int point = iend - 1; point &gt;= istart + 1; point--)</b>
+<b class="fc"><i>678</i>&nbsp;				pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, point, json_writer);</b>
+<i>679</i>&nbsp;
+<b class="fc"><i>680</i>&nbsp;			pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, istart, json_writer);</b>
+<i>681</i>&nbsp;		} else {
+<b class="fc"><i>682</i>&nbsp;			for (int point = istart; point &lt; iend - 1; point++)</b>
+<b class="fc"><i>683</i>&nbsp;				pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, point, json_writer);</b>
+<i>684</i>&nbsp;
+<b class="fc"><i>685</i>&nbsp;			pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, iend - 1, json_writer);</b>
+<i>686</i>&nbsp;
+<b class="fc"><i>687</i>&nbsp;			if (b_closed)</b>
+<b class="nc"><i>688</i>&nbsp;				pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, zs, ms, position, istart, json_writer);</b>
+<i>689</i>&nbsp;		}
+<i>690</i>&nbsp;
+<b class="fc"><i>691</i>&nbsp;		json_writer.endArray();</b>
+<b class="fc"><i>692</i>&nbsp;	}</b>
+<i>693</i>&nbsp;
+<i>694</i>&nbsp;	// Mirrors wkt
+<i>695</i>&nbsp;	private static int pointText_(int precision, boolean bFixedPoint, boolean b_export_zs, boolean b_export_ms,
+<i>696</i>&nbsp;			double x, double y, double z, double m, JsonWriter json_writer) {
+<i>697</i>&nbsp;
+<b class="fc"><i>698</i>&nbsp;		json_writer.startArray();</b>
+<i>699</i>&nbsp;
+<b class="fc"><i>700</i>&nbsp;		json_writer.addValueDouble(x, precision, bFixedPoint);</b>
+<b class="fc"><i>701</i>&nbsp;		json_writer.addValueDouble(y, precision, bFixedPoint);</b>
+<i>702</i>&nbsp;
+<b class="fc"><i>703</i>&nbsp;		if (b_export_zs)</b>
+<b class="fc"><i>704</i>&nbsp;			json_writer.addValueDouble(z, precision, bFixedPoint);</b>
+<i>705</i>&nbsp;
+<b class="fc"><i>706</i>&nbsp;		if (b_export_ms)</b>
+<b class="fc"><i>707</i>&nbsp;			json_writer.addValueDouble(m, precision, bFixedPoint);</b>
+<i>708</i>&nbsp;
+<b class="fc"><i>709</i>&nbsp;		json_writer.endArray();</b>
+<i>710</i>&nbsp;
+<b class="fc"><i>711</i>&nbsp;		return 1;</b>
+<i>712</i>&nbsp;	}
+<i>713</i>&nbsp;
+<i>714</i>&nbsp;	// Mirrors wkt
+<i>715</i>&nbsp;	private static void pointText_(int precision, boolean bFixedPoint, boolean b_export_zs, boolean b_export_ms,
+<i>716</i>&nbsp;			AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfDbl position, int point,
+<i>717</i>&nbsp;			JsonWriter json_writer) {
+<b class="fc"><i>718</i>&nbsp;		double x = position.readAsDbl(2 * point);</b>
+<b class="fc"><i>719</i>&nbsp;		double y = position.readAsDbl(2 * point + 1);</b>
+<b class="fc"><i>720</i>&nbsp;		double z = NumberUtils.NaN();</b>
+<b class="fc"><i>721</i>&nbsp;		double m = NumberUtils.NaN();</b>
+<i>722</i>&nbsp;
+<b class="fc"><i>723</i>&nbsp;		if (b_export_zs)</b>
+<b class="fc"><i>724</i>&nbsp;			z = (zs != null ? zs.readAsDbl(point) : VertexDescription.getDefaultValue(Semantics.Z));</b>
+<i>725</i>&nbsp;
+<b class="fc"><i>726</i>&nbsp;		if (b_export_ms)</b>
+<b class="fc"><i>727</i>&nbsp;			m = (ms != null ? ms.readAsDbl(point) : VertexDescription.getDefaultValue(Semantics.M));</b>
+<i>728</i>&nbsp;
+<b class="fc"><i>729</i>&nbsp;		pointText_(precision, bFixedPoint, b_export_zs, b_export_ms, x, y, z, m, json_writer);</b>
+<b class="fc"><i>730</i>&nbsp;	}</b>
+<i>731</i>&nbsp;
+<i>732</i>&nbsp;	// Mirrors wkt
+<i>733</i>&nbsp;	private static void writeEnvelopeAsGeoJsonPolygon_(int precision, boolean bFixedPoint, boolean b_export_zs,
+<i>734</i>&nbsp;			boolean b_export_ms, double xmin, double ymin, double xmax, double ymax, double zmin, double zmax,
+<i>735</i>&nbsp;			double mmin, double mmax, JsonWriter json_writer) {
+<b class="fc"><i>736</i>&nbsp;		json_writer.startArray();</b>
+<b class="fc"><i>737</i>&nbsp;		json_writer.startArray();</b>
+<i>738</i>&nbsp;
+<b class="fc"><i>739</i>&nbsp;		json_writer.startArray();</b>
+<b class="fc"><i>740</i>&nbsp;		json_writer.addValueDouble(xmin, precision, bFixedPoint);</b>
+<b class="fc"><i>741</i>&nbsp;		json_writer.addValueDouble(ymin, precision, bFixedPoint);</b>
+<i>742</i>&nbsp;
+<b class="fc"><i>743</i>&nbsp;		if (b_export_zs)</b>
+<b class="nc"><i>744</i>&nbsp;			json_writer.addValueDouble(zmin, precision, bFixedPoint);</b>
+<i>745</i>&nbsp;
+<b class="fc"><i>746</i>&nbsp;		if (b_export_ms)</b>
+<b class="nc"><i>747</i>&nbsp;			json_writer.addValueDouble(mmin, precision, bFixedPoint);</b>
+<i>748</i>&nbsp;
+<b class="fc"><i>749</i>&nbsp;		json_writer.endArray();</b>
+<i>750</i>&nbsp;
+<b class="fc"><i>751</i>&nbsp;		json_writer.startArray();</b>
+<b class="fc"><i>752</i>&nbsp;		json_writer.addValueDouble(xmax, precision, bFixedPoint);</b>
+<b class="fc"><i>753</i>&nbsp;		json_writer.addValueDouble(ymin, precision, bFixedPoint);</b>
+<i>754</i>&nbsp;
+<b class="fc"><i>755</i>&nbsp;		if (b_export_zs)</b>
+<b class="nc"><i>756</i>&nbsp;			json_writer.addValueDouble(zmax, precision, bFixedPoint);</b>
+<i>757</i>&nbsp;
+<b class="fc"><i>758</i>&nbsp;		if (b_export_ms)</b>
+<b class="nc"><i>759</i>&nbsp;			json_writer.addValueDouble(mmax, precision, bFixedPoint);</b>
+<i>760</i>&nbsp;
+<b class="fc"><i>761</i>&nbsp;		json_writer.endArray();</b>
+<i>762</i>&nbsp;
+<b class="fc"><i>763</i>&nbsp;		json_writer.startArray();</b>
+<b class="fc"><i>764</i>&nbsp;		json_writer.addValueDouble(xmax, precision, bFixedPoint);</b>
+<b class="fc"><i>765</i>&nbsp;		json_writer.addValueDouble(ymax, precision, bFixedPoint);</b>
+<i>766</i>&nbsp;
+<b class="fc"><i>767</i>&nbsp;		if (b_export_zs)</b>
+<b class="nc"><i>768</i>&nbsp;			json_writer.addValueDouble(zmin, precision, bFixedPoint);</b>
+<i>769</i>&nbsp;
+<b class="fc"><i>770</i>&nbsp;		if (b_export_ms)</b>
+<b class="nc"><i>771</i>&nbsp;			json_writer.addValueDouble(mmin, precision, bFixedPoint);</b>
+<i>772</i>&nbsp;
+<b class="fc"><i>773</i>&nbsp;		json_writer.endArray();</b>
+<i>774</i>&nbsp;
+<b class="fc"><i>775</i>&nbsp;		json_writer.startArray();</b>
+<b class="fc"><i>776</i>&nbsp;		json_writer.addValueDouble(xmin, precision, bFixedPoint);</b>
+<b class="fc"><i>777</i>&nbsp;		json_writer.addValueDouble(ymax, precision, bFixedPoint);</b>
+<i>778</i>&nbsp;
+<b class="fc"><i>779</i>&nbsp;		if (b_export_zs)</b>
+<b class="nc"><i>780</i>&nbsp;			json_writer.addValueDouble(zmax, precision, bFixedPoint);</b>
+<i>781</i>&nbsp;
+<b class="fc"><i>782</i>&nbsp;		if (b_export_ms)</b>
+<b class="nc"><i>783</i>&nbsp;			json_writer.addValueDouble(mmax, precision, bFixedPoint);</b>
+<i>784</i>&nbsp;
+<b class="fc"><i>785</i>&nbsp;		json_writer.endArray();</b>
+<i>786</i>&nbsp;
+<b class="fc"><i>787</i>&nbsp;		json_writer.startArray();</b>
+<b class="fc"><i>788</i>&nbsp;		json_writer.addValueDouble(xmin, precision, bFixedPoint);</b>
+<b class="fc"><i>789</i>&nbsp;		json_writer.addValueDouble(ymin, precision, bFixedPoint);</b>
+<i>790</i>&nbsp;
+<b class="fc"><i>791</i>&nbsp;		if (b_export_zs)</b>
+<b class="nc"><i>792</i>&nbsp;			json_writer.addValueDouble(zmin, precision, bFixedPoint);</b>
+<i>793</i>&nbsp;
+<b class="fc"><i>794</i>&nbsp;		if (b_export_ms)</b>
+<b class="nc"><i>795</i>&nbsp;			json_writer.addValueDouble(mmin, precision, bFixedPoint);</b>
+<i>796</i>&nbsp;
+<b class="fc"><i>797</i>&nbsp;		json_writer.endArray();</b>
+<i>798</i>&nbsp;
+<b class="fc"><i>799</i>&nbsp;		json_writer.endArray();</b>
+<b class="fc"><i>800</i>&nbsp;		json_writer.endArray();</b>
+<b class="fc"><i>801</i>&nbsp;	}</b>
+<i>802</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-26 10:02</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1172 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Simplificator</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Simplificator (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Simplificator</td>
+<td class="coverageStat">
+  <span class="percent">
+    95%
+  </span>
+  <span class="absValue">
+    (19/ 20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.9%
+  </span>
+  <span class="absValue">
+    (516/ 544)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">Simplificator$SimplificatorAngleComparer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">Simplificator$SimplificatorVertexComparer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    95.8%
+  </span>
+  <span class="absValue">
+    (23/ 24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.9%
+  </span>
+  <span class="absValue">
+    (524/ 552)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<b class="fc"><i>26</i>&nbsp;class Simplificator {</b>
+<i>27</i>&nbsp;	private EditShape m_shape;
+<i>28</i>&nbsp;	private int m_geometry;
+<i>29</i>&nbsp;	private IndexMultiDCList m_sortedVertices;
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;	private AttributeStreamOfInt32 m_bunchEdgeEndPoints;
+<i>32</i>&nbsp;	private AttributeStreamOfInt32 m_bunchEdgeCenterPoints;
+<i>33</i>&nbsp;	private AttributeStreamOfInt32 m_bunchEdgeIndices;
+<i>34</i>&nbsp;	// private AttributeStreamOfInt32 m_orphanVertices;
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;	private int m_dbgCounter;
+<i>37</i>&nbsp;	private int m_sortedVerticesListIndex;
+<i>38</i>&nbsp;	private int m_userIndexSortedIndexToVertex;
+<i>39</i>&nbsp;	private int m_userIndexSortedAngleIndexToVertex;
+<i>40</i>&nbsp;	private int m_nextVertexToProcess;
+<i>41</i>&nbsp;	private int m_firstCoincidentVertex;
+<i>42</i>&nbsp;	private int m_knownSimpleResult;
+<i>43</i>&nbsp;	private boolean m_bWinding;
+<i>44</i>&nbsp;	private boolean m_fixSelfTangency;
+<i>45</i>&nbsp;	private ProgressTracker m_progressTracker;
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;	private void _beforeRemoveVertex(int vertex, boolean bChangePathFirst) {
+<b class="fc"><i>48</i>&nbsp;		int vertexlistIndex = m_shape.getUserIndex(vertex,</b>
+<i>49</i>&nbsp;				m_userIndexSortedIndexToVertex);
+<i>50</i>&nbsp;
+<b class="fc"><i>51</i>&nbsp;		if (m_nextVertexToProcess == vertexlistIndex) {</b>
+<b class="nc"><i>52</i>&nbsp;			m_nextVertexToProcess = m_sortedVertices</b>
+<b class="nc"><i>53</i>&nbsp;					.getNext(m_nextVertexToProcess);</b>
+<i>54</i>&nbsp;		}
+<i>55</i>&nbsp;
+<b class="fc"><i>56</i>&nbsp;		if (m_firstCoincidentVertex == vertexlistIndex)</b>
+<b class="fc"><i>57</i>&nbsp;			m_firstCoincidentVertex = m_sortedVertices</b>
+<b class="fc"><i>58</i>&nbsp;					.getNext(m_firstCoincidentVertex);</b>
+<i>59</i>&nbsp;
+<b class="fc"><i>60</i>&nbsp;		m_sortedVertices.deleteElement(m_sortedVerticesListIndex,</b>
+<i>61</i>&nbsp;				vertexlistIndex);
+<b class="fc"><i>62</i>&nbsp;		_removeAngleSortInfo(vertex);</b>
+<b class="fc"><i>63</i>&nbsp;		if (bChangePathFirst) {</b>
+<b class="fc"><i>64</i>&nbsp;			int path = m_shape.getPathFromVertex(vertex);</b>
+<b class="fc"><i>65</i>&nbsp;			if (path != -1) {</b>
+<b class="fc"><i>66</i>&nbsp;				int first = m_shape.getFirstVertex(path);</b>
+<b class="fc"><i>67</i>&nbsp;				if (first == vertex) {</b>
+<b class="fc"><i>68</i>&nbsp;					int next = m_shape.getNextVertex(vertex);</b>
+<b class="fc"><i>69</i>&nbsp;					if (next != vertex) {</b>
+<b class="fc"><i>70</i>&nbsp;						int p = m_shape.getPathFromVertex(next);</b>
+<b class="fc"><i>71</i>&nbsp;						if (p == path) {</b>
+<b class="nc"><i>72</i>&nbsp;							m_shape.setFirstVertex_(path, next);</b>
+<b class="nc"><i>73</i>&nbsp;							return;</b>
+<i>74</i>&nbsp;						}
+<i>75</i>&nbsp;						else {
+<b class="fc"><i>76</i>&nbsp;							int prev = m_shape.getPrevVertex(vertex);</b>
+<b class="fc"><i>77</i>&nbsp;							if (prev != vertex) {</b>
+<b class="fc"><i>78</i>&nbsp;								p = m_shape.getPathFromVertex(prev);</b>
+<b class="fc"><i>79</i>&nbsp;								if (p == path) {</b>
+<b class="fc"><i>80</i>&nbsp;									m_shape.setFirstVertex_(path, prev);</b>
+<b class="fc"><i>81</i>&nbsp;									return;</b>
+<i>82</i>&nbsp;								}
+<i>83</i>&nbsp;							}
+<i>84</i>&nbsp;						}
+<i>85</i>&nbsp;					}
+<i>86</i>&nbsp;
+<b class="fc"><i>87</i>&nbsp;					m_shape.setFirstVertex_(path, -1);</b>
+<b class="fc"><i>88</i>&nbsp;					m_shape.setLastVertex_(path, -1);</b>
+<i>89</i>&nbsp;				}
+<i>90</i>&nbsp;			}
+<i>91</i>&nbsp;		}
+<b class="fc"><i>92</i>&nbsp;	}</b>
+<i>93</i>&nbsp;
+<i>94</i>&nbsp;	static class SimplificatorAngleComparer extends
+<i>95</i>&nbsp;			AttributeStreamOfInt32.IntComparator {
+<i>96</i>&nbsp;		Simplificator m_parent;
+<i>97</i>&nbsp;
+<b class="fc"><i>98</i>&nbsp;		public SimplificatorAngleComparer(Simplificator parent) {</b>
+<b class="fc"><i>99</i>&nbsp;			m_parent = parent;</b>
+<b class="fc"><i>100</i>&nbsp;		}</b>
+<i>101</i>&nbsp;
+<i>102</i>&nbsp;		@Override
+<i>103</i>&nbsp;		public int compare(int v1, int v2) {
+<b class="fc"><i>104</i>&nbsp;			return m_parent._compareAngles(v1, v2);</b>
+<i>105</i>&nbsp;		}
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;	}
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;	private boolean _processBunch() {
+<b class="fc"><i>110</i>&nbsp;		boolean bModified = false;</b>
+<b class="fc"><i>111</i>&nbsp;		int iter = 0;</b>
+<b class="fc"><i>112</i>&nbsp;		Point2D ptCenter = new Point2D();</b>
+<i>113</i>&nbsp;		while (true) {
+<b class="fc"><i>114</i>&nbsp;			m_dbgCounter++;// only for debugging</b>
+<b class="fc"><i>115</i>&nbsp;			iter++;</b>
+<i>116</i>&nbsp;			// _ASSERT(iter &lt; 10);
+<b class="fc"><i>117</i>&nbsp;			if (m_bunchEdgeEndPoints == null) {</b>
+<b class="fc"><i>118</i>&nbsp;				m_bunchEdgeEndPoints = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>119</i>&nbsp;				m_bunchEdgeCenterPoints = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>120</i>&nbsp;				m_bunchEdgeIndices = new AttributeStreamOfInt32(0);</b>
+<i>121</i>&nbsp;			} else {
+<b class="fc"><i>122</i>&nbsp;				m_bunchEdgeEndPoints.clear(false);</b>
+<b class="fc"><i>123</i>&nbsp;				m_bunchEdgeCenterPoints.clear(false);</b>
+<b class="fc"><i>124</i>&nbsp;				m_bunchEdgeIndices.clear(false);</b>
+<i>125</i>&nbsp;			}
+<i>126</i>&nbsp;
+<b class="fc"><i>127</i>&nbsp;			int currentVertex = m_firstCoincidentVertex;</b>
+<b class="fc"><i>128</i>&nbsp;			int index = 0;</b>
+<b class="fc"><i>129</i>&nbsp;			boolean bFirst = true;</b>
+<b class="fc"><i>130</i>&nbsp;			while (currentVertex != m_nextVertexToProcess) {</b>
+<b class="fc"><i>131</i>&nbsp;				int v = m_sortedVertices.getData(currentVertex);</b>
+<i>132</i>&nbsp;				{// debug
+<b class="fc"><i>133</i>&nbsp;					Point2D pt = new Point2D();</b>
+<b class="fc"><i>134</i>&nbsp;					m_shape.getXY(v, pt);</b>
+<b class="fc"><i>135</i>&nbsp;					double y = pt.x;</b>
+<i>136</i>&nbsp;				}
+<b class="fc"><i>137</i>&nbsp;				if (bFirst) {</b>
+<b class="fc"><i>138</i>&nbsp;					m_shape.getXY(v, ptCenter);</b>
+<b class="fc"><i>139</i>&nbsp;					bFirst = false;</b>
+<i>140</i>&nbsp;				}
+<b class="fc"><i>141</i>&nbsp;				int vertP = m_shape.getPrevVertex(v);</b>
+<b class="fc"><i>142</i>&nbsp;				int vertN = m_shape.getNextVertex(v);</b>
+<i>143</i>&nbsp;				// _ASSERT(vertP != vertN || m_shape.getPrevVertex(vertN) == v
+<i>144</i>&nbsp;				// &amp;&amp; m_shape.getNextVertex(vertP) == v);
+<i>145</i>&nbsp;
+<b class="fc"><i>146</i>&nbsp;				int id = m_shape.getUserIndex(vertP,</b>
+<i>147</i>&nbsp;						m_userIndexSortedAngleIndexToVertex);
+<b class="fc"><i>148</i>&nbsp;				if (id != 0xdeadbeef)// avoid adding a point twice</b>
+<i>149</i>&nbsp;				{
+<i>150</i>&nbsp;					// _ASSERT(id == -1);
+<b class="fc"><i>151</i>&nbsp;					m_bunchEdgeEndPoints.add(vertP);</b>
+<b class="fc"><i>152</i>&nbsp;					m_shape.setUserIndex(vertP,</b>
+<i>153</i>&nbsp;							m_userIndexSortedAngleIndexToVertex, 0xdeadbeef);// mark
+<i>154</i>&nbsp;																				// that
+<i>155</i>&nbsp;																				// it
+<i>156</i>&nbsp;																				// has
+<i>157</i>&nbsp;																				// been
+<i>158</i>&nbsp;																				// already
+<i>159</i>&nbsp;																				// added
+<b class="fc"><i>160</i>&nbsp;					m_bunchEdgeCenterPoints.add(v);</b>
+<b class="fc"><i>161</i>&nbsp;					m_bunchEdgeIndices.add(index++);</b>
+<i>162</i>&nbsp;				}
+<i>163</i>&nbsp;
+<b class="fc"><i>164</i>&nbsp;				int id2 = m_shape.getUserIndex(vertN,</b>
+<i>165</i>&nbsp;						m_userIndexSortedAngleIndexToVertex);
+<b class="fc"><i>166</i>&nbsp;				if (id2 != 0xdeadbeef) // avoid adding a point twice</b>
+<i>167</i>&nbsp;				{
+<i>168</i>&nbsp;					// _ASSERT(id2 == -1);
+<b class="fc"><i>169</i>&nbsp;					m_bunchEdgeEndPoints.add(vertN);</b>
+<b class="fc"><i>170</i>&nbsp;					m_shape.setUserIndex(vertN,</b>
+<i>171</i>&nbsp;							m_userIndexSortedAngleIndexToVertex, 0xdeadbeef);// mark
+<i>172</i>&nbsp;																				// that
+<i>173</i>&nbsp;																				// it
+<i>174</i>&nbsp;																				// has
+<i>175</i>&nbsp;																				// been
+<i>176</i>&nbsp;																				// already
+<i>177</i>&nbsp;																				// added
+<b class="fc"><i>178</i>&nbsp;					m_bunchEdgeCenterPoints.add(v);</b>
+<b class="fc"><i>179</i>&nbsp;					m_bunchEdgeIndices.add(index++);</b>
+<i>180</i>&nbsp;				}
+<i>181</i>&nbsp;
+<b class="fc"><i>182</i>&nbsp;				currentVertex = m_sortedVertices.getNext(currentVertex);</b>
+<b class="fc"><i>183</i>&nbsp;			}</b>
+<i>184</i>&nbsp;
+<b class="fc"><i>185</i>&nbsp;			if (m_bunchEdgeEndPoints.size() &lt; 2)</b>
+<b class="fc"><i>186</i>&nbsp;				break;</b>
+<i>187</i>&nbsp;
+<i>188</i>&nbsp;			// Sort the bunch edpoints by angle (angle between the axis x and
+<i>189</i>&nbsp;			// the edge, connecting the endpoint with the bunch center)
+<b class="fc"><i>190</i>&nbsp;			m_bunchEdgeIndices.Sort(0, m_bunchEdgeIndices.size(),</b>
+<i>191</i>&nbsp;					new SimplificatorAngleComparer(this));
+<i>192</i>&nbsp;			// SORTDYNAMICARRAYEX(m_bunchEdgeIndices, int, 0,
+<i>193</i>&nbsp;			// m_bunchEdgeIndices.size(), SimplificatorAngleComparer, this);
+<i>194</i>&nbsp;
+<b class="fc"><i>195</i>&nbsp;			for (int i = 0, n = m_bunchEdgeIndices.size(); i &lt; n; i++) {</b>
+<b class="fc"><i>196</i>&nbsp;				int indexL = m_bunchEdgeIndices.get(i);</b>
+<b class="fc"><i>197</i>&nbsp;				int vertex = m_bunchEdgeEndPoints.get(indexL);</b>
+<b class="fc"><i>198</i>&nbsp;				m_shape.setUserIndex(vertex,</b>
+<i>199</i>&nbsp;						m_userIndexSortedAngleIndexToVertex, i);// rember the
+<i>200</i>&nbsp;																// sort by angle
+<i>201</i>&nbsp;																// order
+<i>202</i>&nbsp;				{// debug
+<b class="fc"><i>203</i>&nbsp;					Point2D pt = new Point2D();</b>
+<b class="fc"><i>204</i>&nbsp;					m_shape.getXY(vertex, pt);</b>
+<b class="fc"><i>205</i>&nbsp;					double y = pt.x;</b>
+<i>206</i>&nbsp;				}
+<i>207</i>&nbsp;			}
+<i>208</i>&nbsp;
+<b class="fc"><i>209</i>&nbsp;			boolean bCrossOverResolved = _processCrossOvers(ptCenter);// see of</b>
+<i>210</i>&nbsp;																		// there
+<i>211</i>&nbsp;																		// are
+<i>212</i>&nbsp;																		// crossing
+<i>213</i>&nbsp;																		// over
+<i>214</i>&nbsp;																		// edges.
+<b class="fc"><i>215</i>&nbsp;			for (int i = 0, n = m_bunchEdgeIndices.size(); i &lt; n; i++) {</b>
+<b class="fc"><i>216</i>&nbsp;				int indexL = m_bunchEdgeIndices.get(i);</b>
+<b class="fc"><i>217</i>&nbsp;				if (indexL == -1)</b>
+<b class="fc"><i>218</i>&nbsp;					continue;</b>
+<b class="fc"><i>219</i>&nbsp;				int vertex = m_bunchEdgeEndPoints.get(indexL);</b>
+<b class="fc"><i>220</i>&nbsp;				m_shape.setUserIndex(vertex,</b>
+<i>221</i>&nbsp;						m_userIndexSortedAngleIndexToVertex, -1);// remove
+<i>222</i>&nbsp;																	// mapping
+<i>223</i>&nbsp;			}
+<i>224</i>&nbsp;
+<b class="fc"><i>225</i>&nbsp;			if (bCrossOverResolved) {</b>
+<b class="fc"><i>226</i>&nbsp;				bModified = true;</b>
+<b class="fc"><i>227</i>&nbsp;				continue;</b>
+<i>228</i>&nbsp;			}
+<i>229</i>&nbsp;
+<i>230</i>&nbsp;			break;
+<i>231</i>&nbsp;		}
+<i>232</i>&nbsp;
+<b class="fc"><i>233</i>&nbsp;		return bModified;</b>
+<i>234</i>&nbsp;	}
+<i>235</i>&nbsp;
+<i>236</i>&nbsp;	private boolean _processCrossOvers(Point2D ptCenter) {
+<b class="fc"><i>237</i>&nbsp;		boolean bFound = false;</b>
+<i>238</i>&nbsp;
+<i>239</i>&nbsp;		// Resolve all overlaps
+<b class="fc"><i>240</i>&nbsp;		boolean bContinue = true;</b>
+<b class="fc"><i>241</i>&nbsp;		while (bContinue) {</b>
+<i>242</i>&nbsp;			// The nearest pairts in the middle of the list
+<b class="fc"><i>243</i>&nbsp;			bContinue = false;</b>
+<b class="fc"><i>244</i>&nbsp;			int index1 = 0;</b>
+<b class="fc"><i>245</i>&nbsp;			if (m_bunchEdgeIndices.get(index1) == -1)</b>
+<b class="fc"><i>246</i>&nbsp;				index1 = _getNextEdgeIndex(index1);</b>
+<i>247</i>&nbsp;
+<b class="fc"><i>248</i>&nbsp;			int index2 = _getNextEdgeIndex(index1);</b>
+<i>249</i>&nbsp;
+<b class="fc"><i>250</i>&nbsp;			for (int i = 0, n = m_bunchEdgeIndices.size(); i &lt; n</b>
+<b class="fc"><i>251</i>&nbsp;					&amp;&amp; index1 != -1 &amp;&amp; index2 != -1 &amp;&amp; index1 != index2; i++) {</b>
+<b class="fc"><i>252</i>&nbsp;				int edgeindex1 = m_bunchEdgeIndices.get(index1);</b>
+<b class="fc"><i>253</i>&nbsp;				int edgeindex2 = m_bunchEdgeIndices.get(index2);</b>
+<i>254</i>&nbsp;
+<b class="fc"><i>255</i>&nbsp;				int vertexB1 = m_bunchEdgeEndPoints.get(edgeindex1);</b>
+<b class="fc"><i>256</i>&nbsp;				int vertexB2 = m_bunchEdgeEndPoints.get(edgeindex2);</b>
+<i>257</i>&nbsp;				// _ASSERT(vertexB2 != vertexB1);
+<i>258</i>&nbsp;
+<b class="fc"><i>259</i>&nbsp;				int vertexA1 = m_shape.getNextVertex(vertexB1);</b>
+<b class="fc"><i>260</i>&nbsp;				if (!m_shape.isEqualXY(vertexA1, ptCenter))</b>
+<b class="fc"><i>261</i>&nbsp;					vertexA1 = m_shape.getPrevVertex(vertexB1);</b>
+<b class="fc"><i>262</i>&nbsp;				int vertexA2 = m_shape.getNextVertex(vertexB2);</b>
+<b class="fc"><i>263</i>&nbsp;				if (!m_shape.isEqualXY(vertexA2, ptCenter))</b>
+<b class="fc"><i>264</i>&nbsp;					vertexA2 = m_shape.getPrevVertex(vertexB2);</b>
+<i>265</i>&nbsp;
+<i>266</i>&nbsp;				// _ASSERT(m_shape.isEqualXY(vertexA1, vertexA2));
+<i>267</i>&nbsp;				// _ASSERT(m_shape.isEqualXY(vertexA1, ptCenter));
+<i>268</i>&nbsp;
+<b class="fc"><i>269</i>&nbsp;				boolean bDirection1 = _getDirection(vertexA1, vertexB1);</b>
+<b class="fc"><i>270</i>&nbsp;				boolean bDirection2 = _getDirection(vertexA2, vertexB2);</b>
+<b class="fc"><i>271</i>&nbsp;				int vertexC1 = bDirection1 ? m_shape.getPrevVertex(vertexA1)</b>
+<b class="fc"><i>272</i>&nbsp;						: m_shape.getNextVertex(vertexA1);</b>
+<b class="fc"><i>273</i>&nbsp;				int vertexC2 = bDirection2 ? m_shape.getPrevVertex(vertexA2)</b>
+<b class="fc"><i>274</i>&nbsp;						: m_shape.getNextVertex(vertexA2);</b>
+<i>275</i>&nbsp;
+<b class="fc"><i>276</i>&nbsp;				boolean bOverlap = false;</b>
+<b class="fc"><i>277</i>&nbsp;				if (_removeSpike(vertexA1))</b>
+<b class="nc"><i>278</i>&nbsp;					bOverlap = true;</b>
+<b class="fc"><i>279</i>&nbsp;				else if (_removeSpike(vertexA2))</b>
+<b class="nc"><i>280</i>&nbsp;					bOverlap = true;</b>
+<b class="fc"><i>281</i>&nbsp;				else if (_removeSpike(vertexB1))</b>
+<b class="fc"><i>282</i>&nbsp;					bOverlap = true;</b>
+<b class="fc"><i>283</i>&nbsp;				else if (_removeSpike(vertexB2))</b>
+<b class="nc"><i>284</i>&nbsp;					bOverlap = true;</b>
+<b class="fc"><i>285</i>&nbsp;				else if (_removeSpike(vertexC1))</b>
+<b class="nc"><i>286</i>&nbsp;					bOverlap = true;</b>
+<b class="fc"><i>287</i>&nbsp;				else if (_removeSpike(vertexC2))</b>
+<b class="nc"><i>288</i>&nbsp;					bOverlap = true;</b>
+<i>289</i>&nbsp;
+<b class="fc"><i>290</i>&nbsp;				if (!bOverlap &amp;&amp; m_shape.isEqualXY(vertexB1, vertexB2)) {</b>
+<b class="fc"><i>291</i>&nbsp;					bOverlap = true;</b>
+<b class="fc"><i>292</i>&nbsp;					_resolveOverlap(bDirection1, bDirection2, vertexA1,</b>
+<i>293</i>&nbsp;							vertexB1, vertexA2, vertexB2);
+<i>294</i>&nbsp;				}
+<i>295</i>&nbsp;
+<b class="fc"><i>296</i>&nbsp;				if (!bOverlap &amp;&amp; m_shape.isEqualXY(vertexC1, vertexC2)) {</b>
+<b class="nc"><i>297</i>&nbsp;					bOverlap = true;</b>
+<b class="nc"><i>298</i>&nbsp;					_resolveOverlap(!bDirection1, !bDirection2, vertexA1,</b>
+<i>299</i>&nbsp;							vertexC1, vertexA2, vertexC2);
+<i>300</i>&nbsp;				}
+<i>301</i>&nbsp;
+<b class="fc"><i>302</i>&nbsp;				if (bOverlap)</b>
+<b class="fc"><i>303</i>&nbsp;					bFound = true;</b>
+<i>304</i>&nbsp;
+<b class="fc"><i>305</i>&nbsp;				bContinue |= bOverlap;</b>
+<i>306</i>&nbsp;
+<b class="fc"><i>307</i>&nbsp;				index1 = _getNextEdgeIndex(index1);</b>
+<b class="fc"><i>308</i>&nbsp;				index2 = _getNextEdgeIndex(index1);</b>
+<i>309</i>&nbsp;			}
+<b class="fc"><i>310</i>&nbsp;		}</b>
+<i>311</i>&nbsp;
+<b class="fc"><i>312</i>&nbsp;		if (!bFound) {// resolve all cross overs</b>
+<b class="fc"><i>313</i>&nbsp;			int index1 = 0;</b>
+<b class="fc"><i>314</i>&nbsp;			if (m_bunchEdgeIndices.get(index1) == -1)</b>
+<b class="nc"><i>315</i>&nbsp;				index1 = _getNextEdgeIndex(index1);</b>
+<i>316</i>&nbsp;
+<b class="fc"><i>317</i>&nbsp;			int index2 = _getNextEdgeIndex(index1);</b>
+<i>318</i>&nbsp;
+<b class="fc"><i>319</i>&nbsp;			for (int i = 0, n = m_bunchEdgeIndices.size(); i &lt; n</b>
+<b class="fc"><i>320</i>&nbsp;					&amp;&amp; index1 != -1 &amp;&amp; index2 != -1 &amp;&amp; index1 != index2; i++) {</b>
+<b class="fc"><i>321</i>&nbsp;				int edgeindex1 = m_bunchEdgeIndices.get(index1);</b>
+<b class="fc"><i>322</i>&nbsp;				int edgeindex2 = m_bunchEdgeIndices.get(index2);</b>
+<i>323</i>&nbsp;
+<b class="fc"><i>324</i>&nbsp;				int vertexB1 = m_bunchEdgeEndPoints.get(edgeindex1);</b>
+<b class="fc"><i>325</i>&nbsp;				int vertexB2 = m_bunchEdgeEndPoints.get(edgeindex2);</b>
+<i>326</i>&nbsp;
+<b class="fc"><i>327</i>&nbsp;				int vertexA1 = m_shape.getNextVertex(vertexB1);</b>
+<b class="fc"><i>328</i>&nbsp;				if (!m_shape.isEqualXY(vertexA1, ptCenter))</b>
+<b class="fc"><i>329</i>&nbsp;					vertexA1 = m_shape.getPrevVertex(vertexB1);</b>
+<b class="fc"><i>330</i>&nbsp;				int vertexA2 = m_shape.getNextVertex(vertexB2);</b>
+<b class="fc"><i>331</i>&nbsp;				if (!m_shape.isEqualXY(vertexA2, ptCenter))</b>
+<b class="fc"><i>332</i>&nbsp;					vertexA2 = m_shape.getPrevVertex(vertexB2);</b>
+<i>333</i>&nbsp;
+<i>334</i>&nbsp;				// _ASSERT(m_shape.isEqualXY(vertexA1, vertexA2));
+<i>335</i>&nbsp;				// _ASSERT(m_shape.isEqualXY(vertexA1, ptCenter));
+<i>336</i>&nbsp;
+<b class="fc"><i>337</i>&nbsp;				boolean bDirection1 = _getDirection(vertexA1, vertexB1);</b>
+<b class="fc"><i>338</i>&nbsp;				boolean bDirection2 = _getDirection(vertexA2, vertexB2);</b>
+<b class="fc"><i>339</i>&nbsp;				int vertexC1 = bDirection1 ? m_shape.getPrevVertex(vertexA1)</b>
+<b class="fc"><i>340</i>&nbsp;						: m_shape.getNextVertex(vertexA1);</b>
+<b class="fc"><i>341</i>&nbsp;				int vertexC2 = bDirection2 ? m_shape.getPrevVertex(vertexA2)</b>
+<b class="fc"><i>342</i>&nbsp;						: m_shape.getNextVertex(vertexA2);</b>
+<i>343</i>&nbsp;
+<b class="fc"><i>344</i>&nbsp;				if (_detectAndResolveCrossOver(bDirection1, bDirection2,</b>
+<i>345</i>&nbsp;						vertexB1, vertexA1, vertexC1, vertexB2, vertexA2,
+<i>346</i>&nbsp;						vertexC2)) {
+<b class="fc"><i>347</i>&nbsp;					bFound = true;</b>
+<i>348</i>&nbsp;				}
+<i>349</i>&nbsp;
+<b class="fc"><i>350</i>&nbsp;				index1 = _getNextEdgeIndex(index1);</b>
+<b class="fc"><i>351</i>&nbsp;				index2 = _getNextEdgeIndex(index1);</b>
+<i>352</i>&nbsp;			}
+<i>353</i>&nbsp;		}
+<i>354</i>&nbsp;
+<b class="fc"><i>355</i>&nbsp;		return bFound;</b>
+<i>356</i>&nbsp;	}
+<i>357</i>&nbsp;
+<i>358</i>&nbsp;	static class SimplificatorVertexComparer extends
+<i>359</i>&nbsp;			AttributeStreamOfInt32.IntComparator {
+<i>360</i>&nbsp;		Simplificator m_parent;
+<i>361</i>&nbsp;
+<b class="fc"><i>362</i>&nbsp;		SimplificatorVertexComparer(Simplificator parent) {</b>
+<b class="fc"><i>363</i>&nbsp;			m_parent = parent;</b>
+<b class="fc"><i>364</i>&nbsp;		}</b>
+<i>365</i>&nbsp;
+<i>366</i>&nbsp;		@Override
+<i>367</i>&nbsp;		public int compare(int v1, int v2) {
+<b class="fc"><i>368</i>&nbsp;			return m_parent._compareVerticesSimple(v1, v2);</b>
+<i>369</i>&nbsp;		}
+<i>370</i>&nbsp;
+<i>371</i>&nbsp;	}
+<i>372</i>&nbsp;
+<i>373</i>&nbsp;	private boolean _simplify() {
+<b class="fc"><i>374</i>&nbsp;		if (m_shape.getGeometryType(m_geometry) == Polygon.Type.Polygon.value()</b>
+<b class="fc"><i>375</i>&nbsp;				&amp;&amp; m_shape.getFillRule(m_geometry) == Polygon.FillRule.enumFillRuleWinding)</b>
+<i>376</i>&nbsp;
+<i>377</i>&nbsp;		{
+<b class="nc"><i>378</i>&nbsp;			TopologicalOperations ops = new TopologicalOperations();</b>
+<b class="nc"><i>379</i>&nbsp;			ops.planarSimplifyNoCrackingAndCluster(m_fixSelfTangency,</b>
+<i>380</i>&nbsp;					m_shape, m_geometry, m_progressTracker);
+<b class="nc"><i>381</i>&nbsp;			assert (m_shape.getFillRule(m_geometry) == Polygon.FillRule.enumFillRuleOddEven);</b>
+<i>382</i>&nbsp;		}
+<b class="fc"><i>383</i>&nbsp;		boolean bChanged = false;</b>
+<b class="fc"><i>384</i>&nbsp;		boolean bNeedWindingRepeat = true;</b>
+<b class="fc"><i>385</i>&nbsp;		boolean bWinding = false;</b>
+<i>386</i>&nbsp;
+<b class="fc"><i>387</i>&nbsp;		m_userIndexSortedIndexToVertex = -1;</b>
+<b class="fc"><i>388</i>&nbsp;		m_userIndexSortedAngleIndexToVertex = -1;</b>
+<i>389</i>&nbsp;
+<b class="fc"><i>390</i>&nbsp;		int pointCount = m_shape.getPointCount(m_geometry);</b>
+<i>391</i>&nbsp;
+<i>392</i>&nbsp;		// Sort vertices lexicographically
+<i>393</i>&nbsp;		// Firstly copy allvertices to an array.
+<b class="fc"><i>394</i>&nbsp;		AttributeStreamOfInt32 verticesSorter = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>395</i>&nbsp;		verticesSorter.reserve(pointCount);</b>
+<i>396</i>&nbsp;
+<b class="fc"><i>397</i>&nbsp;		for (int path = m_shape.getFirstPath(m_geometry); path != -1; path = m_shape</b>
+<b class="fc"><i>398</i>&nbsp;				.getNextPath(path)) {</b>
+<b class="fc"><i>399</i>&nbsp;			int vertex = m_shape.getFirstVertex(path);</b>
+<b class="fc"><i>400</i>&nbsp;			for (int index = 0, n = m_shape.getPathSize(path); index &lt; n; index++) {</b>
+<b class="fc"><i>401</i>&nbsp;				verticesSorter.add(vertex);</b>
+<b class="fc"><i>402</i>&nbsp;				vertex = m_shape.getNextVertex(vertex);</b>
+<i>403</i>&nbsp;			}
+<i>404</i>&nbsp;		}
+<i>405</i>&nbsp;
+<i>406</i>&nbsp;		// Sort
+<b class="fc"><i>407</i>&nbsp;		verticesSorter.Sort(0, pointCount,</b>
+<i>408</i>&nbsp;				new SimplificatorVertexComparer(this));
+<i>409</i>&nbsp;		// SORTDYNAMICARRAYEX(verticesSorter, int, 0, pointCount,
+<i>410</i>&nbsp;		// SimplificatorVertexComparer, this);
+<i>411</i>&nbsp;
+<i>412</i>&nbsp;		// Copy sorted vertices to the m_sortedVertices list. Make a mapping
+<i>413</i>&nbsp;		// from the edit shape vertices to the sorted vertices.
+<b class="fc"><i>414</i>&nbsp;		m_userIndexSortedIndexToVertex = m_shape.createUserIndex();// this index</b>
+<i>415</i>&nbsp;																	// is used
+<i>416</i>&nbsp;																	// to map
+<i>417</i>&nbsp;																	// from edit
+<i>418</i>&nbsp;																	// shape
+<i>419</i>&nbsp;																	// vertex to
+<i>420</i>&nbsp;																	// the
+<i>421</i>&nbsp;																	// m_sortedVertices
+<i>422</i>&nbsp;																	// list
+<b class="fc"><i>423</i>&nbsp;		m_sortedVertices = new IndexMultiDCList();</b>
+<b class="fc"><i>424</i>&nbsp;		m_sortedVerticesListIndex = m_sortedVertices.createList(0);</b>
+<b class="fc"><i>425</i>&nbsp;		for (int i = 0; i &lt; pointCount; i++) {</b>
+<b class="fc"><i>426</i>&nbsp;			int vertex = verticesSorter.get(i);</b>
+<i>427</i>&nbsp;			{// debug
+<b class="fc"><i>428</i>&nbsp;				Point2D pt = new Point2D();</b>
+<b class="fc"><i>429</i>&nbsp;				m_shape.getXY(vertex, pt);// for debugging</b>
+<b class="fc"><i>430</i>&nbsp;				double y = pt.x;</b>
+<i>431</i>&nbsp;			}
+<b class="fc"><i>432</i>&nbsp;			int vertexlistIndex = m_sortedVertices.addElement(</b>
+<i>433</i>&nbsp;					m_sortedVerticesListIndex, vertex);
+<b class="fc"><i>434</i>&nbsp;			m_shape.setUserIndex(vertex, m_userIndexSortedIndexToVertex,</b>
+<i>435</i>&nbsp;					vertexlistIndex);// remember the sorted list element on the
+<i>436</i>&nbsp;										// vertex.
+<i>437</i>&nbsp;			// When we remove a vertex, we also remove associated sorted list
+<i>438</i>&nbsp;			// element.
+<i>439</i>&nbsp;		}
+<i>440</i>&nbsp;
+<b class="fc"><i>441</i>&nbsp;		m_userIndexSortedAngleIndexToVertex = m_shape.createUserIndex();// create</b>
+<i>442</i>&nbsp;																		// additional
+<i>443</i>&nbsp;																		// list
+<i>444</i>&nbsp;																		// to
+<i>445</i>&nbsp;																		// store
+<i>446</i>&nbsp;																		// angular
+<i>447</i>&nbsp;																		// sort
+<i>448</i>&nbsp;																		// mapping.
+<i>449</i>&nbsp;
+<b class="fc"><i>450</i>&nbsp;		m_nextVertexToProcess = -1;</b>
+<i>451</i>&nbsp;
+<b class="fc"><i>452</i>&nbsp;		if (_cleanupSpikes())// cleanup any spikes on the polygon.</b>
+<b class="fc"><i>453</i>&nbsp;			bChanged = true;</b>
+<i>454</i>&nbsp;
+<i>455</i>&nbsp;		// External iteration loop for the simplificator.
+<i>456</i>&nbsp;		// ST. I am not sure if it actually needs this loop. TODO: figure this
+<i>457</i>&nbsp;		// out.
+<b class="fc"><i>458</i>&nbsp;		while (bNeedWindingRepeat) {</b>
+<b class="fc"><i>459</i>&nbsp;			bNeedWindingRepeat = false;</b>
+<i>460</i>&nbsp;
+<b class="fc"><i>461</i>&nbsp;			int max_iter = m_shape.getPointCount(m_geometry) + 10 &gt; 30 ? 1000</b>
+<b class="fc"><i>462</i>&nbsp;					: (m_shape.getPointCount(m_geometry) + 10)</b>
+<b class="fc"><i>463</i>&nbsp;							* (m_shape.getPointCount(m_geometry) + 10);</b>
+<i>464</i>&nbsp;
+<i>465</i>&nbsp;			// Simplify polygon
+<b class="fc"><i>466</i>&nbsp;			int iRepeatNum = 0;</b>
+<b class="fc"><i>467</i>&nbsp;			boolean bNeedRepeat = false;</b>
+<i>468</i>&nbsp;
+<i>469</i>&nbsp;			// Internal iteration loop for the simplificator.
+<i>470</i>&nbsp;			// ST. I am not sure if it actually needs this loop. TODO: figure
+<i>471</i>&nbsp;			// this out.
+<i>472</i>&nbsp;			do// while (bNeedRepeat);
+<i>473</i>&nbsp;			{
+<b class="fc"><i>474</i>&nbsp;				bNeedRepeat = false;</b>
+<i>475</i>&nbsp;
+<b class="fc"><i>476</i>&nbsp;				boolean bVertexRecheck = false;</b>
+<b class="fc"><i>477</i>&nbsp;				m_firstCoincidentVertex = -1;</b>
+<b class="fc"><i>478</i>&nbsp;				int coincidentCount = 0;</b>
+<b class="fc"><i>479</i>&nbsp;				Point2D ptFirst = new Point2D();</b>
+<b class="fc"><i>480</i>&nbsp;				Point2D pt = new Point2D();</b>
+<i>481</i>&nbsp;				// Main loop of the simplificator. Go through the vertices and
+<i>482</i>&nbsp;				// for those that have same coordinates,
+<b class="fc"><i>483</i>&nbsp;				for (int vlistindex = m_sortedVertices</b>
+<b class="fc"><i>484</i>&nbsp;						.getFirst(m_sortedVerticesListIndex); vlistindex != IndexMultiDCList</b>
+<b class="fc"><i>485</i>&nbsp;						.nullNode();) {</b>
+<b class="fc"><i>486</i>&nbsp;					int vertex = m_sortedVertices.getData(vlistindex);</b>
+<i>487</i>&nbsp;					{// debug
+<i>488</i>&nbsp;						// Point2D pt = new Point2D();
+<b class="fc"><i>489</i>&nbsp;						m_shape.getXY(vertex, pt);</b>
+<b class="fc"><i>490</i>&nbsp;						double d = pt.x;</b>
+<i>491</i>&nbsp;					}
+<i>492</i>&nbsp;
+<b class="fc"><i>493</i>&nbsp;					if (m_firstCoincidentVertex != -1) {</b>
+<i>494</i>&nbsp;						// Point2D pt = new Point2D();
+<b class="fc"><i>495</i>&nbsp;						m_shape.getXY(vertex, pt);</b>
+<b class="fc"><i>496</i>&nbsp;						if (ptFirst.isEqual(pt)) {</b>
+<b class="fc"><i>497</i>&nbsp;							coincidentCount++;</b>
+<i>498</i>&nbsp;						} else {
+<b class="fc"><i>499</i>&nbsp;							ptFirst.setCoords(pt);</b>
+<b class="fc"><i>500</i>&nbsp;							m_nextVertexToProcess = vlistindex;// we remeber the</b>
+<i>501</i>&nbsp;																// next index in
+<i>502</i>&nbsp;																// the member
+<i>503</i>&nbsp;																// variable to
+<i>504</i>&nbsp;																// allow it to
+<i>505</i>&nbsp;																// be updated if
+<i>506</i>&nbsp;																// a vertex is
+<i>507</i>&nbsp;																// removed
+<i>508</i>&nbsp;																// inside of the
+<i>509</i>&nbsp;																// _ProcessBunch.
+<b class="fc"><i>510</i>&nbsp;							if (coincidentCount &gt; 0) {</b>
+<b class="fc"><i>511</i>&nbsp;								boolean result = _processBunch();// process a</b>
+<i>512</i>&nbsp;																	// bunch of
+<i>513</i>&nbsp;																	// coinciding
+<i>514</i>&nbsp;																	// vertices
+<b class="fc"><i>515</i>&nbsp;								if (result) {// something has changed.</b>
+<i>516</i>&nbsp;												// Note that ProcessBunch may
+<i>517</i>&nbsp;												// change m_nextVertexToProcess
+<i>518</i>&nbsp;												// and m_firstCoincidentVertex.
+<b class="fc"><i>519</i>&nbsp;									bNeedRepeat = true;</b>
+<b class="fc"><i>520</i>&nbsp;									if (m_nextVertexToProcess != IndexMultiDCList</b>
+<b class="fc"><i>521</i>&nbsp;											.nullNode()) {</b>
+<b class="fc"><i>522</i>&nbsp;										int v = m_sortedVertices</b>
+<b class="fc"><i>523</i>&nbsp;												.getData(m_nextVertexToProcess);</b>
+<b class="fc"><i>524</i>&nbsp;										m_shape.getXY(v, ptFirst);</b>
+<i>525</i>&nbsp;									}
+<i>526</i>&nbsp;								}
+<i>527</i>&nbsp;							}
+<i>528</i>&nbsp;
+<b class="fc"><i>529</i>&nbsp;							vlistindex = m_nextVertexToProcess;</b>
+<b class="fc"><i>530</i>&nbsp;							m_firstCoincidentVertex = vlistindex;</b>
+<b class="fc"><i>531</i>&nbsp;							coincidentCount = 0;</b>
+<i>532</i>&nbsp;						}
+<i>533</i>&nbsp;					} else {
+<b class="fc"><i>534</i>&nbsp;						m_firstCoincidentVertex = vlistindex;</b>
+<b class="fc"><i>535</i>&nbsp;						m_shape.getXY(m_sortedVertices.getData(vlistindex),</b>
+<i>536</i>&nbsp;								ptFirst);
+<b class="fc"><i>537</i>&nbsp;						coincidentCount = 0;</b>
+<i>538</i>&nbsp;					}
+<i>539</i>&nbsp;
+<b class="fc"><i>540</i>&nbsp;					if (vlistindex != -1)//vlistindex can be set to -1 after ProcessBunch call above</b>
+<b class="fc"><i>541</i>&nbsp;						vlistindex = m_sortedVertices.getNext(vlistindex);</b>
+<b class="fc"><i>542</i>&nbsp;				}</b>
+<i>543</i>&nbsp;
+<b class="fc"><i>544</i>&nbsp;				m_nextVertexToProcess = -1;</b>
+<i>545</i>&nbsp;
+<b class="fc"><i>546</i>&nbsp;				if (coincidentCount &gt; 0) {</b>
+<b class="nc"><i>547</i>&nbsp;					boolean result = _processBunch();</b>
+<b class="nc"><i>548</i>&nbsp;					if (result)</b>
+<b class="nc"><i>549</i>&nbsp;						bNeedRepeat = true;</b>
+<i>550</i>&nbsp;				}
+<i>551</i>&nbsp;
+<b class="fc"><i>552</i>&nbsp;				if (iRepeatNum++ &gt; 10) {</b>
+<b class="nc"><i>553</i>&nbsp;					throw GeometryException.GeometryInternalError();</b>
+<i>554</i>&nbsp;				}
+<i>555</i>&nbsp;
+<b class="fc"><i>556</i>&nbsp;				if (bNeedRepeat)</b>
+<b class="fc"><i>557</i>&nbsp;					_fixOrphanVertices();// fix broken structure of the shape</b>
+<i>558</i>&nbsp;
+<b class="fc"><i>559</i>&nbsp;				if (_cleanupSpikes())</b>
+<b class="nc"><i>560</i>&nbsp;					bNeedRepeat = true;</b>
+<i>561</i>&nbsp;
+<b class="fc"><i>562</i>&nbsp;				bNeedWindingRepeat |= bNeedRepeat &amp;&amp; bWinding;</b>
+<i>563</i>&nbsp;
+<b class="fc"><i>564</i>&nbsp;				bChanged |= bNeedRepeat;</b>
+<i>565</i>&nbsp;
+<b class="fc"><i>566</i>&nbsp;			} while (bNeedRepeat);</b>
+<i>567</i>&nbsp;
+<b class="fc"><i>568</i>&nbsp;		}// while (bNeedWindingRepeat)</b>
+<i>569</i>&nbsp;
+<i>570</i>&nbsp;		// Now process rings. Fix ring orientation and determine rings that need
+<i>571</i>&nbsp;		// to be deleted.
+<i>572</i>&nbsp;
+<b class="fc"><i>573</i>&nbsp;		m_shape.removeUserIndex(m_userIndexSortedIndexToVertex);</b>
+<b class="fc"><i>574</i>&nbsp;		m_shape.removeUserIndex(m_userIndexSortedAngleIndexToVertex);</b>
+<i>575</i>&nbsp;
+<b class="fc"><i>576</i>&nbsp;		bChanged |= RingOrientationFixer.execute(m_shape, m_geometry,</b>
+<i>577</i>&nbsp;				m_sortedVertices, m_fixSelfTangency);
+<i>578</i>&nbsp;
+<b class="fc"><i>579</i>&nbsp;		return bChanged;</b>
+<i>580</i>&nbsp;	}
+<i>581</i>&nbsp;
+<i>582</i>&nbsp;	private boolean _getDirection(int vert1, int vert2) {
+<b class="fc"><i>583</i>&nbsp;		if (m_shape.getNextVertex(vert2) == vert1) {</b>
+<i>584</i>&nbsp;			// _ASSERT(m_shape.getPrevVertex(vert1) == vert2);
+<b class="fc"><i>585</i>&nbsp;			return false;</b>
+<i>586</i>&nbsp;		} else {
+<i>587</i>&nbsp;			// _ASSERT(m_shape.getPrevVertex(vert2) == vert1);
+<i>588</i>&nbsp;			// _ASSERT(m_shape.getNextVertex(vert1) == vert2);
+<b class="fc"><i>589</i>&nbsp;			return true;</b>
+<i>590</i>&nbsp;		}
+<i>591</i>&nbsp;	}
+<i>592</i>&nbsp;
+<i>593</i>&nbsp;	private boolean _detectAndResolveCrossOver(boolean bDirection1,
+<i>594</i>&nbsp;			boolean bDirection2, int vertexB1, int vertexA1, int vertexC1,
+<i>595</i>&nbsp;			int vertexB2, int vertexA2, int vertexC2) {
+<i>596</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexB1, vertexB2));
+<i>597</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexC1, vertexC2));
+<i>598</i>&nbsp;
+<b class="fc"><i>599</i>&nbsp;		if (vertexA1 == vertexA2) {</b>
+<b class="fc"><i>600</i>&nbsp;			_removeAngleSortInfo(vertexB1);</b>
+<b class="fc"><i>601</i>&nbsp;			_removeAngleSortInfo(vertexB2);</b>
+<b class="fc"><i>602</i>&nbsp;			return false;</b>
+<i>603</i>&nbsp;		}
+<i>604</i>&nbsp;
+<i>605</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexB1, vertexC2));
+<i>606</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexB1, vertexC1));
+<i>607</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexB2, vertexC2));
+<i>608</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexB2, vertexC1));
+<i>609</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexA1, vertexB1));
+<i>610</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexA1, vertexC1));
+<i>611</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexA2, vertexB2));
+<i>612</i>&nbsp;		// _ASSERT(!m_shape.isEqualXY(vertexA2, vertexC2));
+<i>613</i>&nbsp;
+<i>614</i>&nbsp;		// _ASSERT(m_shape.isEqualXY(vertexA1, vertexA2));
+<i>615</i>&nbsp;
+<i>616</i>&nbsp;		// get indices of the vertices for the angle sort.
+<b class="fc"><i>617</i>&nbsp;		int iB1 = m_shape.getUserIndex(vertexB1,</b>
+<i>618</i>&nbsp;				m_userIndexSortedAngleIndexToVertex);
+<b class="fc"><i>619</i>&nbsp;		int iC1 = m_shape.getUserIndex(vertexC1,</b>
+<i>620</i>&nbsp;				m_userIndexSortedAngleIndexToVertex);
+<b class="fc"><i>621</i>&nbsp;		int iB2 = m_shape.getUserIndex(vertexB2,</b>
+<i>622</i>&nbsp;				m_userIndexSortedAngleIndexToVertex);
+<b class="fc"><i>623</i>&nbsp;		int iC2 = m_shape.getUserIndex(vertexC2,</b>
+<i>624</i>&nbsp;				m_userIndexSortedAngleIndexToVertex);
+<i>625</i>&nbsp;		// _ASSERT(iB1 &gt;= 0);
+<i>626</i>&nbsp;		// _ASSERT(iC1 &gt;= 0);
+<i>627</i>&nbsp;		// _ASSERT(iB2 &gt;= 0);
+<i>628</i>&nbsp;		// _ASSERT(iC2 &gt;= 0);
+<i>629</i>&nbsp;		// Sort the indices to restore the angle-sort order
+<b class="fc"><i>630</i>&nbsp;		int[] ar = new int[8];</b>
+<b class="fc"><i>631</i>&nbsp;		int[] br = new int[4];</b>
+<i>632</i>&nbsp;
+<b class="fc"><i>633</i>&nbsp;		ar[0] = 0;</b>
+<b class="fc"><i>634</i>&nbsp;		br[0] = iB1;</b>
+<b class="fc"><i>635</i>&nbsp;		ar[1] = 0;</b>
+<b class="fc"><i>636</i>&nbsp;		br[1] = iC1;</b>
+<b class="fc"><i>637</i>&nbsp;		ar[2] = 1;</b>
+<b class="fc"><i>638</i>&nbsp;		br[2] = iB2;</b>
+<b class="fc"><i>639</i>&nbsp;		ar[3] = 1;</b>
+<b class="fc"><i>640</i>&nbsp;		br[3] = iC2;</b>
+<b class="fc"><i>641</i>&nbsp;		for (int j = 1; j &lt; 4; j++)// insertion sort</b>
+<i>642</i>&nbsp;		{
+<b class="fc"><i>643</i>&nbsp;			int key = br[j];</b>
+<b class="fc"><i>644</i>&nbsp;			int data = ar[j];</b>
+<b class="fc"><i>645</i>&nbsp;			int i = j - 1;</b>
+<b class="fc"><i>646</i>&nbsp;			while (i &gt;= 0 &amp;&amp; br[i] &gt; key) {</b>
+<b class="fc"><i>647</i>&nbsp;				br[i + 1] = br[i];</b>
+<b class="fc"><i>648</i>&nbsp;				ar[i + 1] = ar[i];</b>
+<b class="fc"><i>649</i>&nbsp;				i--;</b>
+<i>650</i>&nbsp;			}
+<b class="fc"><i>651</i>&nbsp;			br[i + 1] = key;</b>
+<b class="fc"><i>652</i>&nbsp;			ar[i + 1] = data;</b>
+<i>653</i>&nbsp;		}
+<i>654</i>&nbsp;
+<b class="fc"><i>655</i>&nbsp;		int detector = 0;</b>
+<b class="fc"><i>656</i>&nbsp;		if (ar[0] != 0)</b>
+<b class="nc"><i>657</i>&nbsp;			detector |= 1;</b>
+<b class="fc"><i>658</i>&nbsp;		if (ar[1] != 0)</b>
+<b class="fc"><i>659</i>&nbsp;			detector |= 2;</b>
+<b class="fc"><i>660</i>&nbsp;		if (ar[2] != 0)</b>
+<b class="fc"><i>661</i>&nbsp;			detector |= 4;</b>
+<b class="fc"><i>662</i>&nbsp;		if (ar[3] != 0)</b>
+<b class="fc"><i>663</i>&nbsp;			detector |= 8;</b>
+<b class="fc"><i>664</i>&nbsp;		if (detector != 5 &amp;&amp; detector != 10)// not an overlap</b>
+<b class="fc"><i>665</i>&nbsp;			return false;</b>
+<i>666</i>&nbsp;
+<b class="fc"><i>667</i>&nbsp;		if (bDirection1 == bDirection2) {</b>
+<b class="fc"><i>668</i>&nbsp;			if (bDirection1) {</b>
+<b class="fc"><i>669</i>&nbsp;				m_shape.setNextVertex_(vertexC2, vertexA1); // B1&lt; &gt;B2</b>
+<b class="fc"><i>670</i>&nbsp;				m_shape.setPrevVertex_(vertexA1, vertexC2); // \ /</b>
+<b class="fc"><i>671</i>&nbsp;				m_shape.setNextVertex_(vertexC1, vertexA2); // A1A2</b>
+<b class="fc"><i>672</i>&nbsp;				m_shape.setPrevVertex_(vertexA2, vertexC1); // / \ //</b>
+<i>673</i>&nbsp;															// C2&gt; &lt;C1
+<i>674</i>&nbsp;			} else {
+<b class="fc"><i>675</i>&nbsp;				m_shape.setPrevVertex_(vertexC2, vertexA1); // B1&gt; &lt;B2</b>
+<b class="fc"><i>676</i>&nbsp;				m_shape.setNextVertex_(vertexA1, vertexC2); // \ /</b>
+<b class="fc"><i>677</i>&nbsp;				m_shape.setPrevVertex_(vertexC1, vertexA2); // A1A2</b>
+<b class="fc"><i>678</i>&nbsp;				m_shape.setNextVertex_(vertexA2, vertexC1); // / \ //</b>
+<i>679</i>&nbsp;															// C2&lt; &gt;C1
+<i>680</i>&nbsp;			}
+<i>681</i>&nbsp;		} else {
+<b class="fc"><i>682</i>&nbsp;			if (bDirection1) {</b>
+<b class="fc"><i>683</i>&nbsp;				m_shape.setPrevVertex_(vertexA1, vertexB2); // B1&lt; &lt;B2</b>
+<b class="fc"><i>684</i>&nbsp;				m_shape.setNextVertex_(vertexB2, vertexA1); // \ /</b>
+<b class="fc"><i>685</i>&nbsp;				m_shape.setPrevVertex_(vertexA2, vertexC1); // A1A2</b>
+<b class="fc"><i>686</i>&nbsp;				m_shape.setNextVertex_(vertexC1, vertexA2); // / \ //</b>
+<i>687</i>&nbsp;															// C2&lt; &lt;C1
+<i>688</i>&nbsp;
+<i>689</i>&nbsp;			} else {
+<b class="fc"><i>690</i>&nbsp;				m_shape.setNextVertex_(vertexA1, vertexB2); // B1&gt; &gt;B2</b>
+<b class="fc"><i>691</i>&nbsp;				m_shape.setPrevVertex_(vertexB2, vertexA1); // \ /</b>
+<b class="fc"><i>692</i>&nbsp;				m_shape.setNextVertex_(vertexA2, vertexC1); // A1A2</b>
+<b class="fc"><i>693</i>&nbsp;				m_shape.setPrevVertex_(vertexC1, vertexA2); // / \ //</b>
+<i>694</i>&nbsp;															// C2&gt; &gt;C1
+<i>695</i>&nbsp;
+<i>696</i>&nbsp;			}
+<i>697</i>&nbsp;		}
+<i>698</i>&nbsp;
+<b class="fc"><i>699</i>&nbsp;		return true;</b>
+<i>700</i>&nbsp;	}
+<i>701</i>&nbsp;
+<i>702</i>&nbsp;	private void _resolveOverlap(boolean bDirection1, boolean bDirection2,
+<i>703</i>&nbsp;			int vertexA1, int vertexB1, int vertexA2, int vertexB2) {
+<b class="fc"><i>704</i>&nbsp;		if (m_bWinding) {</b>
+<b class="nc"><i>705</i>&nbsp;			_resolveOverlapWinding(bDirection1, bDirection2, vertexA1,</b>
+<i>706</i>&nbsp;					vertexB1, vertexA2, vertexB2);
+<i>707</i>&nbsp;		} else {
+<b class="fc"><i>708</i>&nbsp;			_resolveOverlapOddEven(bDirection1, bDirection2, vertexA1,</b>
+<i>709</i>&nbsp;					vertexB1, vertexA2, vertexB2);
+<i>710</i>&nbsp;		}
+<b class="fc"><i>711</i>&nbsp;	}</b>
+<i>712</i>&nbsp;
+<i>713</i>&nbsp;	private void _resolveOverlapWinding(boolean bDirection1,
+<i>714</i>&nbsp;			boolean bDirection2, int vertexA1, int vertexB1, int vertexA2,
+<i>715</i>&nbsp;			int vertexB2) {
+<b class="nc"><i>716</i>&nbsp;		throw new GeometryException(&quot;not implemented.&quot;);</b>
+<i>717</i>&nbsp;	}
+<i>718</i>&nbsp;
+<i>719</i>&nbsp;	private void _resolveOverlapOddEven(boolean bDirection1,
+<i>720</i>&nbsp;			boolean bDirection2, int vertexA1, int vertexB1, int vertexA2,
+<i>721</i>&nbsp;			int vertexB2) {
+<b class="fc"><i>722</i>&nbsp;		if (bDirection1 != bDirection2) {</b>
+<b class="fc"><i>723</i>&nbsp;			if (bDirection1) {</b>
+<i>724</i>&nbsp;				// _ASSERT(m_shape.getNextVertex(vertexA1) == vertexB1);
+<i>725</i>&nbsp;				// _ASSERT(m_shape.getNextVertex(vertexB2) == vertexA2);
+<b class="fc"><i>726</i>&nbsp;				m_shape.setNextVertex_(vertexA1, vertexA2); // B1&lt; B2</b>
+<b class="fc"><i>727</i>&nbsp;				m_shape.setPrevVertex_(vertexA2, vertexA1); // | |</b>
+<b class="fc"><i>728</i>&nbsp;				m_shape.setNextVertex_(vertexB2, vertexB1); // | |</b>
+<b class="fc"><i>729</i>&nbsp;				m_shape.setPrevVertex_(vertexB1, vertexB2); // A1 &gt;A2</b>
+<i>730</i>&nbsp;
+<b class="fc"><i>731</i>&nbsp;				_transferVertexData(vertexA2, vertexA1);</b>
+<b class="fc"><i>732</i>&nbsp;				_beforeRemoveVertex(vertexA2, true);</b>
+<b class="fc"><i>733</i>&nbsp;				m_shape.removeVertexInternal_(vertexA2, true);</b>
+<b class="fc"><i>734</i>&nbsp;				_removeAngleSortInfo(vertexA1);</b>
+<b class="fc"><i>735</i>&nbsp;				_transferVertexData(vertexB2, vertexB1);</b>
+<b class="fc"><i>736</i>&nbsp;				_beforeRemoveVertex(vertexB2, true);</b>
+<b class="fc"><i>737</i>&nbsp;				m_shape.removeVertexInternal_(vertexB2, false);</b>
+<b class="fc"><i>738</i>&nbsp;				_removeAngleSortInfo(vertexB1);</b>
+<i>739</i>&nbsp;			} else {
+<b class="fc"><i>740</i>&nbsp;				m_shape.setNextVertex_(vertexA2, vertexA1); // B1 B2&lt;</b>
+<b class="fc"><i>741</i>&nbsp;				m_shape.setPrevVertex_(vertexA1, vertexA2); // | |</b>
+<b class="fc"><i>742</i>&nbsp;				m_shape.setNextVertex_(vertexB1, vertexB2); // | |</b>
+<b class="fc"><i>743</i>&nbsp;				m_shape.setPrevVertex_(vertexB2, vertexB1); // A1&lt; A2</b>
+<i>744</i>&nbsp;
+<b class="fc"><i>745</i>&nbsp;				_transferVertexData(vertexA2, vertexA1);</b>
+<b class="fc"><i>746</i>&nbsp;				_beforeRemoveVertex(vertexA2, true);</b>
+<b class="fc"><i>747</i>&nbsp;				m_shape.removeVertexInternal_(vertexA2, false);</b>
+<b class="fc"><i>748</i>&nbsp;				_removeAngleSortInfo(vertexA1);</b>
+<b class="fc"><i>749</i>&nbsp;				_transferVertexData(vertexB2, vertexB1);</b>
+<b class="fc"><i>750</i>&nbsp;				_beforeRemoveVertex(vertexB2, true);</b>
+<b class="fc"><i>751</i>&nbsp;				m_shape.removeVertexInternal_(vertexB2, true);</b>
+<b class="fc"><i>752</i>&nbsp;				_removeAngleSortInfo(vertexB1);</b>
+<i>753</i>&nbsp;			}
+<i>754</i>&nbsp;		} else// bDirection1 == bDirection2
+<i>755</i>&nbsp;		{
+<b class="fc"><i>756</i>&nbsp;			if (!bDirection1) {</b>
+<i>757</i>&nbsp;				// _ASSERT(m_shape.getNextVertex(vertexB1) == vertexA1);
+<i>758</i>&nbsp;				// _ASSERT(m_shape.getNextVertex(vertexB2) == vertexA2);
+<i>759</i>&nbsp;			} else {
+<i>760</i>&nbsp;				// _ASSERT(m_shape.getNextVertex(vertexA1) == vertexB1);
+<i>761</i>&nbsp;				// _ASSERT(m_shape.getNextVertex(vertexA2) == vertexB2);
+<i>762</i>&nbsp;			}
+<i>763</i>&nbsp;
+<i>764</i>&nbsp;			// if (m_shape._RingParentageCheckInternal(vertexA1, vertexA2))
+<i>765</i>&nbsp;			{
+<b class="fc"><i>766</i>&nbsp;				int a1 = bDirection1 ? vertexA1 : vertexB1;</b>
+<b class="fc"><i>767</i>&nbsp;				int a2 = bDirection2 ? vertexA2 : vertexB2;</b>
+<b class="fc"><i>768</i>&nbsp;				int b1 = bDirection1 ? vertexB1 : vertexA1;</b>
+<b class="fc"><i>769</i>&nbsp;				int b2 = bDirection2 ? vertexB2 : vertexA2;</b>
+<i>770</i>&nbsp;
+<i>771</i>&nbsp;				// m_shape.dbgVerifyIntegrity(a1);//debug
+<i>772</i>&nbsp;				// m_shape.dbgVerifyIntegrity(a2);//debug
+<i>773</i>&nbsp;
+<b class="fc"><i>774</i>&nbsp;				boolean bVisitedA1 = false;</b>
+<b class="fc"><i>775</i>&nbsp;				m_shape.setNextVertex_(a1, a2);</b>
+<b class="fc"><i>776</i>&nbsp;				m_shape.setNextVertex_(a2, a1);</b>
+<b class="fc"><i>777</i>&nbsp;				m_shape.setPrevVertex_(b1, b2);</b>
+<b class="fc"><i>778</i>&nbsp;				m_shape.setPrevVertex_(b2, b1);</b>
+<b class="fc"><i>779</i>&nbsp;				int v = b2;</b>
+<b class="fc"><i>780</i>&nbsp;				while (v != a2)</b>
+<i>781</i>&nbsp;				{
+<b class="fc"><i>782</i>&nbsp;					int prev = m_shape.getPrevVertex(v);</b>
+<b class="fc"><i>783</i>&nbsp;					int next = m_shape.getNextVertex(v);</b>
+<i>784</i>&nbsp;
+<b class="fc"><i>785</i>&nbsp;					m_shape.setPrevVertex_(v, next);</b>
+<b class="fc"><i>786</i>&nbsp;					m_shape.setNextVertex_(v, prev);</b>
+<b class="fc"><i>787</i>&nbsp;					bVisitedA1 |= v == a1;</b>
+<b class="fc"><i>788</i>&nbsp;					v = next;</b>
+<b class="fc"><i>789</i>&nbsp;				}</b>
+<i>790</i>&nbsp;
+<b class="fc"><i>791</i>&nbsp;				if (!bVisitedA1) {</b>
+<i>792</i>&nbsp;					// a case of two rings being merged
+<b class="fc"><i>793</i>&nbsp;					int prev = m_shape.getPrevVertex(a2);</b>
+<b class="fc"><i>794</i>&nbsp;					int next = m_shape.getNextVertex(a2);</b>
+<b class="fc"><i>795</i>&nbsp;					m_shape.setPrevVertex_(a2, next);</b>
+<b class="fc"><i>796</i>&nbsp;					m_shape.setNextVertex_(a2, prev);</b>
+<i>797</i>&nbsp;				} else {
+<i>798</i>&nbsp;					// merge happend on the same ring.
+<i>799</i>&nbsp;				}
+<i>800</i>&nbsp;
+<i>801</i>&nbsp;				// m_shape.dbgVerifyIntegrity(b1);//debug
+<i>802</i>&nbsp;				// m_shape.dbgVerifyIntegrity(a1);//debug
+<i>803</i>&nbsp;
+<b class="fc"><i>804</i>&nbsp;				_transferVertexData(a2, a1);</b>
+<b class="fc"><i>805</i>&nbsp;				_beforeRemoveVertex(a2, true);</b>
+<b class="fc"><i>806</i>&nbsp;				m_shape.removeVertexInternal_(a2, false);</b>
+<b class="fc"><i>807</i>&nbsp;				_removeAngleSortInfo(a1);</b>
+<b class="fc"><i>808</i>&nbsp;				_transferVertexData(b2, b1);</b>
+<b class="fc"><i>809</i>&nbsp;				_beforeRemoveVertex(b2, true);</b>
+<b class="fc"><i>810</i>&nbsp;				m_shape.removeVertexInternal_(b2, false);</b>
+<b class="fc"><i>811</i>&nbsp;				_removeAngleSortInfo(b1);</b>
+<i>812</i>&nbsp;
+<i>813</i>&nbsp;				// m_shape.dbgVerifyIntegrity(b1);//debug
+<i>814</i>&nbsp;				// m_shape.dbgVerifyIntegrity(a1);//debug
+<i>815</i>&nbsp;			}
+<i>816</i>&nbsp;		}
+<b class="fc"><i>817</i>&nbsp;	}</b>
+<i>818</i>&nbsp;
+<i>819</i>&nbsp;	private boolean _cleanupSpikes() {
+<b class="fc"><i>820</i>&nbsp;		boolean bModified = false;</b>
+<b class="fc"><i>821</i>&nbsp;		for (int path = m_shape.getFirstPath(m_geometry); path != -1;) {</b>
+<b class="fc"><i>822</i>&nbsp;			int vertex = m_shape.getFirstVertex(path);</b>
+<b class="fc"><i>823</i>&nbsp;			for (int vindex = 0, n = m_shape.getPathSize(path); vindex &lt; n</b>
+<b class="fc"><i>824</i>&nbsp;					&amp;&amp; n &gt; 1;) {</b>
+<b class="fc"><i>825</i>&nbsp;				int prev = m_shape.getPrevVertex(vertex);</b>
+<b class="fc"><i>826</i>&nbsp;				int next = m_shape.getNextVertex(vertex);</b>
+<b class="fc"><i>827</i>&nbsp;				if (m_shape.isEqualXY(prev, next)) {</b>
+<b class="fc"><i>828</i>&nbsp;					bModified = true;</b>
+<b class="fc"><i>829</i>&nbsp;					_beforeRemoveVertex(vertex, false);</b>
+<b class="fc"><i>830</i>&nbsp;					m_shape.removeVertex(vertex, true);// not internal, because</b>
+<i>831</i>&nbsp;														// path is valid at this
+<i>832</i>&nbsp;														// point
+<b class="fc"><i>833</i>&nbsp;					_beforeRemoveVertex(next, false);</b>
+<b class="fc"><i>834</i>&nbsp;					m_shape.removeVertex(next, true);</b>
+<b class="fc"><i>835</i>&nbsp;					vertex = prev;</b>
+<b class="fc"><i>836</i>&nbsp;					vindex = 0;</b>
+<b class="fc"><i>837</i>&nbsp;					n = m_shape.getPathSize(path);</b>
+<i>838</i>&nbsp;				} else {
+<b class="fc"><i>839</i>&nbsp;					vertex = next;</b>
+<b class="fc"><i>840</i>&nbsp;					vindex++;</b>
+<i>841</i>&nbsp;				}
+<b class="fc"><i>842</i>&nbsp;			}</b>
+<i>843</i>&nbsp;
+<b class="fc"><i>844</i>&nbsp;			if (m_shape.getPathSize(path) &lt; 2) {</b>
+<b class="fc"><i>845</i>&nbsp;				int vertexL = m_shape.getFirstVertex(path);</b>
+<b class="fc"><i>846</i>&nbsp;				for (int vindex = 0, n = m_shape.getPathSize(path); vindex &lt; n; vindex++) {</b>
+<b class="nc"><i>847</i>&nbsp;					_beforeRemoveVertex(vertexL, false);</b>
+<b class="nc"><i>848</i>&nbsp;					vertexL = m_shape.getNextVertex(vertexL);</b>
+<i>849</i>&nbsp;				}
+<i>850</i>&nbsp;
+<b class="fc"><i>851</i>&nbsp;				path = m_shape.removePath(path);</b>
+<b class="fc"><i>852</i>&nbsp;				bModified = true;</b>
+<b class="fc"><i>853</i>&nbsp;			} else</b>
+<b class="fc"><i>854</i>&nbsp;				path = m_shape.getNextPath(path);</b>
+<b class="fc"><i>855</i>&nbsp;		}</b>
+<i>856</i>&nbsp;
+<b class="fc"><i>857</i>&nbsp;		return bModified;</b>
+<i>858</i>&nbsp;	}
+<i>859</i>&nbsp;
+<i>860</i>&nbsp;	private boolean _removeSpike(int vertexIn) {
+<i>861</i>&nbsp;		// m_shape.dbgVerifyIntegrity(vertex);//debug
+<b class="fc"><i>862</i>&nbsp;		int vertex = vertexIn;</b>
+<i>863</i>&nbsp;
+<i>864</i>&nbsp;		// _ASSERT(m_shape.isEqualXY(m_shape.getNextVertex(vertex),
+<i>865</i>&nbsp;		// m_shape.getPrevVertex(vertex)));
+<b class="fc"><i>866</i>&nbsp;		boolean bFound = false;</b>
+<i>867</i>&nbsp;		while (true) {
+<b class="fc"><i>868</i>&nbsp;			int next = m_shape.getNextVertex(vertex);</b>
+<b class="fc"><i>869</i>&nbsp;			int prev = m_shape.getPrevVertex(vertex);</b>
+<b class="fc"><i>870</i>&nbsp;			if (next == vertex) {// last vertex in a ring</b>
+<b class="nc"><i>871</i>&nbsp;				_beforeRemoveVertex(vertex, true);</b>
+<b class="nc"><i>872</i>&nbsp;				m_shape.removeVertexInternal_(vertex, false);</b>
+<b class="nc"><i>873</i>&nbsp;				return true;</b>
+<i>874</i>&nbsp;			}
+<i>875</i>&nbsp;
+<b class="fc"><i>876</i>&nbsp;			if (!m_shape.isEqualXY(next, prev))</b>
+<b class="fc"><i>877</i>&nbsp;				break;</b>
+<i>878</i>&nbsp;
+<b class="fc"><i>879</i>&nbsp;			bFound = true;</b>
+<b class="fc"><i>880</i>&nbsp;			_removeAngleSortInfo(prev);</b>
+<b class="fc"><i>881</i>&nbsp;			_removeAngleSortInfo(next);</b>
+<b class="fc"><i>882</i>&nbsp;			_beforeRemoveVertex(vertex, true);</b>
+<b class="fc"><i>883</i>&nbsp;			m_shape.removeVertexInternal_(vertex, false);</b>
+<i>884</i>&nbsp;			// m_shape.dbgVerifyIntegrity(prev);//debug
+<b class="fc"><i>885</i>&nbsp;			_transferVertexData(next, prev);</b>
+<b class="fc"><i>886</i>&nbsp;			_beforeRemoveVertex(next, true);</b>
+<b class="fc"><i>887</i>&nbsp;			m_shape.removeVertexInternal_(next, true);</b>
+<b class="fc"><i>888</i>&nbsp;			if (next == prev)</b>
+<b class="fc"><i>889</i>&nbsp;				break;// deleted the last vertex</b>
+<i>890</i>&nbsp;
+<i>891</i>&nbsp;			// m_shape.dbgVerifyIntegrity(prev);//debug
+<i>892</i>&nbsp;
+<b class="fc"><i>893</i>&nbsp;			vertex = prev;</b>
+<b class="fc"><i>894</i>&nbsp;		}</b>
+<b class="fc"><i>895</i>&nbsp;		return bFound;</b>
+<i>896</i>&nbsp;	}
+<i>897</i>&nbsp;
+<i>898</i>&nbsp;	private void _fixOrphanVertices() {
+<b class="fc"><i>899</i>&nbsp;		int pathCount = 0;</b>
+<i>900</i>&nbsp;		// clean any path info
+<b class="fc"><i>901</i>&nbsp;		for (int node = m_sortedVertices.getFirst(m_sortedVertices</b>
+<b class="fc"><i>902</i>&nbsp;				.getFirstList()); node != -1; node = m_sortedVertices</b>
+<b class="fc"><i>903</i>&nbsp;				.getNext(node)) {</b>
+<b class="fc"><i>904</i>&nbsp;			int vertex = m_sortedVertices.getData(node);</b>
+<b class="fc"><i>905</i>&nbsp;			m_shape.setPathToVertex_(vertex, -1);</b>
+<i>906</i>&nbsp;		}
+<b class="fc"><i>907</i>&nbsp;		int geometrySize = 0;</b>
+<b class="fc"><i>908</i>&nbsp;		for (int path = m_shape.getFirstPath(m_geometry); path != -1;) {</b>
+<b class="fc"><i>909</i>&nbsp;			int first = m_shape.getFirstVertex(path);</b>
+<b class="fc"><i>910</i>&nbsp;			if (first == -1 || m_shape.getPathFromVertex(first) != -1) {</b>
+<b class="fc"><i>911</i>&nbsp;				int p = path;</b>
+<b class="fc"><i>912</i>&nbsp;				path = m_shape.getNextPath(path);</b>
+<b class="fc"><i>913</i>&nbsp;				m_shape.removePathOnly_(p);</b>
+<b class="fc"><i>914</i>&nbsp;				continue;</b>
+<i>915</i>&nbsp;			}
+<i>916</i>&nbsp;
+<b class="fc"><i>917</i>&nbsp;			m_shape.setPathToVertex_(first, path);</b>
+<b class="fc"><i>918</i>&nbsp;			int pathSize = 1;</b>
+<b class="fc"><i>919</i>&nbsp;			for (int vertex = m_shape.getNextVertex(first); vertex != first; vertex = m_shape</b>
+<b class="fc"><i>920</i>&nbsp;					.getNextVertex(vertex)) {</b>
+<b class="fc"><i>921</i>&nbsp;				m_shape.setPathToVertex_(vertex, path);</b>
+<b class="fc"><i>922</i>&nbsp;				pathSize++;</b>
+<i>923</i>&nbsp;			}
+<b class="fc"><i>924</i>&nbsp;			m_shape.setRingAreaValid_(path,false);</b>
+<b class="fc"><i>925</i>&nbsp;			m_shape.setPathSize_(path, pathSize);</b>
+<b class="fc"><i>926</i>&nbsp;			m_shape.setLastVertex_(path, m_shape.getPrevVertex(first));</b>
+<b class="fc"><i>927</i>&nbsp;			geometrySize += pathSize;</b>
+<b class="fc"><i>928</i>&nbsp;			pathCount++;</b>
+<b class="fc"><i>929</i>&nbsp;			path = m_shape.getNextPath(path);</b>
+<b class="fc"><i>930</i>&nbsp;		}</b>
+<i>931</i>&nbsp;
+<i>932</i>&nbsp;		// Some vertices do not belong to any path. We have to create new path
+<i>933</i>&nbsp;		// objects for those.
+<i>934</i>&nbsp;		// Produce new paths for the orphan vertices.
+<b class="fc"><i>935</i>&nbsp;		for (int node = m_sortedVertices.getFirst(m_sortedVertices</b>
+<b class="fc"><i>936</i>&nbsp;				.getFirstList()); node != -1; node = m_sortedVertices</b>
+<b class="fc"><i>937</i>&nbsp;				.getNext(node)) {</b>
+<b class="fc"><i>938</i>&nbsp;			int vertex = m_sortedVertices.getData(node);</b>
+<b class="fc"><i>939</i>&nbsp;			if (m_shape.getPathFromVertex(vertex) != -1)</b>
+<b class="fc"><i>940</i>&nbsp;				continue;</b>
+<i>941</i>&nbsp;			
+<b class="fc"><i>942</i>&nbsp;			int path = m_shape.insertClosedPath_(m_geometry, -1, vertex, vertex, null);</b>
+<b class="fc"><i>943</i>&nbsp;			geometrySize += m_shape.getPathSize(path);</b>
+<b class="fc"><i>944</i>&nbsp;			pathCount++;</b>
+<i>945</i>&nbsp;		}
+<i>946</i>&nbsp;		
+<b class="fc"><i>947</i>&nbsp;		m_shape.setGeometryPathCount_(m_geometry, pathCount);</b>
+<b class="fc"><i>948</i>&nbsp;		m_shape.setGeometryVertexCount_(m_geometry, geometrySize);</b>
+<b class="fc"><i>949</i>&nbsp;		int totalPointCount = 0;</b>
+<b class="fc"><i>950</i>&nbsp;		for (int geometry = m_shape.getFirstGeometry(); geometry != -1; geometry = m_shape.getNextGeometry(geometry)) {</b>
+<b class="fc"><i>951</i>&nbsp;			totalPointCount += m_shape.getPointCount(geometry);</b>
+<i>952</i>&nbsp;		}
+<i>953</i>&nbsp;		
+<b class="fc"><i>954</i>&nbsp;		m_shape.setTotalPointCount_(totalPointCount);</b>
+<b class="fc"><i>955</i>&nbsp;	}</b>
+<i>956</i>&nbsp;
+<i>957</i>&nbsp;	private int _getNextEdgeIndex(int indexIn) {
+<b class="fc"><i>958</i>&nbsp;		int index = indexIn;</b>
+<b class="fc"><i>959</i>&nbsp;		for (int i = 0, n = m_bunchEdgeIndices.size() - 1; i &lt; n; i++) {</b>
+<b class="fc"><i>960</i>&nbsp;			index = (index + 1) % m_bunchEdgeIndices.size();</b>
+<b class="fc"><i>961</i>&nbsp;			if (m_bunchEdgeIndices.get(index) != -1)</b>
+<b class="fc"><i>962</i>&nbsp;				return index;</b>
+<i>963</i>&nbsp;		}
+<b class="fc"><i>964</i>&nbsp;		return -1;</b>
+<i>965</i>&nbsp;	}
+<i>966</i>&nbsp;
+<i>967</i>&nbsp;	private void _transferVertexData(int vertexFrom, int vertexTo) {
+<b class="fc"><i>968</i>&nbsp;		int v1 = m_shape.getUserIndex(vertexTo, m_userIndexSortedIndexToVertex);</b>
+<b class="fc"><i>969</i>&nbsp;		int v2 = m_shape.getUserIndex(vertexTo,</b>
+<i>970</i>&nbsp;				m_userIndexSortedAngleIndexToVertex);
+<b class="fc"><i>971</i>&nbsp;		m_shape.transferAllDataToTheVertex(vertexFrom, vertexTo);</b>
+<b class="fc"><i>972</i>&nbsp;		m_shape.setUserIndex(vertexTo, m_userIndexSortedIndexToVertex, v1);</b>
+<b class="fc"><i>973</i>&nbsp;		m_shape.setUserIndex(vertexTo, m_userIndexSortedAngleIndexToVertex, v2);</b>
+<b class="fc"><i>974</i>&nbsp;	}</b>
+<i>975</i>&nbsp;
+<i>976</i>&nbsp;	private void _removeAngleSortInfo(int vertex) {
+<b class="fc"><i>977</i>&nbsp;		int angleIndex = m_shape.getUserIndex(vertex,</b>
+<i>978</i>&nbsp;				m_userIndexSortedAngleIndexToVertex);
+<b class="fc"><i>979</i>&nbsp;		if (angleIndex != -1) {</b>
+<b class="fc"><i>980</i>&nbsp;			m_bunchEdgeIndices.set(angleIndex, -1);</b>
+<b class="fc"><i>981</i>&nbsp;			m_shape.setUserIndex(vertex, m_userIndexSortedAngleIndexToVertex,</b>
+<i>982</i>&nbsp;					-1);
+<i>983</i>&nbsp;		}
+<b class="fc"><i>984</i>&nbsp;	}</b>
+<i>985</i>&nbsp;
+<b class="fc"><i>986</i>&nbsp;	protected Simplificator() {</b>
+<b class="fc"><i>987</i>&nbsp;		m_dbgCounter = 0;</b>
+<b class="fc"><i>988</i>&nbsp;	}</b>
+<i>989</i>&nbsp;
+<i>990</i>&nbsp;	public static boolean execute(EditShape shape, int geometry,
+<i>991</i>&nbsp;			int knownSimpleResult, boolean fixSelfTangency, ProgressTracker progressTracker) {
+<b class="fc"><i>992</i>&nbsp;		Simplificator simplificator = new Simplificator();</b>
+<b class="fc"><i>993</i>&nbsp;		simplificator.m_shape = shape;</b>
+<i>994</i>&nbsp;		// simplificator.m_bWinding = bWinding;
+<b class="fc"><i>995</i>&nbsp;		simplificator.m_geometry = geometry;</b>
+<b class="fc"><i>996</i>&nbsp;		simplificator.m_knownSimpleResult = knownSimpleResult;</b>
+<b class="fc"><i>997</i>&nbsp;		simplificator.m_fixSelfTangency = fixSelfTangency;</b>
+<b class="fc"><i>998</i>&nbsp;		simplificator.m_progressTracker = progressTracker;</b>
+<b class="fc"><i>999</i>&nbsp;		return simplificator._simplify();</b>
+<i>1000</i>&nbsp;	}
+<i>1001</i>&nbsp;
+<i>1002</i>&nbsp;	int _compareVerticesSimple(int v1, int v2) {
+<b class="fc"><i>1003</i>&nbsp;		Point2D pt1 = new Point2D();</b>
+<b class="fc"><i>1004</i>&nbsp;		m_shape.getXY(v1, pt1);</b>
+<b class="fc"><i>1005</i>&nbsp;		Point2D pt2 = new Point2D();</b>
+<b class="fc"><i>1006</i>&nbsp;		m_shape.getXY(v2, pt2);</b>
+<b class="fc"><i>1007</i>&nbsp;		int res = pt1.compare(pt2);</b>
+<b class="fc"><i>1008</i>&nbsp;		if (res == 0) {// sort equal vertices by the path ID</b>
+<b class="fc"><i>1009</i>&nbsp;			int i1 = m_shape.getPathFromVertex(v1);</b>
+<b class="fc"><i>1010</i>&nbsp;			int i2 = m_shape.getPathFromVertex(v2);</b>
+<b class="fc"><i>1011</i>&nbsp;			res = i1 &lt; i2 ? -1 : (i1 == i2 ? 0 : 1);</b>
+<i>1012</i>&nbsp;		}
+<i>1013</i>&nbsp;
+<b class="fc"><i>1014</i>&nbsp;		return res;</b>
+<i>1015</i>&nbsp;	}
+<i>1016</i>&nbsp;
+<i>1017</i>&nbsp;	int _compareAngles(int index1, int index2) {
+<b class="fc"><i>1018</i>&nbsp;		int vert1 = m_bunchEdgeEndPoints.get(index1);</b>
+<b class="fc"><i>1019</i>&nbsp;		Point2D pt1 = new Point2D();</b>
+<b class="fc"><i>1020</i>&nbsp;		m_shape.getXY(vert1, pt1);</b>
+<b class="fc"><i>1021</i>&nbsp;		Point2D pt2 = new Point2D();</b>
+<b class="fc"><i>1022</i>&nbsp;		int vert2 = m_bunchEdgeEndPoints.get(index2);</b>
+<b class="fc"><i>1023</i>&nbsp;		m_shape.getXY(vert2, pt2);</b>
+<i>1024</i>&nbsp;
+<b class="fc"><i>1025</i>&nbsp;		if (pt1.isEqual(pt2))</b>
+<b class="fc"><i>1026</i>&nbsp;			return 0;// overlap case</b>
+<i>1027</i>&nbsp;
+<b class="fc"><i>1028</i>&nbsp;		int vert10 = m_bunchEdgeCenterPoints.get(index1);</b>
+<b class="fc"><i>1029</i>&nbsp;		Point2D pt10 = new Point2D();</b>
+<b class="fc"><i>1030</i>&nbsp;		m_shape.getXY(vert10, pt10);</b>
+<i>1031</i>&nbsp;
+<b class="fc"><i>1032</i>&nbsp;		int vert20 = m_bunchEdgeCenterPoints.get(index2);</b>
+<b class="fc"><i>1033</i>&nbsp;		Point2D pt20 = new Point2D();</b>
+<b class="fc"><i>1034</i>&nbsp;		m_shape.getXY(vert20, pt20);</b>
+<i>1035</i>&nbsp;		// _ASSERT(pt10.isEqual(pt20));
+<i>1036</i>&nbsp;
+<b class="fc"><i>1037</i>&nbsp;		Point2D v1 = new Point2D();</b>
+<b class="fc"><i>1038</i>&nbsp;		v1.sub(pt1, pt10);</b>
+<b class="fc"><i>1039</i>&nbsp;		Point2D v2 = new Point2D();</b>
+<b class="fc"><i>1040</i>&nbsp;		v2.sub(pt2, pt20);</b>
+<b class="fc"><i>1041</i>&nbsp;		int result = Point2D._compareVectors(v1, v2);</b>
+<b class="fc"><i>1042</i>&nbsp;		return result;</b>
+<i>1043</i>&nbsp;	}
+<i>1044</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

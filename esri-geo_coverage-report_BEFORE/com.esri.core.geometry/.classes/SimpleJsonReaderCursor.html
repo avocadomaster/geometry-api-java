@@ -1,0 +1,145 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: SimpleJsonReaderCursor</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: SimpleJsonReaderCursor (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">SimpleJsonReaderCursor</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 13)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2017 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;class SimpleJsonReaderCursor extends JsonReaderCursor {
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;	JsonReader m_jsonParser;
+<i>29</i>&nbsp;	JsonReader[] m_jsonParserArray;
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;	int m_index;
+<i>32</i>&nbsp;	int m_count;
+<i>33</i>&nbsp;
+<b class="nc"><i>34</i>&nbsp;	public SimpleJsonReaderCursor(JsonReader jsonString) {</b>
+<b class="nc"><i>35</i>&nbsp;		m_jsonParser = jsonString;</b>
+<b class="nc"><i>36</i>&nbsp;		m_index = -1;</b>
+<b class="nc"><i>37</i>&nbsp;		m_count = 1;</b>
+<i>38</i>&nbsp;	}
+<i>39</i>&nbsp;
+<b class="nc"><i>40</i>&nbsp;	public SimpleJsonReaderCursor(JsonReader[] jsonStringArray) {</b>
+<b class="nc"><i>41</i>&nbsp;		m_jsonParserArray = jsonStringArray;</b>
+<b class="nc"><i>42</i>&nbsp;		m_index = -1;</b>
+<b class="nc"><i>43</i>&nbsp;		m_count = jsonStringArray.length;</b>
+<i>44</i>&nbsp;	}
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;	@Override
+<i>47</i>&nbsp;	public int getID() {
+<b class="nc"><i>48</i>&nbsp;		return m_index;</b>
+<i>49</i>&nbsp;	}
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;	@Override
+<i>52</i>&nbsp;	public JsonReader next() {
+<b class="nc"><i>53</i>&nbsp;		if (m_index &lt; m_count - 1) {</b>
+<b class="nc"><i>54</i>&nbsp;			m_index++;</b>
+<b class="nc"><i>55</i>&nbsp;			return m_jsonParser != null ? m_jsonParser</b>
+<i>56</i>&nbsp;					: m_jsonParserArray[m_index];
+<i>57</i>&nbsp;		}
+<i>58</i>&nbsp;
+<b class="nc"><i>59</i>&nbsp;		return null;</b>
+<i>60</i>&nbsp;	}
+<i>61</i>&nbsp;
+<i>62</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-26 10:02</div>
+</div>
+</body>
+</html>

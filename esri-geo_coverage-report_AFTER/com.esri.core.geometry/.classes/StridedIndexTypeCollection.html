@@ -1,0 +1,359 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: StridedIndexTypeCollection</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: StridedIndexTypeCollection (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">StridedIndexTypeCollection</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90%
+  </span>
+  <span class="absValue">
+    (18/ 20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.3%
+  </span>
+  <span class="absValue">
+    (98/ 122)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;/**
+<i>27</i>&nbsp; * A collection of strides of Index_type elements. To be used when one needs a
+<i>28</i>&nbsp; * collection of homogeneous elements that contain only integer fields (i.e.
+<i>29</i>&nbsp; * structs with Index_type members) Recycles the strides. Allows for constant
+<i>30</i>&nbsp; * time creation and deletion of an element.
+<i>31</i>&nbsp; */
+<b class="fc"><i>32</i>&nbsp;final class StridedIndexTypeCollection {</b>
+<b class="fc"><i>33</i>&nbsp;	private int[][] m_buffer = null;</b>
+<b class="fc"><i>34</i>&nbsp;	private int m_firstFree = -1;</b>
+<b class="fc"><i>35</i>&nbsp;	private int m_last = 0;</b>
+<b class="fc"><i>36</i>&nbsp;	private int m_size = 0;</b>
+<b class="fc"><i>37</i>&nbsp;	private int m_capacity = 0;</b>
+<b class="fc"><i>38</i>&nbsp;	private int m_bufferSize = 0;</b>
+<i>39</i>&nbsp;	private int m_stride;
+<i>40</i>&nbsp;	private int m_realStride;
+<i>41</i>&nbsp;	private int m_blockSize;
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;	/*
+<i>44</i>&nbsp;	 private final static int m_realBlockSize = 2048;//if you change this, change m_blockSize, m_blockPower, m_blockMask, and st_sizes
+<i>45</i>&nbsp;	 private final static int m_blockMask = 0x7FF;
+<i>46</i>&nbsp;	 private final static int m_blockPower = 11;
+<i>47</i>&nbsp;	 private final static int[] st_sizes = {16, 32, 64, 128, 256, 512, 1024, 2048};
+<i>48</i>&nbsp;	 */
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;	private final static int m_realBlockSize = 16384;// if you change this,
+<i>51</i>&nbsp;														// change m_blockSize,
+<i>52</i>&nbsp;														// m_blockPower,
+<i>53</i>&nbsp;														// m_blockMask, and
+<i>54</i>&nbsp;														// st_sizes
+<i>55</i>&nbsp;	private final static int m_blockMask = 0x3FFF;
+<i>56</i>&nbsp;	private final static int m_blockPower = 14;
+<b class="fc"><i>57</i>&nbsp;	private final static int[] st_sizes = { 16, 32, 64, 128, 256, 512, 1024,</b>
+<i>58</i>&nbsp;			2048, 4096, 8192, 16384 };
+<i>59</i>&nbsp;
+<b class="fc"><i>60</i>&nbsp;	StridedIndexTypeCollection(int stride) {</b>
+<b class="fc"><i>61</i>&nbsp;		m_stride = stride;</b>
+<b class="fc"><i>62</i>&nbsp;		m_realStride = stride;</b>
+<b class="fc"><i>63</i>&nbsp;		m_blockSize = m_realBlockSize / m_realStride;</b>
+<b class="fc"><i>64</i>&nbsp;	}</b>
+<i>65</i>&nbsp;
+<i>66</i>&nbsp;	private boolean dbgdelete_(int element) {
+<b class="fc"><i>67</i>&nbsp;		m_buffer[element &gt;&gt; m_blockPower][(element &amp; m_blockMask) + 1] = -0x7eadbeed;</b>
+<b class="fc"><i>68</i>&nbsp;		return true;</b>
+<i>69</i>&nbsp;	}
+<i>70</i>&nbsp;	
+<i>71</i>&nbsp;	void deleteElement(int element) {
+<b class="fc"><i>72</i>&nbsp;		assert(dbgdelete_(element));</b>
+<b class="fc"><i>73</i>&nbsp;		int totalStrides = (element &gt;&gt; m_blockPower) * m_blockSize</b>
+<i>74</i>&nbsp;				* m_realStride + (element &amp; m_blockMask);
+<b class="fc"><i>75</i>&nbsp;		if (totalStrides &lt; m_last * m_realStride) {</b>
+<b class="fc"><i>76</i>&nbsp;			m_buffer[element &gt;&gt; m_blockPower][element &amp; m_blockMask] = m_firstFree;</b>
+<b class="fc"><i>77</i>&nbsp;			m_firstFree = element;</b>
+<i>78</i>&nbsp;		} else {
+<b class="nc"><i>79</i>&nbsp;			assert (totalStrides == m_last * m_realStride);</b>
+<b class="nc"><i>80</i>&nbsp;			m_last--;</b>
+<i>81</i>&nbsp;		}
+<b class="fc"><i>82</i>&nbsp;		m_size--;</b>
+<b class="fc"><i>83</i>&nbsp;	}</b>
+<i>84</i>&nbsp;
+<i>85</i>&nbsp;	// Returns the given field of the element.
+<i>86</i>&nbsp;	int getField(int element, int field) {
+<b class="fc"><i>87</i>&nbsp;		assert(m_buffer[element &gt;&gt; m_blockPower][(element &amp; m_blockMask) + 1] != -0x7eadbeed);</b>
+<b class="fc"><i>88</i>&nbsp;		return m_buffer[element &gt;&gt; m_blockPower][(element &amp; m_blockMask)</b>
+<i>89</i>&nbsp;				+ field];
+<i>90</i>&nbsp;	}
+<i>91</i>&nbsp;
+<i>92</i>&nbsp;	// Sets the given field of the element.
+<i>93</i>&nbsp;	void setField(int element, int field, int value) {
+<b class="fc"><i>94</i>&nbsp;		assert(m_buffer[element &gt;&gt; m_blockPower][(element &amp; m_blockMask) + 1] != -0x7eadbeed);</b>
+<b class="fc"><i>95</i>&nbsp;		m_buffer[element &gt;&gt; m_blockPower][(element &amp; m_blockMask) + field] = value;</b>
+<b class="fc"><i>96</i>&nbsp;	}</b>
+<i>97</i>&nbsp;
+<i>98</i>&nbsp;	// Returns the stride size
+<i>99</i>&nbsp;	int getStride() {
+<b class="nc"><i>100</i>&nbsp;		return m_stride;</b>
+<i>101</i>&nbsp;	}
+<i>102</i>&nbsp;
+<i>103</i>&nbsp;	// Creates the new element. This is a constant time operation.
+<i>104</i>&nbsp;	// All fields are initialized to -1.
+<i>105</i>&nbsp;	int newElement() {
+<b class="fc"><i>106</i>&nbsp;		int element = m_firstFree;</b>
+<b class="fc"><i>107</i>&nbsp;		if (element == -1) {</b>
+<b class="fc"><i>108</i>&nbsp;			if (m_last == m_capacity) {</b>
+<b class="fc"><i>109</i>&nbsp;				long newcap = m_capacity != 0 ? (((long) m_capacity + 1) * 3 / 2)</b>
+<i>110</i>&nbsp;						: (long) 1;
+<b class="fc"><i>111</i>&nbsp;				if (newcap &gt; Integer.MAX_VALUE)</b>
+<b class="nc"><i>112</i>&nbsp;					newcap = Integer.MAX_VALUE;// cannot grow past 2gb elements</b>
+<i>113</i>&nbsp;												// presently
+<i>114</i>&nbsp;
+<b class="fc"><i>115</i>&nbsp;				if (newcap == m_capacity)</b>
+<b class="nc"><i>116</i>&nbsp;					throw new IndexOutOfBoundsException();</b>
+<i>117</i>&nbsp;
+<b class="fc"><i>118</i>&nbsp;				grow_(newcap);</b>
+<i>119</i>&nbsp;			}
+<i>120</i>&nbsp;
+<b class="fc"><i>121</i>&nbsp;			element = ((m_last / m_blockSize) &lt;&lt; m_blockPower)</b>
+<i>122</i>&nbsp;					+ (m_last % m_blockSize) * m_realStride;
+<b class="fc"><i>123</i>&nbsp;			m_last++;</b>
+<i>124</i>&nbsp;		} else {
+<b class="fc"><i>125</i>&nbsp;			m_firstFree = m_buffer[element &gt;&gt; m_blockPower][element</b>
+<i>126</i>&nbsp;					&amp; m_blockMask];
+<i>127</i>&nbsp;		}
+<i>128</i>&nbsp;
+<b class="fc"><i>129</i>&nbsp;		m_size++;</b>
+<b class="fc"><i>130</i>&nbsp;		int ar[] = m_buffer[element &gt;&gt; m_blockPower];</b>
+<b class="fc"><i>131</i>&nbsp;		int ind = element &amp; m_blockMask;</b>
+<b class="fc"><i>132</i>&nbsp;		for (int i = 0; i &lt; m_stride; i++) {</b>
+<b class="fc"><i>133</i>&nbsp;			ar[ind + i] = -1;</b>
+<i>134</i>&nbsp;		}
+<b class="fc"><i>135</i>&nbsp;		return element;</b>
+<i>136</i>&nbsp;	}
+<i>137</i>&nbsp;
+<i>138</i>&nbsp;	int elementToIndex(int element) {
+<b class="fc"><i>139</i>&nbsp;		return (element &gt;&gt; m_blockPower) * m_blockSize</b>
+<i>140</i>&nbsp;				+ (element &amp; m_blockMask) / m_realStride;
+<i>141</i>&nbsp;	}
+<i>142</i>&nbsp;
+<i>143</i>&nbsp;	// Deletes all elements and frees all the memory if b_free_memory is True.
+<i>144</i>&nbsp;	void deleteAll(boolean b_free_memory) {
+<b class="fc"><i>145</i>&nbsp;		m_firstFree = -1;</b>
+<b class="fc"><i>146</i>&nbsp;		m_last = 0;</b>
+<b class="fc"><i>147</i>&nbsp;		m_size = 0;</b>
+<b class="fc"><i>148</i>&nbsp;		if (b_free_memory) {</b>
+<b class="fc"><i>149</i>&nbsp;			m_buffer = null;</b>
+<b class="fc"><i>150</i>&nbsp;			m_capacity = 0;</b>
+<i>151</i>&nbsp;		}
+<b class="fc"><i>152</i>&nbsp;	}</b>
+<i>153</i>&nbsp;
+<i>154</i>&nbsp;	// Returns the count of existing elements
+<i>155</i>&nbsp;	int size() {
+<b class="fc"><i>156</i>&nbsp;		return m_size;</b>
+<i>157</i>&nbsp;	}
+<i>158</i>&nbsp;
+<i>159</i>&nbsp;	// Sets the capcity of the collection. Only applied if current capacity is
+<i>160</i>&nbsp;	// smaller.
+<i>161</i>&nbsp;	void setCapacity(int capacity) {
+<b class="fc"><i>162</i>&nbsp;		if (capacity &gt; m_capacity)</b>
+<b class="fc"><i>163</i>&nbsp;			grow_(capacity);</b>
+<b class="fc"><i>164</i>&nbsp;	}</b>
+<i>165</i>&nbsp;
+<i>166</i>&nbsp;	// Returns the capacity of the collection
+<i>167</i>&nbsp;	int capacity() {
+<b class="fc"><i>168</i>&nbsp;		return m_capacity;</b>
+<i>169</i>&nbsp;	}
+<i>170</i>&nbsp;
+<i>171</i>&nbsp;	// Swaps content of two elements (each field of the stride)
+<i>172</i>&nbsp;	void swap(int element1, int element2) {
+<b class="nc"><i>173</i>&nbsp;		int ar1[] = m_buffer[element1 &gt;&gt; m_blockPower];</b>
+<b class="nc"><i>174</i>&nbsp;		int ar2[] = m_buffer[element2 &gt;&gt; m_blockPower];</b>
+<b class="nc"><i>175</i>&nbsp;		int ind1 = element1 &amp; m_blockMask;</b>
+<b class="nc"><i>176</i>&nbsp;		int ind2 = element2 &amp; m_blockMask;</b>
+<b class="nc"><i>177</i>&nbsp;		for (int i = 0; i &lt; m_stride; i++) {</b>
+<b class="nc"><i>178</i>&nbsp;			int tmp = ar1[ind1 + i];</b>
+<b class="nc"><i>179</i>&nbsp;			ar1[ind1 + i] = ar2[ind2 + i];</b>
+<b class="nc"><i>180</i>&nbsp;			ar2[ind2 + i] = tmp;</b>
+<i>181</i>&nbsp;		}
+<b class="nc"><i>182</i>&nbsp;	}</b>
+<i>183</i>&nbsp;
+<i>184</i>&nbsp;	// Swaps content of two fields
+<i>185</i>&nbsp;	void swapField(int element1, int element2, int field) {
+<b class="fc"><i>186</i>&nbsp;		int ar1[] = m_buffer[element1 &gt;&gt; m_blockPower];</b>
+<b class="fc"><i>187</i>&nbsp;		int ar2[] = m_buffer[element2 &gt;&gt; m_blockPower];</b>
+<b class="fc"><i>188</i>&nbsp;		int ind1 = (element1 &amp; m_blockMask) + field;</b>
+<b class="fc"><i>189</i>&nbsp;		int ind2 = (element2 &amp; m_blockMask) + field;</b>
+<b class="fc"><i>190</i>&nbsp;		int tmp = ar1[ind1];</b>
+<b class="fc"><i>191</i>&nbsp;		ar1[ind1] = ar2[ind2];</b>
+<b class="fc"><i>192</i>&nbsp;		ar2[ind2] = tmp;</b>
+<b class="fc"><i>193</i>&nbsp;	}</b>
+<i>194</i>&nbsp;
+<i>195</i>&nbsp;	// Returns a value of the index, that never will be returned by new_element
+<i>196</i>&nbsp;	// and is neither -1 nor impossible_index_3.
+<i>197</i>&nbsp;	static int impossibleIndex2() {
+<b class="fc"><i>198</i>&nbsp;		return -2;</b>
+<i>199</i>&nbsp;	}
+<i>200</i>&nbsp;
+<i>201</i>&nbsp;	// Returns a value of the index, that never will be returned by new_element
+<i>202</i>&nbsp;	// and is neither -1 nor impossible_index_2.
+<i>203</i>&nbsp;	static int impossibleIndex3() {
+<b class="fc"><i>204</i>&nbsp;		return -3;</b>
+<i>205</i>&nbsp;	}
+<i>206</i>&nbsp;
+<i>207</i>&nbsp;	static boolean isValidElement(int element) {
+<b class="fc"><i>208</i>&nbsp;		return element &gt;= 0;</b>
+<i>209</i>&nbsp;	}
+<i>210</i>&nbsp;
+<i>211</i>&nbsp;	private void ensureBufferBlocksCapacity(int blocks) {
+<b class="fc"><i>212</i>&nbsp;		if (m_buffer.length &lt; blocks) {</b>
+<b class="nc"><i>213</i>&nbsp;			int[][] newBuffer = new int[blocks][];</b>
+<b class="nc"><i>214</i>&nbsp;			for (int i = 0; i &lt; m_buffer.length; i++) {</b>
+<b class="nc"><i>215</i>&nbsp;				newBuffer[i] = m_buffer[i];</b>
+<i>216</i>&nbsp;			}
+<i>217</i>&nbsp;
+<b class="nc"><i>218</i>&nbsp;			m_buffer = newBuffer;</b>
+<i>219</i>&nbsp;		}
+<b class="fc"><i>220</i>&nbsp;	}</b>
+<i>221</i>&nbsp;
+<i>222</i>&nbsp;	private void grow_(long newsize) {
+<b class="fc"><i>223</i>&nbsp;		if (m_buffer == null) {</b>
+<b class="fc"><i>224</i>&nbsp;			m_bufferSize = 0;</b>
+<b class="fc"><i>225</i>&nbsp;			m_buffer = new int[8][];</b>
+<i>226</i>&nbsp;		}
+<i>227</i>&nbsp;
+<b class="fc"><i>228</i>&nbsp;		assert (newsize &gt; m_capacity);</b>
+<i>229</i>&nbsp;
+<b class="fc"><i>230</i>&nbsp;		long nblocks = (newsize + m_blockSize - 1) / m_blockSize;</b>
+<b class="fc"><i>231</i>&nbsp;		if (nblocks &gt; Integer.MAX_VALUE)</b>
+<b class="nc"><i>232</i>&nbsp;			throw new IndexOutOfBoundsException();</b>
+<i>233</i>&nbsp;
+<b class="fc"><i>234</i>&nbsp;		ensureBufferBlocksCapacity((int) nblocks);</b>
+<b class="fc"><i>235</i>&nbsp;		if (nblocks == 1) {</b>
+<i>236</i>&nbsp;			// When less than one block is needed we allocate smaller arrays
+<i>237</i>&nbsp;			// than m_realBlockSize to avoid initialization cost.
+<b class="fc"><i>238</i>&nbsp;			int oldsz = m_capacity &gt; 0 ? m_capacity : 0;</b>
+<b class="fc"><i>239</i>&nbsp;			assert (oldsz &lt; newsize);</b>
+<b class="fc"><i>240</i>&nbsp;			int i = 0;</b>
+<b class="fc"><i>241</i>&nbsp;			int realnewsize = (int) newsize * m_realStride;</b>
+<b class="fc"><i>242</i>&nbsp;			while (realnewsize &gt; st_sizes[i])</b>
+<i>243</i>&nbsp;				// get the size to allocate. Using fixed sizes to reduce
+<i>244</i>&nbsp;				// fragmentation.
+<b class="fc"><i>245</i>&nbsp;				i++;</b>
+<b class="fc"><i>246</i>&nbsp;			int[] b = new int[st_sizes[i]];</b>
+<b class="fc"><i>247</i>&nbsp;			if (m_bufferSize == 1) {</b>
+<b class="fc"><i>248</i>&nbsp;				System.arraycopy(m_buffer[0], 0, b, 0, m_buffer[0].length);</b>
+<b class="fc"><i>249</i>&nbsp;				m_buffer[0] = b;</b>
+<i>250</i>&nbsp;			} else {
+<b class="fc"><i>251</i>&nbsp;				m_buffer[m_bufferSize] = b;</b>
+<b class="fc"><i>252</i>&nbsp;				m_bufferSize++;</b>
+<i>253</i>&nbsp;			}
+<b class="fc"><i>254</i>&nbsp;			m_capacity = b.length / m_realStride;</b>
+<b class="fc"><i>255</i>&nbsp;		} else {</b>
+<b class="fc"><i>256</i>&nbsp;			if (nblocks * m_blockSize &gt; Integer.MAX_VALUE)</b>
+<b class="nc"><i>257</i>&nbsp;				throw new IndexOutOfBoundsException();</b>
+<i>258</i>&nbsp;
+<b class="fc"><i>259</i>&nbsp;			if (m_bufferSize == 1) {</b>
+<b class="fc"><i>260</i>&nbsp;				if (m_buffer[0].length &lt; m_realBlockSize) {</b>
+<i>261</i>&nbsp;					// resize the first buffer to ensure it is equal the
+<i>262</i>&nbsp;					// m_realBlockSize.
+<b class="nc"><i>263</i>&nbsp;					int[] b = new int[m_realBlockSize];</b>
+<b class="nc"><i>264</i>&nbsp;					System.arraycopy(m_buffer[0], 0, b, 0, m_buffer[0].length);</b>
+<b class="nc"><i>265</i>&nbsp;					m_buffer[0] = b;</b>
+<b class="nc"><i>266</i>&nbsp;					m_capacity = m_blockSize;</b>
+<i>267</i>&nbsp;				}
+<i>268</i>&nbsp;			}
+<i>269</i>&nbsp;
+<b class="fc"><i>270</i>&nbsp;			while (m_bufferSize &lt; nblocks) {</b>
+<b class="fc"><i>271</i>&nbsp;				m_buffer[m_bufferSize++] = new int[m_realBlockSize];</b>
+<b class="fc"><i>272</i>&nbsp;				m_capacity += m_blockSize;</b>
+<i>273</i>&nbsp;			}
+<i>274</i>&nbsp;		}
+<b class="fc"><i>275</i>&nbsp;	}</b>
+<i>276</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

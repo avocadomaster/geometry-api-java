@@ -1,0 +1,152 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OperatorImportFromESRIShape</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OperatorImportFromESRIShape (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OperatorImportFromESRIShape</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    33.3%
+  </span>
+  <span class="absValue">
+    (1/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/ 4)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;package com.esri.core.geometry;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;import java.nio.ByteBuffer;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;import com.esri.core.geometry.Operator.Type;
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;/**
+<i>32</i>&nbsp; *Import from ESRI shape format.
+<i>33</i>&nbsp; */
+<b class="fc"><i>34</i>&nbsp;public abstract class OperatorImportFromESRIShape extends Operator {</b>
+<i>35</i>&nbsp;	@Override
+<i>36</i>&nbsp;	public Type getType() {
+<b class="nc"><i>37</i>&nbsp;		return Type.ImportFromESRIShape;</b>
+<i>38</i>&nbsp;	}
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;	/**
+<i>41</i>&nbsp;	 * Performs the ImportFromESRIShape operation on a stream of shape buffers
+<i>42</i>&nbsp;	 * @param importFlags Use the {@link ShapeImportFlags} interface. The default is 0, which means geometry comes from a trusted source and is topologically simple.
+<i>43</i>&nbsp;	 * If the geometry comes from non-trusted source (that is it can be non-simple), pass ShapeImportNonTrusted.
+<i>44</i>&nbsp;	 * @param type The geometry type that you want to import. Use the {@link Geometry.Type} enum. It can be Geometry.Type.Unknown if the type of geometry has to be
+<i>45</i>&nbsp;	 * figured out from the shape buffer.
+<i>46</i>&nbsp;	 * @param shapeBuffers The cursor over shape buffers that hold the Geometries in ESRIShape format.
+<i>47</i>&nbsp;	 * @return Returns a GeometryCursor.
+<i>48</i>&nbsp;	 */
+<i>49</i>&nbsp;	abstract GeometryCursor execute(int importFlags, Geometry.Type type,
+<i>50</i>&nbsp;			ByteBufferCursor shapeBuffers);
+<i>51</i>&nbsp;
+<i>52</i>&nbsp;	/**
+<i>53</i>&nbsp;	 * Performs the ImportFromESRIShape operation.
+<i>54</i>&nbsp;	 * @param importFlags Use the {@link ShapeImportFlags} interface. The default is 0, which means geometry comes from a trusted source and is topologically simple.
+<i>55</i>&nbsp;	 * If the geometry comes from non-trusted source (that is it can be non-simple), pass ShapeImportNonTrusted.
+<i>56</i>&nbsp;	 * @param type The geometry type that you want to import. Use the {@link Geometry.Type} enum. It can be Geometry.Type.Unknown if the type of geometry has to be
+<i>57</i>&nbsp;	 * figured out from the shape buffer.
+<i>58</i>&nbsp;	 * @param shapeBuffer The buffer holding the Geometry in ESRIShape format.
+<i>59</i>&nbsp;	 * @return Returns the imported Geometry.
+<i>60</i>&nbsp;	 */
+<i>61</i>&nbsp;	public abstract Geometry execute(int importFlags, Geometry.Type type,
+<i>62</i>&nbsp;			ByteBuffer shapeBuffer);
+<i>63</i>&nbsp;
+<i>64</i>&nbsp;	public static OperatorImportFromESRIShape local() {
+<b class="nc"><i>65</i>&nbsp;		return (OperatorImportFromESRIShape) OperatorFactoryLocal.getInstance()</b>
+<b class="nc"><i>66</i>&nbsp;				.getOperator(Type.ImportFromESRIShape);</b>
+<i>67</i>&nbsp;	}
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

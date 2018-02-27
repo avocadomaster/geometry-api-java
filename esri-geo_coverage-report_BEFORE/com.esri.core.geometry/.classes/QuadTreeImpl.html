@@ -1,0 +1,1463 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: QuadTreeImpl</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: QuadTreeImpl (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">QuadTreeImpl</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.3%
+  </span>
+  <span class="absValue">
+    (62/ 71)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.4%
+  </span>
+  <span class="absValue">
+    (413/ 442)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">QuadTreeImpl$Data</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/ 5)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">QuadTreeImpl$QuadTreeIteratorImpl</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (6/ 7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.6%
+  </span>
+  <span class="absValue">
+    (113/ 122)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">QuadTreeImpl$QuadTreeSortedIteratorImpl</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    82.6%
+  </span>
+  <span class="absValue">
+    (19/ 23)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">QuadTreeImpl$QuadTreeSortedIteratorImpl$Sorter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/ 6)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    87.2%
+  </span>
+  <span class="absValue">
+    (75/ 86)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    93%
+  </span>
+  <span class="absValue">
+    (556/ 598)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;import java.util.ArrayList;
+<i>27</i>&nbsp;
+<b class="fc"><i>28</i>&nbsp;class QuadTreeImpl {</b>
+<b class="fc"><i>29</i>&nbsp;	static final class QuadTreeIteratorImpl {</b>
+<i>30</i>&nbsp;		/**
+<i>31</i>&nbsp;		 * Resets the iterator to an starting state on the Quad_tree_impl. If
+<i>32</i>&nbsp;		 * the input Geometry is a Line segment, then the query will be the
+<i>33</i>&nbsp;		 * segment. Otherwise the query will be the Envelope_2D bounding the
+<i>34</i>&nbsp;		 * Geometry. \param query The Geometry used for the query. \param
+<i>35</i>&nbsp;		 * tolerance The tolerance used for the intersection tests. \param
+<i>36</i>&nbsp;		 * tolerance The tolerance used for the intersection tests.
+<i>37</i>&nbsp;		 */
+<i>38</i>&nbsp;		void resetIterator(Geometry query, double tolerance) {
+<b class="fc"><i>39</i>&nbsp;			m_quads_stack.resize(0);</b>
+<b class="fc"><i>40</i>&nbsp;			m_extents_stack.clear();</b>
+<b class="fc"><i>41</i>&nbsp;			m_current_element_handle = -1;</b>
+<b class="fc"><i>42</i>&nbsp;			query.queryLooseEnvelope2D(m_query_box);</b>
+<b class="fc"><i>43</i>&nbsp;			m_query_box.inflate(tolerance, tolerance);</b>
+<i>44</i>&nbsp;
+<b class="fc"><i>45</i>&nbsp;			if (m_quad_tree.m_root != -1 &amp;&amp; m_query_box.isIntersecting(m_quad_tree.m_extent)) {</b>
+<b class="fc"><i>46</i>&nbsp;				int type = query.getType().value();</b>
+<b class="fc"><i>47</i>&nbsp;				m_b_linear = Geometry.isSegment(type);</b>
+<i>48</i>&nbsp;
+<b class="fc"><i>49</i>&nbsp;				if (m_b_linear) {</b>
+<b class="fc"><i>50</i>&nbsp;					Segment segment = (Segment) query;</b>
+<b class="fc"><i>51</i>&nbsp;					m_query_start = segment.getStartXY();</b>
+<b class="fc"><i>52</i>&nbsp;					m_query_end = segment.getEndXY();</b>
+<b class="fc"><i>53</i>&nbsp;					m_tolerance = tolerance;</b>
+<b class="fc"><i>54</i>&nbsp;				} else {</b>
+<b class="nc"><i>55</i>&nbsp;					m_tolerance = NumberUtils.NaN(); // we don&#39;t need it</b>
+<i>56</i>&nbsp;				}
+<i>57</i>&nbsp;
+<b class="fc"><i>58</i>&nbsp;				m_quads_stack.add(m_quad_tree.m_root);</b>
+<b class="fc"><i>59</i>&nbsp;				m_extents_stack.add(m_quad_tree.m_extent);</b>
+<b class="fc"><i>60</i>&nbsp;				m_next_element_handle = m_quad_tree.get_first_element_(m_quad_tree.m_root);</b>
+<b class="fc"><i>61</i>&nbsp;			} else</b>
+<b class="nc"><i>62</i>&nbsp;				m_next_element_handle = -1;</b>
+<b class="fc"><i>63</i>&nbsp;		}</b>
+<i>64</i>&nbsp;
+<i>65</i>&nbsp;		/**
+<i>66</i>&nbsp;		 * Resets the iterator to a starting state on the Quad_tree_impl using
+<i>67</i>&nbsp;		 * the input Envelope_2D as the query. \param query The Envelope_2D used
+<i>68</i>&nbsp;		 * for the query. \param tolerance The tolerance used for the
+<i>69</i>&nbsp;		 * intersection tests.
+<i>70</i>&nbsp;		 */
+<i>71</i>&nbsp;		void resetIterator(Envelope2D query, double tolerance) {
+<b class="fc"><i>72</i>&nbsp;			m_quads_stack.resize(0);</b>
+<b class="fc"><i>73</i>&nbsp;			m_extents_stack.clear();</b>
+<b class="fc"><i>74</i>&nbsp;			m_current_element_handle = -1;</b>
+<b class="fc"><i>75</i>&nbsp;			m_query_box.setCoords(query);</b>
+<b class="fc"><i>76</i>&nbsp;			m_query_box.inflate(tolerance, tolerance);</b>
+<b class="fc"><i>77</i>&nbsp;			m_tolerance = NumberUtils.NaN(); // we don&#39;t need it</b>
+<i>78</i>&nbsp;
+<b class="fc"><i>79</i>&nbsp;			if (m_quad_tree.m_root != -1 &amp;&amp; m_query_box.isIntersecting(m_quad_tree.m_extent)) {</b>
+<b class="fc"><i>80</i>&nbsp;				m_quads_stack.add(m_quad_tree.m_root);</b>
+<b class="fc"><i>81</i>&nbsp;				m_extents_stack.add(m_quad_tree.m_extent);</b>
+<b class="fc"><i>82</i>&nbsp;				m_next_element_handle = m_quad_tree.get_first_element_(m_quad_tree.m_root);</b>
+<b class="fc"><i>83</i>&nbsp;				m_b_linear = false;</b>
+<i>84</i>&nbsp;			} else
+<b class="fc"><i>85</i>&nbsp;				m_next_element_handle = -1;</b>
+<b class="fc"><i>86</i>&nbsp;		}</b>
+<i>87</i>&nbsp;
+<i>88</i>&nbsp;		/**
+<i>89</i>&nbsp;		 * Moves the iterator to the next int and returns the int.
+<i>90</i>&nbsp;		 */
+<i>91</i>&nbsp;		int next() {
+<i>92</i>&nbsp;			// If the node stack is empty, then we&#39;ve exhausted our search
+<i>93</i>&nbsp;
+<b class="fc"><i>94</i>&nbsp;			if (m_quads_stack.size() == 0)</b>
+<b class="fc"><i>95</i>&nbsp;				return -1;</b>
+<i>96</i>&nbsp;
+<b class="fc"><i>97</i>&nbsp;			m_current_element_handle = m_next_element_handle;</b>
+<i>98</i>&nbsp;
+<b class="fc"><i>99</i>&nbsp;			Point2D start = null;</b>
+<b class="fc"><i>100</i>&nbsp;			Point2D end = null;</b>
+<i>101</i>&nbsp;			Envelope2D bounding_box;
+<b class="fc"><i>102</i>&nbsp;			Envelope2D extent_inf = null;</b>
+<b class="fc"><i>103</i>&nbsp;			Envelope2D[] child_extents = null;</b>
+<i>104</i>&nbsp;
+<b class="fc"><i>105</i>&nbsp;			if (m_b_linear) {</b>
+<b class="fc"><i>106</i>&nbsp;				start = new Point2D();</b>
+<b class="fc"><i>107</i>&nbsp;				end = new Point2D();</b>
+<b class="fc"><i>108</i>&nbsp;				extent_inf = new Envelope2D();</b>
+<i>109</i>&nbsp;			}
+<i>110</i>&nbsp;
+<b class="fc"><i>111</i>&nbsp;			boolean b_found_hit = false;</b>
+<b class="fc"><i>112</i>&nbsp;			while (!b_found_hit) {</b>
+<b class="fc"><i>113</i>&nbsp;				while (m_current_element_handle != -1) {</b>
+<b class="fc"><i>114</i>&nbsp;					int current_data_handle = m_quad_tree.get_data_(m_current_element_handle);</b>
+<b class="fc"><i>115</i>&nbsp;					bounding_box = m_quad_tree.get_bounding_box_value_(current_data_handle);</b>
+<i>116</i>&nbsp;
+<b class="fc"><i>117</i>&nbsp;					if (bounding_box.isIntersecting(m_query_box)) {</b>
+<b class="fc"><i>118</i>&nbsp;						if (m_b_linear) {</b>
+<b class="fc"><i>119</i>&nbsp;							start.setCoords(m_query_start);</b>
+<b class="fc"><i>120</i>&nbsp;							end.setCoords(m_query_end);</b>
+<b class="fc"><i>121</i>&nbsp;							extent_inf.setCoords(bounding_box);</b>
+<i>122</i>&nbsp;
+<b class="fc"><i>123</i>&nbsp;							extent_inf.inflate(m_tolerance, m_tolerance);</b>
+<b class="fc"><i>124</i>&nbsp;							if (extent_inf.clipLine(start, end) &gt; 0) {</b>
+<b class="fc"><i>125</i>&nbsp;								b_found_hit = true;</b>
+<b class="fc"><i>126</i>&nbsp;								break;</b>
+<i>127</i>&nbsp;							}
+<i>128</i>&nbsp;						} else {
+<b class="fc"><i>129</i>&nbsp;							b_found_hit = true;</b>
+<b class="fc"><i>130</i>&nbsp;							break;</b>
+<i>131</i>&nbsp;						}
+<i>132</i>&nbsp;					}
+<i>133</i>&nbsp;
+<i>134</i>&nbsp;					// get next element_handle
+<b class="fc"><i>135</i>&nbsp;					m_current_element_handle = m_quad_tree.get_next_element_(m_current_element_handle);</b>
+<b class="fc"><i>136</i>&nbsp;				}</b>
+<i>137</i>&nbsp;
+<i>138</i>&nbsp;				// If m_current_element_handle equals -1, then we&#39;ve exhausted our search in the current quadtree node
+<b class="fc"><i>139</i>&nbsp;				if (m_current_element_handle == -1) {</b>
+<i>140</i>&nbsp;					// get the last node from the stack and add the children whose extent intersects m_query_box
+<b class="fc"><i>141</i>&nbsp;					int current_quad = m_quads_stack.getLast();</b>
+<b class="fc"><i>142</i>&nbsp;					Envelope2D current_extent = m_extents_stack.get(m_extents_stack.size() - 1);</b>
+<i>143</i>&nbsp;
+<b class="fc"><i>144</i>&nbsp;					if (child_extents == null) {</b>
+<b class="fc"><i>145</i>&nbsp;						child_extents = new Envelope2D[4];</b>
+<b class="fc"><i>146</i>&nbsp;						child_extents[0] = new Envelope2D();</b>
+<b class="fc"><i>147</i>&nbsp;						child_extents[1] = new Envelope2D();</b>
+<b class="fc"><i>148</i>&nbsp;						child_extents[2] = new Envelope2D();</b>
+<b class="fc"><i>149</i>&nbsp;						child_extents[3] = new Envelope2D();</b>
+<i>150</i>&nbsp;					}
+<i>151</i>&nbsp;
+<b class="fc"><i>152</i>&nbsp;					set_child_extents_(current_extent, child_extents);</b>
+<b class="fc"><i>153</i>&nbsp;					m_quads_stack.removeLast();</b>
+<b class="fc"><i>154</i>&nbsp;					m_extents_stack.remove(m_extents_stack.size() - 1);</b>
+<i>155</i>&nbsp;
+<b class="fc"><i>156</i>&nbsp;					for (int quadrant = 0; quadrant &lt; 4; quadrant++) {</b>
+<b class="fc"><i>157</i>&nbsp;						int child_handle = m_quad_tree.get_child_(current_quad, quadrant);</b>
+<i>158</i>&nbsp;
+<b class="fc"><i>159</i>&nbsp;						if (child_handle != -1 &amp;&amp; m_quad_tree.getSubTreeElementCount(child_handle) &gt; 0) {</b>
+<b class="fc"><i>160</i>&nbsp;							if (child_extents[quadrant].isIntersecting(m_query_box)) {</b>
+<b class="fc"><i>161</i>&nbsp;								if (m_b_linear) {</b>
+<b class="fc"><i>162</i>&nbsp;									start.setCoords(m_query_start);</b>
+<b class="fc"><i>163</i>&nbsp;									end.setCoords(m_query_end);</b>
+<i>164</i>&nbsp;
+<b class="fc"><i>165</i>&nbsp;									extent_inf.setCoords(child_extents[quadrant]);</b>
+<b class="fc"><i>166</i>&nbsp;									extent_inf.inflate(m_tolerance, m_tolerance);</b>
+<b class="fc"><i>167</i>&nbsp;									if (extent_inf.clipLine(start, end) &gt; 0) {</b>
+<b class="fc"><i>168</i>&nbsp;										Envelope2D child_extent = new Envelope2D();</b>
+<b class="fc"><i>169</i>&nbsp;										child_extent.setCoords(child_extents[quadrant]);</b>
+<b class="fc"><i>170</i>&nbsp;										m_quads_stack.add(child_handle);</b>
+<b class="fc"><i>171</i>&nbsp;										m_extents_stack.add(child_extent);</b>
+<b class="fc"><i>172</i>&nbsp;									}</b>
+<i>173</i>&nbsp;								} else {
+<b class="fc"><i>174</i>&nbsp;									Envelope2D child_extent = new Envelope2D();</b>
+<b class="fc"><i>175</i>&nbsp;									child_extent.setCoords(child_extents[quadrant]);</b>
+<b class="fc"><i>176</i>&nbsp;									m_quads_stack.add(child_handle);</b>
+<b class="fc"><i>177</i>&nbsp;									m_extents_stack.add(child_extent);</b>
+<i>178</i>&nbsp;								}
+<i>179</i>&nbsp;							}
+<i>180</i>&nbsp;						}
+<i>181</i>&nbsp;					}
+<i>182</i>&nbsp;
+<b class="fc"><i>183</i>&nbsp;					assert (m_quads_stack.size() &lt;= 4 * (m_quad_tree.m_height - 1));</b>
+<i>184</i>&nbsp;
+<b class="fc"><i>185</i>&nbsp;					if (m_quads_stack.size() == 0)</b>
+<b class="fc"><i>186</i>&nbsp;						return -1;</b>
+<i>187</i>&nbsp;
+<b class="fc"><i>188</i>&nbsp;					m_current_element_handle = m_quad_tree.get_first_element_(m_quads_stack.get(m_quads_stack.size() - 1));</b>
+<b class="fc"><i>189</i>&nbsp;				}</b>
+<i>190</i>&nbsp;			}
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;			// We did not exhaust our search in the current node, so we return
+<i>193</i>&nbsp;			// the element at m_current_element_handle in m_element_nodes
+<i>194</i>&nbsp;
+<b class="fc"><i>195</i>&nbsp;			m_next_element_handle = m_quad_tree.get_next_element_(m_current_element_handle);</b>
+<b class="fc"><i>196</i>&nbsp;			return m_current_element_handle;</b>
+<i>197</i>&nbsp;		}
+<i>198</i>&nbsp;
+<i>199</i>&nbsp;		// Creates an iterator on the input Quad_tree_impl. The query will be
+<i>200</i>&nbsp;		// the Envelope_2D bounding the input Geometry.
+<b class="nc"><i>201</i>&nbsp;		QuadTreeIteratorImpl(QuadTreeImpl quad_tree_impl, Geometry query, double tolerance) {</b>
+<b class="nc"><i>202</i>&nbsp;			m_quad_tree = quad_tree_impl;</b>
+<b class="nc"><i>203</i>&nbsp;			m_query_box = new Envelope2D();</b>
+<b class="nc"><i>204</i>&nbsp;			m_quads_stack = new AttributeStreamOfInt32(0);</b>
+<b class="nc"><i>205</i>&nbsp;			m_extents_stack = new ArrayList&lt;Envelope2D&gt;(0);</b>
+<b class="nc"><i>206</i>&nbsp;			resetIterator(query, tolerance);</b>
+<b class="nc"><i>207</i>&nbsp;		}</b>
+<i>208</i>&nbsp;
+<i>209</i>&nbsp;		// Creates an iterator on the input Quad_tree_impl using the input
+<i>210</i>&nbsp;		// Envelope_2D as the query.
+<b class="fc"><i>211</i>&nbsp;		QuadTreeIteratorImpl(QuadTreeImpl quad_tree_impl, Envelope2D query, double tolerance) {</b>
+<b class="fc"><i>212</i>&nbsp;			m_quad_tree = quad_tree_impl;</b>
+<b class="fc"><i>213</i>&nbsp;			m_query_box = new Envelope2D();</b>
+<b class="fc"><i>214</i>&nbsp;			m_quads_stack = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>215</i>&nbsp;			m_extents_stack = new ArrayList&lt;Envelope2D&gt;(0);</b>
+<b class="fc"><i>216</i>&nbsp;			resetIterator(query, tolerance);</b>
+<b class="fc"><i>217</i>&nbsp;		}</b>
+<i>218</i>&nbsp;
+<i>219</i>&nbsp;		// Creates an iterator on the input Quad_tree_impl.
+<b class="fc"><i>220</i>&nbsp;		QuadTreeIteratorImpl(QuadTreeImpl quad_tree_impl) {</b>
+<b class="fc"><i>221</i>&nbsp;			m_quad_tree = quad_tree_impl;</b>
+<b class="fc"><i>222</i>&nbsp;			m_query_box = new Envelope2D();</b>
+<b class="fc"><i>223</i>&nbsp;			m_quads_stack = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>224</i>&nbsp;			m_extents_stack = new ArrayList&lt;Envelope2D&gt;(0);</b>
+<b class="fc"><i>225</i>&nbsp;		}</b>
+<i>226</i>&nbsp;
+<i>227</i>&nbsp;		private boolean m_b_linear;
+<i>228</i>&nbsp;		private Point2D m_query_start;
+<i>229</i>&nbsp;		private Point2D m_query_end;
+<i>230</i>&nbsp;		private Envelope2D m_query_box;
+<i>231</i>&nbsp;		private double m_tolerance;
+<i>232</i>&nbsp;		private int m_current_element_handle;
+<i>233</i>&nbsp;		private int m_next_element_handle;
+<i>234</i>&nbsp;		private QuadTreeImpl m_quad_tree;
+<i>235</i>&nbsp;		private AttributeStreamOfInt32 m_quads_stack;
+<i>236</i>&nbsp;		private ArrayList&lt;Envelope2D&gt; m_extents_stack; // this won&#39;t grow bigger than 4 * (m_quad_tree-&gt;m_height - 1)
+<i>237</i>&nbsp;	}
+<i>238</i>&nbsp;
+<i>239</i>&nbsp;	static final class QuadTreeSortedIteratorImpl {
+<i>240</i>&nbsp;		/**
+<i>241</i>&nbsp;		 * Resets the iterator to a starting state on the Quad_tree_impl. If the input Geometry is a Line segment, then the query will be the segment. Otherwise the query will be the Envelope_2D bounding the Geometry.
+<i>242</i>&nbsp;		 * \param query The Geometry used for the query.
+<i>243</i>&nbsp;		 * \param tolerance The tolerance used for the intersection tests.
+<i>244</i>&nbsp;		 * \param tolerance The tolerance used for the intersection tests.
+<i>245</i>&nbsp;		 */
+<i>246</i>&nbsp;		void resetIterator(Geometry query, double tolerance) {
+<b class="nc"><i>247</i>&nbsp;			m_quad_tree_iterator_impl.resetIterator(query, tolerance);</b>
+<b class="nc"><i>248</i>&nbsp;			m_sorted_handles.resize(0);</b>
+<b class="nc"><i>249</i>&nbsp;			m_index = -1;</b>
+<b class="nc"><i>250</i>&nbsp;		}</b>
+<i>251</i>&nbsp;
+<i>252</i>&nbsp;		/**
+<i>253</i>&nbsp;		 * Resets the iterator to a starting state on the Quad_tree_impl using the input Envelope_2D as the query.
+<i>254</i>&nbsp;		 * \param query The Envelope_2D used for the query.
+<i>255</i>&nbsp;		 * \param tolerance The tolerance used for the intersection tests.
+<i>256</i>&nbsp;		 */
+<i>257</i>&nbsp;		void resetIterator(Envelope2D query, double tolerance) {
+<b class="fc"><i>258</i>&nbsp;			m_quad_tree_iterator_impl.resetIterator(query, tolerance);</b>
+<b class="fc"><i>259</i>&nbsp;			m_sorted_handles.resize(0);</b>
+<b class="fc"><i>260</i>&nbsp;			m_index = -1;</b>
+<b class="fc"><i>261</i>&nbsp;		}</b>
+<i>262</i>&nbsp;
+<i>263</i>&nbsp;		/**
+<i>264</i>&nbsp;		 * Moves the iterator to the next Element_handle and returns the Element_handle.
+<i>265</i>&nbsp;		 */
+<i>266</i>&nbsp;		int next() {
+<b class="fc"><i>267</i>&nbsp;			if (m_index == -1) {</b>
+<b class="fc"><i>268</i>&nbsp;				int element_handle = -1;</b>
+<b class="fc"><i>269</i>&nbsp;				while ((element_handle = m_quad_tree_iterator_impl.next()) != -1)</b>
+<b class="fc"><i>270</i>&nbsp;					m_sorted_handles.add(element_handle);</b>
+<i>271</i>&nbsp;
+<b class="fc"><i>272</i>&nbsp;				m_bucket_sort.sort(m_sorted_handles, 0, m_sorted_handles.size(), new Sorter(m_quad_tree_iterator_impl.m_quad_tree));</b>
+<i>273</i>&nbsp;			}
+<i>274</i>&nbsp;
+<b class="fc"><i>275</i>&nbsp;			if (m_index == m_sorted_handles.size() - 1)</b>
+<b class="fc"><i>276</i>&nbsp;				return -1;</b>
+<i>277</i>&nbsp;
+<b class="fc"><i>278</i>&nbsp;			m_index++;</b>
+<b class="fc"><i>279</i>&nbsp;			return m_sorted_handles.get(m_index);</b>
+<i>280</i>&nbsp;		}
+<i>281</i>&nbsp;
+<i>282</i>&nbsp;		//Creates a sorted iterator on the input Quad_tree_iterator_impl
+<b class="fc"><i>283</i>&nbsp;		QuadTreeSortedIteratorImpl(QuadTreeIteratorImpl quad_tree_iterator_impl) {</b>
+<b class="fc"><i>284</i>&nbsp;			m_bucket_sort = new BucketSort();</b>
+<b class="fc"><i>285</i>&nbsp;			m_sorted_handles = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>286</i>&nbsp;			m_quad_tree_iterator_impl = quad_tree_iterator_impl;</b>
+<b class="fc"><i>287</i>&nbsp;			m_index = -1;</b>
+<b class="fc"><i>288</i>&nbsp;		}</b>
+<i>289</i>&nbsp;
+<i>290</i>&nbsp;		private class Sorter extends ClassicSort {
+<b class="fc"><i>291</i>&nbsp;			public Sorter(QuadTreeImpl quad_tree) {</b>
+<b class="fc"><i>292</i>&nbsp;				m_quad_tree = quad_tree;</b>
+<b class="fc"><i>293</i>&nbsp;			}</b>
+<i>294</i>&nbsp;
+<i>295</i>&nbsp;			@Override
+<i>296</i>&nbsp;			public void userSort(int begin, int end, AttributeStreamOfInt32 indices) {
+<b class="fc"><i>297</i>&nbsp;				indices.sort(begin, end);</b>
+<b class="fc"><i>298</i>&nbsp;			}</b>
+<i>299</i>&nbsp;
+<i>300</i>&nbsp;			@Override
+<i>301</i>&nbsp;			public double getValue(int e) {
+<b class="fc"><i>302</i>&nbsp;				return m_quad_tree.getElement(e);</b>
+<i>303</i>&nbsp;			}
+<i>304</i>&nbsp;
+<i>305</i>&nbsp;			private QuadTreeImpl m_quad_tree;
+<i>306</i>&nbsp;		}
+<i>307</i>&nbsp;
+<i>308</i>&nbsp;		private BucketSort m_bucket_sort;
+<i>309</i>&nbsp;		private AttributeStreamOfInt32 m_sorted_handles;
+<i>310</i>&nbsp;		private QuadTreeIteratorImpl m_quad_tree_iterator_impl;
+<i>311</i>&nbsp;		int m_index;
+<i>312</i>&nbsp;	}
+<i>313</i>&nbsp;
+<i>314</i>&nbsp;	/**
+<i>315</i>&nbsp;	 * Creates a Quad_tree_impl with the root having the extent of the input Envelope_2D, and height of the input height, where the root starts at height 0.
+<i>316</i>&nbsp;	 * \param extent The extent of the Quad_tree_impl.
+<i>317</i>&nbsp;	 * \param height The max height of the Quad_tree_impl.
+<i>318</i>&nbsp;	 */
+<b class="fc"><i>319</i>&nbsp;	QuadTreeImpl(Envelope2D extent, int height) {</b>
+<b class="fc"><i>320</i>&nbsp;		m_quad_tree_nodes = new StridedIndexTypeCollection(10);</b>
+<b class="fc"><i>321</i>&nbsp;		m_element_nodes = new StridedIndexTypeCollection(4);</b>
+<b class="fc"><i>322</i>&nbsp;		m_data = new ArrayList&lt;Data&gt;(0);</b>
+<b class="fc"><i>323</i>&nbsp;		m_free_data = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>324</i>&nbsp;		m_b_store_duplicates = false;</b>
+<i>325</i>&nbsp;
+<b class="fc"><i>326</i>&nbsp;		m_extent = new Envelope2D();</b>
+<b class="fc"><i>327</i>&nbsp;		m_data_extent = new Envelope2D();</b>
+<i>328</i>&nbsp;
+<b class="fc"><i>329</i>&nbsp;		reset_(extent, height);</b>
+<b class="fc"><i>330</i>&nbsp;	}</b>
+<i>331</i>&nbsp;
+<i>332</i>&nbsp;	/**
+<i>333</i>&nbsp;	 * Creates a Quad_tree_impl with the root having the extent of the input Envelope_2D, and height of the input height, where the root starts at height 0.
+<i>334</i>&nbsp;	 * \param extent The extent of the Quad_tree_impl.
+<i>335</i>&nbsp;	 * \param height The max height of the Quad_tree_impl.
+<i>336</i>&nbsp;	 * \param b_store_duplicates Put true to place elements deeper into the quad tree at intesecting quads, duplicates will be stored. Put false to only place elements into quads that can contain it.
+<i>337</i>&nbsp;	 */
+<b class="fc"><i>338</i>&nbsp;	QuadTreeImpl(Envelope2D extent, int height, boolean b_store_duplicates) {</b>
+<b class="fc"><i>339</i>&nbsp;		m_quad_tree_nodes = (b_store_duplicates ? new StridedIndexTypeCollection(11) : new StridedIndexTypeCollection(10));</b>
+<b class="fc"><i>340</i>&nbsp;		m_element_nodes = new StridedIndexTypeCollection(4);</b>
+<b class="fc"><i>341</i>&nbsp;		m_data = new ArrayList&lt;Data&gt;(0);</b>
+<b class="fc"><i>342</i>&nbsp;		m_free_data = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>343</i>&nbsp;		m_b_store_duplicates = b_store_duplicates;</b>
+<i>344</i>&nbsp;
+<b class="fc"><i>345</i>&nbsp;		m_extent = new Envelope2D();</b>
+<b class="fc"><i>346</i>&nbsp;		m_data_extent = new Envelope2D();</b>
+<i>347</i>&nbsp;
+<b class="fc"><i>348</i>&nbsp;		reset_(extent, height);</b>
+<b class="fc"><i>349</i>&nbsp;	}</b>
+<i>350</i>&nbsp;
+<i>351</i>&nbsp;	/**
+<i>352</i>&nbsp;	 * Resets the Quad_tree_impl to the given extent and height.
+<i>353</i>&nbsp;	 * \param extent The extent of the Quad_tree_impl.
+<i>354</i>&nbsp;	 * \param height The max height of the Quad_tree_impl.
+<i>355</i>&nbsp;	 */
+<i>356</i>&nbsp;	void reset(Envelope2D extent, int height) {
+<b class="nc"><i>357</i>&nbsp;		m_quad_tree_nodes.deleteAll(false);</b>
+<b class="nc"><i>358</i>&nbsp;		m_element_nodes.deleteAll(false);</b>
+<b class="nc"><i>359</i>&nbsp;		m_data.clear();</b>
+<b class="nc"><i>360</i>&nbsp;		m_free_data.clear(false);</b>
+<b class="nc"><i>361</i>&nbsp;		reset_(extent, height);</b>
+<b class="nc"><i>362</i>&nbsp;	}</b>
+<i>363</i>&nbsp;
+<i>364</i>&nbsp;	/**
+<i>365</i>&nbsp;	 * Inserts the element and bounding_box into the Quad_tree_impl.
+<i>366</i>&nbsp;	 * Note that this will invalidate any active iterator on the Quad_tree_impl.
+<i>367</i>&nbsp;	 * Returns an Element_handle corresponding to the element and bounding_box.
+<i>368</i>&nbsp;	 * \param element The element of the Geometry to be inserted.
+<i>369</i>&nbsp;	 * \param bounding_box The bounding_box of the Geometry to be inserted.
+<i>370</i>&nbsp;	 */
+<i>371</i>&nbsp;	int insert(int element, Envelope2D bounding_box) {
+<b class="fc"><i>372</i>&nbsp;		if (m_root == -1)</b>
+<b class="fc"><i>373</i>&nbsp;			create_root_();</b>
+<i>374</i>&nbsp;
+<b class="fc"><i>375</i>&nbsp;		if (m_b_store_duplicates) {</b>
+<b class="nc"><i>376</i>&nbsp;			int success = insert_duplicates_(element, bounding_box, 0, m_extent, m_root, false, -1);</b>
+<i>377</i>&nbsp;
+<b class="nc"><i>378</i>&nbsp;			if (success != -1) {</b>
+<b class="nc"><i>379</i>&nbsp;				if (m_data_extent.isEmpty())</b>
+<b class="nc"><i>380</i>&nbsp;					m_data_extent.setCoords(bounding_box);</b>
+<i>381</i>&nbsp;				else
+<b class="nc"><i>382</i>&nbsp;					m_data_extent.merge(bounding_box);</b>
+<i>383</i>&nbsp;			}
+<i>384</i>&nbsp;
+<b class="nc"><i>385</i>&nbsp;			return success;</b>
+<i>386</i>&nbsp;		}
+<i>387</i>&nbsp;
+<b class="fc"><i>388</i>&nbsp;		int element_handle = insert_(element, bounding_box, 0, m_extent, m_root, false, -1);</b>
+<i>389</i>&nbsp;
+<b class="fc"><i>390</i>&nbsp;		if (element_handle != -1) {</b>
+<b class="fc"><i>391</i>&nbsp;			if (m_data_extent.isEmpty())</b>
+<b class="fc"><i>392</i>&nbsp;				m_data_extent.setCoords(bounding_box);</b>
+<i>393</i>&nbsp;			else
+<b class="fc"><i>394</i>&nbsp;				m_data_extent.merge(bounding_box);</b>
+<i>395</i>&nbsp;		}
+<i>396</i>&nbsp;
+<b class="fc"><i>397</i>&nbsp;		return element_handle;</b>
+<i>398</i>&nbsp;	}
+<i>399</i>&nbsp;
+<i>400</i>&nbsp;	/**
+<i>401</i>&nbsp;	 * Inserts the element and bounding_box into the Quad_tree_impl at the given quad_handle.
+<i>402</i>&nbsp;	 * Note that this will invalidate any active iterator on the Quad_tree_impl.
+<i>403</i>&nbsp;	 * Returns an Element_handle corresponding to the element and bounding_box.
+<i>404</i>&nbsp;	 * \param element The element of the Geometry to be inserted.
+<i>405</i>&nbsp;	 * \param bounding_box The bounding_box of the Geometry to be inserted.
+<i>406</i>&nbsp;	 * \param hint_index A handle used as a hint where to place the element. This can be a handle obtained from a previous insertion and is useful on data having strong locality such as segments of a Polygon.
+<i>407</i>&nbsp;	 */
+<i>408</i>&nbsp;	int insert(int element, Envelope2D bounding_box, int hint_index) {
+<b class="fc"><i>409</i>&nbsp;		if (m_root == -1)</b>
+<b class="fc"><i>410</i>&nbsp;			create_root_();</b>
+<i>411</i>&nbsp;
+<b class="fc"><i>412</i>&nbsp;		if (m_b_store_duplicates) {</b>
+<b class="fc"><i>413</i>&nbsp;			int success = insert_duplicates_(element, bounding_box, 0, m_extent, m_root, false, -1);</b>
+<i>414</i>&nbsp;
+<b class="fc"><i>415</i>&nbsp;			if (success != -1) {</b>
+<b class="fc"><i>416</i>&nbsp;				if (m_data_extent.isEmpty())</b>
+<b class="fc"><i>417</i>&nbsp;					m_data_extent.setCoords(bounding_box);</b>
+<i>418</i>&nbsp;				else
+<b class="fc"><i>419</i>&nbsp;					m_data_extent.merge(bounding_box);</b>
+<i>420</i>&nbsp;			}
+<b class="fc"><i>421</i>&nbsp;			return success;</b>
+<i>422</i>&nbsp;		}
+<i>423</i>&nbsp;
+<i>424</i>&nbsp;		int quad_handle;
+<i>425</i>&nbsp;
+<b class="fc"><i>426</i>&nbsp;		if (hint_index == -1)</b>
+<b class="fc"><i>427</i>&nbsp;			quad_handle = m_root;</b>
+<i>428</i>&nbsp;		else
+<b class="fc"><i>429</i>&nbsp;			quad_handle = get_quad_(hint_index);</b>
+<i>430</i>&nbsp;
+<b class="fc"><i>431</i>&nbsp;		int quad_height = getHeight(quad_handle);</b>
+<b class="fc"><i>432</i>&nbsp;		Envelope2D quad_extent = getExtent(quad_handle);</b>
+<i>433</i>&nbsp;
+<b class="fc"><i>434</i>&nbsp;		int element_handle = insert_(element, bounding_box, quad_height, quad_extent, quad_handle, false, -1);</b>
+<i>435</i>&nbsp;
+<b class="fc"><i>436</i>&nbsp;		if (element_handle != -1) {</b>
+<b class="fc"><i>437</i>&nbsp;			if (m_data_extent.isEmpty())</b>
+<b class="fc"><i>438</i>&nbsp;				m_data_extent.setCoords(bounding_box);</b>
+<i>439</i>&nbsp;			else
+<b class="fc"><i>440</i>&nbsp;				m_data_extent.merge(bounding_box);</b>
+<i>441</i>&nbsp;		}
+<i>442</i>&nbsp;
+<b class="fc"><i>443</i>&nbsp;		return element_handle;</b>
+<i>444</i>&nbsp;	}
+<i>445</i>&nbsp;
+<i>446</i>&nbsp;	/**
+<i>447</i>&nbsp;	 * Removes the element and bounding_box at the given element_handle.
+<i>448</i>&nbsp;	 * Note that this will invalidate any active iterator on the Quad_tree_impl.
+<i>449</i>&nbsp;	 * \param element_handle The handle corresponding to the element and bounding_box to be removed.
+<i>450</i>&nbsp;	 */
+<i>451</i>&nbsp;	void removeElement(int element_handle) {
+<b class="fc"><i>452</i>&nbsp;		if (m_b_store_duplicates)</b>
+<b class="nc"><i>453</i>&nbsp;			throw new GeometryException(&quot;invalid call&quot;);</b>
+<i>454</i>&nbsp;
+<b class="fc"><i>455</i>&nbsp;		int quad_handle = get_quad_(element_handle);</b>
+<b class="fc"><i>456</i>&nbsp;		disconnect_element_handle_(element_handle);</b>
+<b class="fc"><i>457</i>&nbsp;		free_element_and_box_node_(element_handle);</b>
+<i>458</i>&nbsp;
+<b class="fc"><i>459</i>&nbsp;		int q = quad_handle;</b>
+<i>460</i>&nbsp;
+<b class="fc"><i>461</i>&nbsp;		while (q != -1) {</b>
+<b class="fc"><i>462</i>&nbsp;			set_sub_tree_element_count_(q, get_sub_tree_element_count_(q) - 1);</b>
+<b class="fc"><i>463</i>&nbsp;			int parent = get_parent_(q);</b>
+<i>464</i>&nbsp;
+<b class="fc"><i>465</i>&nbsp;			if (get_sub_tree_element_count_(q) == 0) {</b>
+<b class="fc"><i>466</i>&nbsp;				assert (get_local_element_count_(q) == 0);</b>
+<i>467</i>&nbsp;
+<b class="fc"><i>468</i>&nbsp;				if (q != m_root) {</b>
+<b class="fc"><i>469</i>&nbsp;					int quadrant = get_quadrant_(q);</b>
+<b class="fc"><i>470</i>&nbsp;					m_quad_tree_nodes.deleteElement(q);</b>
+<b class="fc"><i>471</i>&nbsp;					set_child_(parent, quadrant, -1);</b>
+<i>472</i>&nbsp;				}
+<i>473</i>&nbsp;			}
+<i>474</i>&nbsp;
+<b class="fc"><i>475</i>&nbsp;			q = parent;</b>
+<b class="fc"><i>476</i>&nbsp;		}</b>
+<b class="fc"><i>477</i>&nbsp;	}</b>
+<i>478</i>&nbsp;
+<i>479</i>&nbsp;	/**
+<i>480</i>&nbsp;	 * Returns the element at the given element_handle.
+<i>481</i>&nbsp;	 * \param element_handle The handle corresponding to the element to be retrieved.
+<i>482</i>&nbsp;	 */
+<i>483</i>&nbsp;	int getElement(int element_handle) {
+<b class="fc"><i>484</i>&nbsp;		return get_element_value_(get_data_(element_handle));</b>
+<i>485</i>&nbsp;	}
+<i>486</i>&nbsp;
+<i>487</i>&nbsp;	/**
+<i>488</i>&nbsp;	 * Returns the ith unique element.
+<i>489</i>&nbsp;	 * \param i The index corresponding to the ith unique element.
+<i>490</i>&nbsp;	 */
+<i>491</i>&nbsp;	int getElementAtIndex(int i) {
+<b class="nc"><i>492</i>&nbsp;		return m_data.get(i).element;</b>
+<i>493</i>&nbsp;	}
+<i>494</i>&nbsp;
+<i>495</i>&nbsp;	/**
+<i>496</i>&nbsp;	 * Returns the element extent at the given element_handle.
+<i>497</i>&nbsp;	 * \param element_handle The handle corresponding to the element extent to be retrieved.
+<i>498</i>&nbsp;	 */
+<i>499</i>&nbsp;	Envelope2D getElementExtent(int element_handle) {
+<b class="nc"><i>500</i>&nbsp;		int data_handle = get_data_(element_handle);</b>
+<b class="nc"><i>501</i>&nbsp;		return get_bounding_box_value_(data_handle);</b>
+<i>502</i>&nbsp;	}
+<i>503</i>&nbsp;
+<i>504</i>&nbsp;	/**
+<i>505</i>&nbsp;	 * Returns the extent of the ith unique element.
+<i>506</i>&nbsp;	 * \param i The index corresponding to the ith unique element.
+<i>507</i>&nbsp;	 */
+<i>508</i>&nbsp;	Envelope2D getElementExtentAtIndex(int i) {
+<b class="nc"><i>509</i>&nbsp;		return m_data.get(i).box;</b>
+<i>510</i>&nbsp;	}
+<i>511</i>&nbsp;
+<i>512</i>&nbsp;	/**
+<i>513</i>&nbsp;	 * Returns the extent of all elements in the quad tree.
+<i>514</i>&nbsp;	 */
+<i>515</i>&nbsp;	Envelope2D getDataExtent() {
+<b class="fc"><i>516</i>&nbsp;		return m_data_extent;</b>
+<i>517</i>&nbsp;	}
+<i>518</i>&nbsp;
+<i>519</i>&nbsp;	/**
+<i>520</i>&nbsp;	 * Returns the extent of the quad tree.
+<i>521</i>&nbsp;	 */
+<i>522</i>&nbsp;	Envelope2D getQuadTreeExtent() {
+<b class="nc"><i>523</i>&nbsp;		return m_extent;</b>
+<i>524</i>&nbsp;	}
+<i>525</i>&nbsp;
+<i>526</i>&nbsp;	/**
+<i>527</i>&nbsp;	 * Returns the height of the quad at the given quad_handle.
+<i>528</i>&nbsp;	 * \param quad_handle The handle corresponding to the quad.
+<i>529</i>&nbsp;	 */
+<i>530</i>&nbsp;	int getHeight(int quad_handle) {
+<b class="fc"><i>531</i>&nbsp;		return get_height_(quad_handle);</b>
+<i>532</i>&nbsp;	}
+<i>533</i>&nbsp;
+<i>534</i>&nbsp;	int getMaxHeight() {
+<b class="nc"><i>535</i>&nbsp;		return m_height;</b>
+<i>536</i>&nbsp;	}
+<i>537</i>&nbsp;
+<i>538</i>&nbsp;	/**
+<i>539</i>&nbsp;	 * Returns the extent of the quad at the given quad_handle.
+<i>540</i>&nbsp;	 * \param quad_handle The handle corresponding to the quad.
+<i>541</i>&nbsp;	 */
+<i>542</i>&nbsp;	Envelope2D getExtent(int quad_handle) {
+<b class="fc"><i>543</i>&nbsp;		Envelope2D quad_extent = new Envelope2D();</b>
+<b class="fc"><i>544</i>&nbsp;		quad_extent.setCoords(m_extent);</b>
+<i>545</i>&nbsp;
+<b class="fc"><i>546</i>&nbsp;		if (quad_handle == m_root)</b>
+<b class="fc"><i>547</i>&nbsp;			return quad_extent;</b>
+<i>548</i>&nbsp;
+<b class="fc"><i>549</i>&nbsp;		AttributeStreamOfInt32 quadrants = new AttributeStreamOfInt32(0);</b>
+<i>550</i>&nbsp;
+<b class="fc"><i>551</i>&nbsp;		int q = quad_handle;</b>
+<i>552</i>&nbsp;
+<i>553</i>&nbsp;		do {
+<b class="fc"><i>554</i>&nbsp;			quadrants.add(get_quadrant_(q));</b>
+<b class="fc"><i>555</i>&nbsp;			q = get_parent_(q);</b>
+<i>556</i>&nbsp;
+<b class="fc"><i>557</i>&nbsp;		} while (q != m_root);</b>
+<i>558</i>&nbsp;
+<b class="fc"><i>559</i>&nbsp;		int sz = quadrants.size();</b>
+<b class="fc"><i>560</i>&nbsp;		assert (sz == getHeight(quad_handle));</b>
+<i>561</i>&nbsp;
+<b class="fc"><i>562</i>&nbsp;		for (int i = 0; i &lt; sz; i++) {</b>
+<b class="fc"><i>563</i>&nbsp;			int child = quadrants.getLast();</b>
+<b class="fc"><i>564</i>&nbsp;			quadrants.removeLast();</b>
+<i>565</i>&nbsp;
+<b class="fc"><i>566</i>&nbsp;			if (child == 0) {//northeast</b>
+<b class="fc"><i>567</i>&nbsp;				quad_extent.xmin = 0.5 * (quad_extent.xmin + quad_extent.xmax);</b>
+<b class="fc"><i>568</i>&nbsp;				quad_extent.ymin = 0.5 * (quad_extent.ymin + quad_extent.ymax);</b>
+<b class="fc"><i>569</i>&nbsp;			} else if (child == 1) {//northwest</b>
+<b class="fc"><i>570</i>&nbsp;				quad_extent.xmax = 0.5 * (quad_extent.xmin + quad_extent.xmax);</b>
+<b class="fc"><i>571</i>&nbsp;				quad_extent.ymin = 0.5 * (quad_extent.ymin + quad_extent.ymax);</b>
+<b class="fc"><i>572</i>&nbsp;			} else if (child == 2) {//southwest</b>
+<b class="fc"><i>573</i>&nbsp;				quad_extent.xmax = 0.5 * (quad_extent.xmin + quad_extent.xmax);</b>
+<b class="fc"><i>574</i>&nbsp;				quad_extent.ymax = 0.5 * (quad_extent.ymin + quad_extent.ymax);</b>
+<i>575</i>&nbsp;			} else {//southeast
+<b class="fc"><i>576</i>&nbsp;				quad_extent.xmin = 0.5 * (quad_extent.xmin + quad_extent.xmax);</b>
+<b class="fc"><i>577</i>&nbsp;				quad_extent.ymax = 0.5 * (quad_extent.ymin + quad_extent.ymax);</b>
+<i>578</i>&nbsp;			}
+<i>579</i>&nbsp;		}
+<i>580</i>&nbsp;
+<b class="fc"><i>581</i>&nbsp;		return quad_extent;</b>
+<i>582</i>&nbsp;	}
+<i>583</i>&nbsp;
+<i>584</i>&nbsp;	/**
+<i>585</i>&nbsp;	 * Returns the Quad_handle of the quad containing the given element_handle.
+<i>586</i>&nbsp;	 * \param element_handle The handle corresponding to the element.
+<i>587</i>&nbsp;	 */
+<i>588</i>&nbsp;	int getQuad(int element_handle) {
+<b class="fc"><i>589</i>&nbsp;		return get_quad_(element_handle);</b>
+<i>590</i>&nbsp;	}
+<i>591</i>&nbsp;
+<i>592</i>&nbsp;	/**
+<i>593</i>&nbsp;	 * Returns the number of elements in the Quad_tree_impl.
+<i>594</i>&nbsp;	 */
+<i>595</i>&nbsp;	int getElementCount() {
+<b class="fc"><i>596</i>&nbsp;		if (m_root == -1)</b>
+<b class="fc"><i>597</i>&nbsp;			return 0;</b>
+<i>598</i>&nbsp;
+<b class="fc"><i>599</i>&nbsp;		assert (get_sub_tree_element_count_(m_root) == m_data.size());</b>
+<b class="fc"><i>600</i>&nbsp;		return get_sub_tree_element_count_(m_root);</b>
+<i>601</i>&nbsp;	}
+<i>602</i>&nbsp;
+<i>603</i>&nbsp;	/**
+<i>604</i>&nbsp;	 * Returns the number of elements in the subtree rooted at the given quad_handle.
+<i>605</i>&nbsp;	 * \param quad_handle The handle corresponding to the quad.
+<i>606</i>&nbsp;	 */
+<i>607</i>&nbsp;	int getSubTreeElementCount(int quad_handle) {
+<b class="fc"><i>608</i>&nbsp;		return get_sub_tree_element_count_(quad_handle);</b>
+<i>609</i>&nbsp;	}
+<i>610</i>&nbsp;
+<i>611</i>&nbsp;	/**
+<i>612</i>&nbsp;	 * Returns the number of elements contained in the subtree rooted at the given quad_handle.
+<i>613</i>&nbsp;	 * \param quad_handle The handle corresponding to the quad.
+<i>614</i>&nbsp;	 */
+<i>615</i>&nbsp;	int getContainedSubTreeElementCount(int quad_handle) {
+<b class="fc"><i>616</i>&nbsp;		if (!m_b_store_duplicates)</b>
+<b class="nc"><i>617</i>&nbsp;			return get_sub_tree_element_count_(quad_handle);</b>
+<i>618</i>&nbsp;
+<b class="fc"><i>619</i>&nbsp;		return get_contained_sub_tree_element_count_(quad_handle);</b>
+<i>620</i>&nbsp;	}
+<i>621</i>&nbsp;
+<i>622</i>&nbsp;	/**
+<i>623</i>&nbsp;	 * Returns the number of elements in the quad tree that intersect the qiven query. Some elements may be duplicated if the quad tree stores duplicates.
+<i>624</i>&nbsp;	 * \param query The Envelope_2D used for the query.
+<i>625</i>&nbsp;	 * \param tolerance The tolerance used for the intersection tests.
+<i>626</i>&nbsp;	 * \param max_count If the intersection count becomes greater than or equal to the max_count, then max_count is returned.
+<i>627</i>&nbsp;	 */
+<i>628</i>&nbsp;	int getIntersectionCount(Envelope2D query, double tolerance, int max_count) {
+<b class="fc"><i>629</i>&nbsp;		if (m_root == -1)</b>
+<b class="fc"><i>630</i>&nbsp;			return 0;</b>
+<i>631</i>&nbsp;
+<b class="fc"><i>632</i>&nbsp;		Envelope2D query_inflated = new Envelope2D();</b>
+<b class="fc"><i>633</i>&nbsp;		query_inflated.setCoords(query);</b>
+<b class="fc"><i>634</i>&nbsp;		query_inflated.inflate(tolerance, tolerance);</b>
+<i>635</i>&nbsp;
+<b class="fc"><i>636</i>&nbsp;		AttributeStreamOfInt32 quads_stack = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>637</i>&nbsp;		ArrayList&lt;Envelope2D&gt; extents_stack = new ArrayList&lt;Envelope2D&gt;(0);</b>
+<b class="fc"><i>638</i>&nbsp;		quads_stack.add(m_root);</b>
+<b class="fc"><i>639</i>&nbsp;		extents_stack.add(new Envelope2D(m_extent.xmin, m_extent.ymin, m_extent.xmax, m_extent.ymax));</b>
+<i>640</i>&nbsp;
+<b class="fc"><i>641</i>&nbsp;		Envelope2D[] child_extents = new Envelope2D[4];</b>
+<b class="fc"><i>642</i>&nbsp;		child_extents[0] = new Envelope2D();</b>
+<b class="fc"><i>643</i>&nbsp;		child_extents[1] = new Envelope2D();</b>
+<b class="fc"><i>644</i>&nbsp;		child_extents[2] = new Envelope2D();</b>
+<b class="fc"><i>645</i>&nbsp;		child_extents[3] = new Envelope2D();</b>
+<i>646</i>&nbsp;
+<b class="fc"><i>647</i>&nbsp;		Envelope2D current_extent = new Envelope2D();</b>
+<i>648</i>&nbsp;
+<b class="fc"><i>649</i>&nbsp;		int intersection_count = 0;</b>
+<i>650</i>&nbsp;
+<b class="fc"><i>651</i>&nbsp;		while (quads_stack.size() &gt; 0) {</b>
+<b class="fc"><i>652</i>&nbsp;			boolean b_subdivide = false;</b>
+<i>653</i>&nbsp;
+<b class="fc"><i>654</i>&nbsp;			int current_quad_handle = quads_stack.getLast();</b>
+<b class="fc"><i>655</i>&nbsp;			current_extent.setCoords(extents_stack.get(extents_stack.size() - 1));</b>
+<i>656</i>&nbsp;
+<b class="fc"><i>657</i>&nbsp;			quads_stack.removeLast();</b>
+<b class="fc"><i>658</i>&nbsp;			extents_stack.remove(extents_stack.size() - 1);</b>
+<i>659</i>&nbsp;
+<i>660</i>&nbsp;
+<b class="fc"><i>661</i>&nbsp;			if (query_inflated.contains(current_extent)) {</b>
+<b class="fc"><i>662</i>&nbsp;				intersection_count += getSubTreeElementCount(current_quad_handle);</b>
+<i>663</i>&nbsp;
+<b class="fc"><i>664</i>&nbsp;				if (max_count &gt; 0 &amp;&amp; intersection_count &gt;= max_count)</b>
+<b class="nc"><i>665</i>&nbsp;					return max_count;</b>
+<i>666</i>&nbsp;			} else {
+<b class="fc"><i>667</i>&nbsp;				if (query_inflated.isIntersecting(current_extent)) {</b>
+<b class="fc"><i>668</i>&nbsp;					for (int element_handle = get_first_element_(current_quad_handle); element_handle != -1; element_handle = get_next_element_(element_handle)) {</b>
+<b class="fc"><i>669</i>&nbsp;						int data_handle = get_data_(element_handle);</b>
+<b class="fc"><i>670</i>&nbsp;						Envelope2D env = get_bounding_box_value_(data_handle);</b>
+<i>671</i>&nbsp;
+<b class="fc"><i>672</i>&nbsp;						if (env.isIntersecting(query_inflated)) {</b>
+<b class="fc"><i>673</i>&nbsp;							intersection_count++;</b>
+<i>674</i>&nbsp;
+<b class="fc"><i>675</i>&nbsp;							if (max_count &gt; 0 &amp;&amp; intersection_count &gt;= max_count)</b>
+<b class="fc"><i>676</i>&nbsp;								return max_count;</b>
+<i>677</i>&nbsp;						}
+<i>678</i>&nbsp;					}
+<i>679</i>&nbsp;
+<b class="fc"><i>680</i>&nbsp;					b_subdivide = getHeight(current_quad_handle) + 1 &lt;= m_height;</b>
+<i>681</i>&nbsp;				}
+<i>682</i>&nbsp;			}
+<i>683</i>&nbsp;
+<b class="fc"><i>684</i>&nbsp;			if (b_subdivide) {</b>
+<b class="fc"><i>685</i>&nbsp;				set_child_extents_(current_extent, child_extents);</b>
+<i>686</i>&nbsp;
+<b class="fc"><i>687</i>&nbsp;				for (int i = 0; i &lt; 4; i++) {</b>
+<b class="fc"><i>688</i>&nbsp;					int child_handle = get_child_(current_quad_handle, i);</b>
+<i>689</i>&nbsp;
+<b class="fc"><i>690</i>&nbsp;					if (child_handle != -1 &amp;&amp; getSubTreeElementCount(child_handle) &gt; 0) {</b>
+<b class="fc"><i>691</i>&nbsp;						boolean b_is_intersecting = query_inflated.isIntersecting(child_extents[i]);</b>
+<i>692</i>&nbsp;
+<b class="fc"><i>693</i>&nbsp;						if (b_is_intersecting) {</b>
+<b class="fc"><i>694</i>&nbsp;							quads_stack.add(child_handle);</b>
+<b class="fc"><i>695</i>&nbsp;							extents_stack.add(new Envelope2D(child_extents[i].xmin, child_extents[i].ymin, child_extents[i].xmax, child_extents[i].ymax));</b>
+<i>696</i>&nbsp;						}
+<i>697</i>&nbsp;					}
+<i>698</i>&nbsp;				}
+<i>699</i>&nbsp;			}
+<b class="fc"><i>700</i>&nbsp;		}</b>
+<i>701</i>&nbsp;
+<b class="fc"><i>702</i>&nbsp;		return intersection_count;</b>
+<i>703</i>&nbsp;	}
+<i>704</i>&nbsp;
+<i>705</i>&nbsp;	/**
+<i>706</i>&nbsp;	 * Returns true if the quad tree has data intersecting the given query.
+<i>707</i>&nbsp;	 * \param query The Envelope_2D used for the query.
+<i>708</i>&nbsp;	 * \param tolerance The tolerance used for the intersection tests.
+<i>709</i>&nbsp;	 */
+<i>710</i>&nbsp;	boolean hasData(Envelope2D query, double tolerance) {
+<b class="fc"><i>711</i>&nbsp;		int count = getIntersectionCount(query, tolerance, 1);</b>
+<b class="fc"><i>712</i>&nbsp;		return count &gt;= 1;</b>
+<i>713</i>&nbsp;	}
+<i>714</i>&nbsp;
+<i>715</i>&nbsp;	/**
+<i>716</i>&nbsp;	 * Gets an iterator on the Quad_tree_impl. The query will be the Envelope_2D
+<i>717</i>&nbsp;	 * that bounds the input Geometry. To reuse the existing iterator on the
+<i>718</i>&nbsp;	 * same Quad_tree_impl but with a new query, use the reset_iterator function
+<i>719</i>&nbsp;	 * on the Quad_tree_iterator_impl. \param query The Geometry used for the
+<i>720</i>&nbsp;	 * query. If the Geometry is a Line segment, then the query will be the
+<i>721</i>&nbsp;	 * segment. Otherwise the query will be the Envelope_2D bounding the
+<i>722</i>&nbsp;	 * Geometry. \param tolerance The tolerance used for the intersection tests.
+<i>723</i>&nbsp;	 */
+<i>724</i>&nbsp;	QuadTreeIteratorImpl getIterator(Geometry query, double tolerance) {
+<b class="nc"><i>725</i>&nbsp;		return new QuadTreeIteratorImpl(this, query, tolerance);</b>
+<i>726</i>&nbsp;	}
+<i>727</i>&nbsp;
+<i>728</i>&nbsp;	/**
+<i>729</i>&nbsp;	 * Gets an iterator on the Quad_tree_impl using the input Envelope_2D as the
+<i>730</i>&nbsp;	 * query. To reuse the existing iterator on the same Quad_tree_impl but with
+<i>731</i>&nbsp;	 * a new query, use the reset_iterator function on the
+<i>732</i>&nbsp;	 * Quad_tree_iterator_impl. \param query The Envelope_2D used for the query.
+<i>733</i>&nbsp;	 * \param tolerance The tolerance used for the intersection tests.
+<i>734</i>&nbsp;	 */
+<i>735</i>&nbsp;	QuadTreeIteratorImpl getIterator(Envelope2D query, double tolerance) {
+<b class="fc"><i>736</i>&nbsp;		return new QuadTreeIteratorImpl(this, query, tolerance);</b>
+<i>737</i>&nbsp;	}
+<i>738</i>&nbsp;
+<i>739</i>&nbsp;	/**
+<i>740</i>&nbsp;	 * Gets an iterator on the Quad_tree.
+<i>741</i>&nbsp;	 */
+<i>742</i>&nbsp;	QuadTreeIteratorImpl getIterator() {
+<b class="fc"><i>743</i>&nbsp;		return new QuadTreeIteratorImpl(this);</b>
+<i>744</i>&nbsp;	}
+<i>745</i>&nbsp;
+<i>746</i>&nbsp;	/**
+<i>747</i>&nbsp;	 * Gets a sorted iterator on the Quad_tree_impl. The Element_handles will be returned in increasing order of their corresponding Element_types.
+<i>748</i>&nbsp;	 * The query will be the Envelope_2D that bounds the input Geometry.
+<i>749</i>&nbsp;	 * To reuse the existing iterator on the same Quad_tree_impl but with a new query, use the reset_iterator function on the Quad_tree_sorted_iterator_impl.
+<i>750</i>&nbsp;	 * \param query The Geometry used for the query. If the Geometry is a Line segment, then the query will be the segment. Otherwise the query will be the Envelope_2D bounding the Geometry.
+<i>751</i>&nbsp;	 * \param tolerance The tolerance used for the intersection tests.
+<i>752</i>&nbsp;	 */
+<i>753</i>&nbsp;	QuadTreeSortedIteratorImpl getSortedIterator(Geometry query, double tolerance) {
+<b class="nc"><i>754</i>&nbsp;		return new QuadTreeSortedIteratorImpl(getIterator(query, tolerance));</b>
+<i>755</i>&nbsp;	}
+<i>756</i>&nbsp;
+<i>757</i>&nbsp;	/**
+<i>758</i>&nbsp;	 * Gets a sorted iterator on the Quad_tree_impl using the input Envelope_2D as the query. The Element_handles will be returned in increasing order of their corresponding Element_types.
+<i>759</i>&nbsp;	 * To reuse the existing iterator on the same Quad_tree_impl but with a new query, use the reset_iterator function on the Quad_tree_iterator_impl.
+<i>760</i>&nbsp;	 * \param query The Envelope_2D used for the query.
+<i>761</i>&nbsp;	 * \param tolerance The tolerance used for the intersection tests.
+<i>762</i>&nbsp;	 */
+<i>763</i>&nbsp;	QuadTreeSortedIteratorImpl getSortedIterator(Envelope2D query, double tolerance) {
+<b class="nc"><i>764</i>&nbsp;		return new QuadTreeSortedIteratorImpl(getIterator(query, tolerance));</b>
+<i>765</i>&nbsp;	}
+<i>766</i>&nbsp;
+<i>767</i>&nbsp;	/**
+<i>768</i>&nbsp;	 * Gets a sorted iterator on the Quad_tree. The Element_handles will be returned in increasing order of their corresponding Element_types
+<i>769</i>&nbsp;	 */
+<i>770</i>&nbsp;	QuadTreeSortedIteratorImpl getSortedIterator() {
+<b class="fc"><i>771</i>&nbsp;		return new QuadTreeSortedIteratorImpl(getIterator());</b>
+<i>772</i>&nbsp;	}
+<i>773</i>&nbsp;
+<i>774</i>&nbsp;	private void reset_(Envelope2D extent, int height) {
+<b class="fc"><i>775</i>&nbsp;		if (height &lt; 0 || height &gt; 127)</b>
+<b class="nc"><i>776</i>&nbsp;			throw new IllegalArgumentException(&quot;invalid height&quot;);</b>
+<i>777</i>&nbsp;
+<b class="fc"><i>778</i>&nbsp;		m_height = height;</b>
+<b class="fc"><i>779</i>&nbsp;		m_extent.setCoords(extent);</b>
+<b class="fc"><i>780</i>&nbsp;		m_root = m_quad_tree_nodes.newElement();</b>
+<b class="fc"><i>781</i>&nbsp;		m_data_extent.setEmpty();</b>
+<b class="fc"><i>782</i>&nbsp;		m_root = -1;</b>
+<b class="fc"><i>783</i>&nbsp;	}</b>
+<i>784</i>&nbsp;
+<i>785</i>&nbsp;	private int insert_(int element, Envelope2D bounding_box, int height, Envelope2D quad_extent, int quad_handle, boolean b_flushing, int flushed_element_handle) {
+<b class="fc"><i>786</i>&nbsp;		if (!quad_extent.contains(bounding_box)) {</b>
+<b class="fc"><i>787</i>&nbsp;			assert (!b_flushing);</b>
+<i>788</i>&nbsp;
+<b class="fc"><i>789</i>&nbsp;			if (height == 0)</b>
+<b class="nc"><i>790</i>&nbsp;				return -1;</b>
+<i>791</i>&nbsp;
+<b class="fc"><i>792</i>&nbsp;			return insert_(element, bounding_box, 0, m_extent, m_root, b_flushing, flushed_element_handle);</b>
+<i>793</i>&nbsp;		}
+<i>794</i>&nbsp;
+<b class="fc"><i>795</i>&nbsp;		if (!b_flushing) {</b>
+<b class="fc"><i>796</i>&nbsp;			for (int q = quad_handle; q != -1; q = get_parent_(q))</b>
+<b class="fc"><i>797</i>&nbsp;				set_sub_tree_element_count_(q, get_sub_tree_element_count_(q) + 1);</b>
+<i>798</i>&nbsp;		}
+<i>799</i>&nbsp;
+<b class="fc"><i>800</i>&nbsp;		Envelope2D current_extent = new Envelope2D();</b>
+<b class="fc"><i>801</i>&nbsp;		current_extent.setCoords(quad_extent);</b>
+<i>802</i>&nbsp;
+<b class="fc"><i>803</i>&nbsp;		int current_quad_handle = quad_handle;</b>
+<i>804</i>&nbsp;
+<b class="fc"><i>805</i>&nbsp;		Envelope2D[] child_extents = new Envelope2D[4];</b>
+<b class="fc"><i>806</i>&nbsp;		child_extents[0] = new Envelope2D();</b>
+<b class="fc"><i>807</i>&nbsp;		child_extents[1] = new Envelope2D();</b>
+<b class="fc"><i>808</i>&nbsp;		child_extents[2] = new Envelope2D();</b>
+<b class="fc"><i>809</i>&nbsp;		child_extents[3] = new Envelope2D();</b>
+<i>810</i>&nbsp;
+<i>811</i>&nbsp;		int current_height;
+<b class="fc"><i>812</i>&nbsp;		for (current_height = height; current_height &lt; m_height &amp;&amp; can_push_down_(current_quad_handle); current_height++) {</b>
+<b class="fc"><i>813</i>&nbsp;			set_child_extents_(current_extent, child_extents);</b>
+<i>814</i>&nbsp;
+<b class="fc"><i>815</i>&nbsp;			boolean b_contains = false;</b>
+<i>816</i>&nbsp;
+<b class="fc"><i>817</i>&nbsp;			for (int i = 0; i &lt; 4; i++) {</b>
+<b class="fc"><i>818</i>&nbsp;				if (child_extents[i].contains(bounding_box)) {</b>
+<b class="fc"><i>819</i>&nbsp;					b_contains = true;</b>
+<i>820</i>&nbsp;
+<b class="fc"><i>821</i>&nbsp;					int child_handle = get_child_(current_quad_handle, i);</b>
+<b class="fc"><i>822</i>&nbsp;					if (child_handle == -1)</b>
+<b class="fc"><i>823</i>&nbsp;						child_handle = create_child_(current_quad_handle, i);</b>
+<i>824</i>&nbsp;
+<b class="fc"><i>825</i>&nbsp;					set_sub_tree_element_count_(child_handle, get_sub_tree_element_count_(child_handle) + 1);</b>
+<i>826</i>&nbsp;
+<b class="fc"><i>827</i>&nbsp;					current_quad_handle = child_handle;</b>
+<b class="fc"><i>828</i>&nbsp;					current_extent.setCoords(child_extents[i]);</b>
+<b class="fc"><i>829</i>&nbsp;					break;</b>
+<i>830</i>&nbsp;				}
+<i>831</i>&nbsp;			}
+<i>832</i>&nbsp;
+<b class="fc"><i>833</i>&nbsp;			if (!b_contains)</b>
+<b class="fc"><i>834</i>&nbsp;				break;</b>
+<i>835</i>&nbsp;		}
+<i>836</i>&nbsp;
+<b class="fc"><i>837</i>&nbsp;		return insert_at_quad_(element, bounding_box, current_height, current_extent, current_quad_handle, b_flushing, quad_handle, flushed_element_handle, -1);</b>
+<i>838</i>&nbsp;	}
+<i>839</i>&nbsp;
+<i>840</i>&nbsp;	private int insert_duplicates_(int element, Envelope2D bounding_box, int height, Envelope2D quad_extent, int quad_handle, boolean b_flushing, int flushed_element_handle) {
+<b class="fc"><i>841</i>&nbsp;		assert (b_flushing || m_root == quad_handle);</b>
+<i>842</i>&nbsp;
+<b class="fc"><i>843</i>&nbsp;		if (!b_flushing) // If b_flushing is true, then the sub tree element counts are already accounted for since the element already lies in the current incoming quad</b>
+<i>844</i>&nbsp;		{
+<b class="fc"><i>845</i>&nbsp;			if (!quad_extent.contains(bounding_box))</b>
+<b class="nc"><i>846</i>&nbsp;				return -1;</b>
+<i>847</i>&nbsp;
+<b class="fc"><i>848</i>&nbsp;			set_sub_tree_element_count_(quad_handle, get_sub_tree_element_count_(quad_handle) + 1);</b>
+<b class="fc"><i>849</i>&nbsp;			set_contained_sub_tree_element_count_(quad_handle, get_contained_sub_tree_element_count_(quad_handle) + 1);</b>
+<i>850</i>&nbsp;		}
+<i>851</i>&nbsp;
+<b class="fc"><i>852</i>&nbsp;		double bounding_box_max_dim = Math.max(bounding_box.getWidth(), bounding_box.getHeight());</b>
+<i>853</i>&nbsp;
+<b class="fc"><i>854</i>&nbsp;		int element_handle = -1;</b>
+<b class="fc"><i>855</i>&nbsp;		AttributeStreamOfInt32 quads_stack = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>856</i>&nbsp;		ArrayList&lt;Envelope2D&gt; extents_stack = new ArrayList&lt;Envelope2D&gt;(0);</b>
+<b class="fc"><i>857</i>&nbsp;		AttributeStreamOfInt32 heights_stack = new AttributeStreamOfInt32(0);</b>
+<b class="fc"><i>858</i>&nbsp;		quads_stack.add(quad_handle);</b>
+<b class="fc"><i>859</i>&nbsp;		extents_stack.add(new Envelope2D(quad_extent.xmin, quad_extent.ymin, quad_extent.xmax, quad_extent.ymax));</b>
+<b class="fc"><i>860</i>&nbsp;		heights_stack.add(height);</b>
+<i>861</i>&nbsp;
+<b class="fc"><i>862</i>&nbsp;		Envelope2D[] child_extents = new Envelope2D[4];</b>
+<b class="fc"><i>863</i>&nbsp;		child_extents[0] = new Envelope2D();</b>
+<b class="fc"><i>864</i>&nbsp;		child_extents[1] = new Envelope2D();</b>
+<b class="fc"><i>865</i>&nbsp;		child_extents[2] = new Envelope2D();</b>
+<b class="fc"><i>866</i>&nbsp;		child_extents[3] = new Envelope2D();</b>
+<i>867</i>&nbsp;
+<b class="fc"><i>868</i>&nbsp;		Envelope2D current_extent = new Envelope2D();</b>
+<i>869</i>&nbsp;
+<b class="fc"><i>870</i>&nbsp;		while (quads_stack.size() &gt; 0) {</b>
+<b class="fc"><i>871</i>&nbsp;			boolean b_subdivide = false;</b>
+<i>872</i>&nbsp;
+<b class="fc"><i>873</i>&nbsp;			int current_quad_handle = quads_stack.getLast();</b>
+<b class="fc"><i>874</i>&nbsp;			current_extent.setCoords(extents_stack.get(extents_stack.size() - 1));</b>
+<b class="fc"><i>875</i>&nbsp;			int current_height = heights_stack.getLast();</b>
+<i>876</i>&nbsp;
+<b class="fc"><i>877</i>&nbsp;			quads_stack.removeLast();</b>
+<b class="fc"><i>878</i>&nbsp;			extents_stack.remove(extents_stack.size() - 1);</b>
+<b class="fc"><i>879</i>&nbsp;			heights_stack.removeLast();</b>
+<i>880</i>&nbsp;
+<b class="fc"><i>881</i>&nbsp;			if (current_height + 1 &lt; m_height &amp;&amp; can_push_down_(current_quad_handle)) {</b>
+<b class="fc"><i>882</i>&nbsp;				double current_extent_max_dim = Math.max(current_extent.getWidth(), current_extent.getHeight());</b>
+<i>883</i>&nbsp;
+<b class="fc"><i>884</i>&nbsp;				if (bounding_box_max_dim &lt;= current_extent_max_dim / 2.0)</b>
+<b class="fc"><i>885</i>&nbsp;					b_subdivide = true;</b>
+<i>886</i>&nbsp;			}
+<i>887</i>&nbsp;
+<b class="fc"><i>888</i>&nbsp;			if (b_subdivide) {</b>
+<b class="fc"><i>889</i>&nbsp;				set_child_extents_(current_extent, child_extents);</b>
+<i>890</i>&nbsp;
+<b class="fc"><i>891</i>&nbsp;				boolean b_contains = false;</b>
+<i>892</i>&nbsp;
+<b class="fc"><i>893</i>&nbsp;				for (int i = 0; i &lt; 4; i++) {</b>
+<b class="fc"><i>894</i>&nbsp;					b_contains = child_extents[i].contains(bounding_box);</b>
+<i>895</i>&nbsp;
+<b class="fc"><i>896</i>&nbsp;					if (b_contains) {</b>
+<b class="fc"><i>897</i>&nbsp;						int child_handle = get_child_(current_quad_handle, i);</b>
+<b class="fc"><i>898</i>&nbsp;						if (child_handle == -1)</b>
+<b class="fc"><i>899</i>&nbsp;							child_handle = create_child_(current_quad_handle, i);</b>
+<i>900</i>&nbsp;
+<b class="fc"><i>901</i>&nbsp;						quads_stack.add(child_handle);</b>
+<b class="fc"><i>902</i>&nbsp;						extents_stack.add(new Envelope2D(child_extents[i].xmin, child_extents[i].ymin, child_extents[i].xmax, child_extents[i].ymax));</b>
+<b class="fc"><i>903</i>&nbsp;						heights_stack.add(current_height + 1);</b>
+<i>904</i>&nbsp;
+<b class="fc"><i>905</i>&nbsp;						set_sub_tree_element_count_(child_handle, get_sub_tree_element_count_(child_handle) + 1);</b>
+<b class="fc"><i>906</i>&nbsp;						set_contained_sub_tree_element_count_(child_handle, get_contained_sub_tree_element_count_(child_handle) + 1);</b>
+<b class="fc"><i>907</i>&nbsp;						break;</b>
+<i>908</i>&nbsp;					}
+<i>909</i>&nbsp;				}
+<i>910</i>&nbsp;
+<b class="fc"><i>911</i>&nbsp;				if (!b_contains) {</b>
+<b class="fc"><i>912</i>&nbsp;					for (int i = 0; i &lt; 4; i++) {</b>
+<b class="fc"><i>913</i>&nbsp;						boolean b_intersects = child_extents[i].isIntersecting(bounding_box);</b>
+<i>914</i>&nbsp;
+<b class="fc"><i>915</i>&nbsp;						if (b_intersects) {</b>
+<b class="fc"><i>916</i>&nbsp;							int child_handle = get_child_(current_quad_handle, i);</b>
+<b class="fc"><i>917</i>&nbsp;							if (child_handle == -1)</b>
+<b class="fc"><i>918</i>&nbsp;								child_handle = create_child_(current_quad_handle, i);</b>
+<i>919</i>&nbsp;
+<b class="fc"><i>920</i>&nbsp;							quads_stack.add(child_handle);</b>
+<b class="fc"><i>921</i>&nbsp;							extents_stack.add(new Envelope2D(child_extents[i].xmin, child_extents[i].ymin, child_extents[i].xmax, child_extents[i].ymax));</b>
+<b class="fc"><i>922</i>&nbsp;							heights_stack.add(current_height + 1);</b>
+<i>923</i>&nbsp;
+<b class="fc"><i>924</i>&nbsp;							set_sub_tree_element_count_(child_handle, get_sub_tree_element_count_(child_handle) + 1);</b>
+<i>925</i>&nbsp;						}
+<i>926</i>&nbsp;					}
+<i>927</i>&nbsp;				}
+<b class="fc"><i>928</i>&nbsp;			} else {</b>
+<b class="fc"><i>929</i>&nbsp;				element_handle = insert_at_quad_(element, bounding_box, current_height, current_extent, current_quad_handle, b_flushing, quad_handle, flushed_element_handle, element_handle);</b>
+<b class="fc"><i>930</i>&nbsp;				b_flushing = false; // flushing is false after the first inserted element has been flushed down, all subsequent inserts will be new</b>
+<i>931</i>&nbsp;			}
+<b class="fc"><i>932</i>&nbsp;		}</b>
+<i>933</i>&nbsp;
+<b class="fc"><i>934</i>&nbsp;		return 0;</b>
+<i>935</i>&nbsp;	}
+<i>936</i>&nbsp;
+<i>937</i>&nbsp;	private int insert_at_quad_(int element, Envelope2D bounding_box, int current_height, Envelope2D current_extent, int current_quad_handle, boolean b_flushing, int quad_handle, int flushed_element_handle, int duplicate_element_handle) {
+<i>938</i>&nbsp;		// If the bounding box is not contained in any of the current_node&#39;s children, or if the current_height is m_height, then insert the element and
+<i>939</i>&nbsp;		// bounding box into the current_node
+<i>940</i>&nbsp;
+<b class="fc"><i>941</i>&nbsp;		int head_element_handle = get_first_element_(current_quad_handle);</b>
+<b class="fc"><i>942</i>&nbsp;		int tail_element_handle = get_last_element_(current_quad_handle);</b>
+<b class="fc"><i>943</i>&nbsp;		int element_handle = -1;</b>
+<i>944</i>&nbsp;
+<b class="fc"><i>945</i>&nbsp;		if (b_flushing) {</b>
+<b class="fc"><i>946</i>&nbsp;			assert (flushed_element_handle != -1);</b>
+<i>947</i>&nbsp;
+<b class="fc"><i>948</i>&nbsp;			if (current_quad_handle == quad_handle)</b>
+<b class="fc"><i>949</i>&nbsp;				return flushed_element_handle;</b>
+<i>950</i>&nbsp;
+<b class="fc"><i>951</i>&nbsp;			disconnect_element_handle_(flushed_element_handle); // Take it out of the incoming quad_handle, and place in current_quad_handle</b>
+<b class="fc"><i>952</i>&nbsp;			element_handle = flushed_element_handle;</b>
+<i>953</i>&nbsp;		} else {
+<b class="fc"><i>954</i>&nbsp;			if (duplicate_element_handle == -1) {</b>
+<b class="fc"><i>955</i>&nbsp;				element_handle = create_element_();</b>
+<b class="fc"><i>956</i>&nbsp;				set_data_values_(get_data_(element_handle), element, bounding_box);</b>
+<i>957</i>&nbsp;			} else {
+<b class="fc"><i>958</i>&nbsp;				assert (m_b_store_duplicates);</b>
+<b class="fc"><i>959</i>&nbsp;				element_handle = create_element_from_duplicate_(duplicate_element_handle);</b>
+<i>960</i>&nbsp;			}
+<i>961</i>&nbsp;		}
+<i>962</i>&nbsp;
+<b class="fc"><i>963</i>&nbsp;		assert (!b_flushing || element_handle == flushed_element_handle);</b>
+<i>964</i>&nbsp;
+<b class="fc"><i>965</i>&nbsp;		set_quad_(element_handle, current_quad_handle); // set parent quad (needed for removal of element)</b>
+<i>966</i>&nbsp;
+<i>967</i>&nbsp;		// assign the prev pointer of the new tail to point at the old tail (tail_element_handle)
+<i>968</i>&nbsp;		// assign the next pointer of the old tail to point at the new tail (next_element_handle)
+<b class="fc"><i>969</i>&nbsp;		if (tail_element_handle != -1) {</b>
+<b class="fc"><i>970</i>&nbsp;			set_prev_element_(element_handle, tail_element_handle);</b>
+<b class="fc"><i>971</i>&nbsp;			set_next_element_(tail_element_handle, element_handle);</b>
+<i>972</i>&nbsp;		} else {
+<b class="fc"><i>973</i>&nbsp;			assert (head_element_handle == -1);</b>
+<b class="fc"><i>974</i>&nbsp;			set_first_element_(current_quad_handle, element_handle);</b>
+<i>975</i>&nbsp;		}
+<i>976</i>&nbsp;
+<i>977</i>&nbsp;		// assign the new tail
+<b class="fc"><i>978</i>&nbsp;		set_last_element_(current_quad_handle, element_handle);</b>
+<i>979</i>&nbsp;
+<b class="fc"><i>980</i>&nbsp;		set_local_element_count_(current_quad_handle, get_local_element_count_(current_quad_handle) + 1);</b>
+<i>981</i>&nbsp;
+<b class="fc"><i>982</i>&nbsp;		if (can_flush_(current_quad_handle))</b>
+<b class="fc"><i>983</i>&nbsp;			flush_(current_height, current_extent, current_quad_handle);</b>
+<i>984</i>&nbsp;
+<b class="fc"><i>985</i>&nbsp;		return element_handle;</b>
+<i>986</i>&nbsp;	}
+<i>987</i>&nbsp;
+<i>988</i>&nbsp;	private static void set_child_extents_(Envelope2D current_extent, Envelope2D[] child_extents) {
+<b class="fc"><i>989</i>&nbsp;		double x_mid = 0.5 * (current_extent.xmin + current_extent.xmax);</b>
+<b class="fc"><i>990</i>&nbsp;		double y_mid = 0.5 * (current_extent.ymin + current_extent.ymax);</b>
+<i>991</i>&nbsp;
+<b class="fc"><i>992</i>&nbsp;		child_extents[0].setCoords(x_mid, y_mid, current_extent.xmax, current_extent.ymax); // northeast</b>
+<b class="fc"><i>993</i>&nbsp;		child_extents[1].setCoords(current_extent.xmin, y_mid, x_mid, current_extent.ymax); // northwest</b>
+<b class="fc"><i>994</i>&nbsp;		child_extents[2].setCoords(current_extent.xmin, current_extent.ymin, x_mid, y_mid); // southwest</b>
+<b class="fc"><i>995</i>&nbsp;		child_extents[3].setCoords(x_mid, current_extent.ymin, current_extent.xmax, y_mid); // southeast</b>
+<b class="fc"><i>996</i>&nbsp;	}</b>
+<i>997</i>&nbsp;
+<i>998</i>&nbsp;	private void disconnect_element_handle_(int element_handle) {
+<b class="fc"><i>999</i>&nbsp;		assert (element_handle != -1);</b>
+<b class="fc"><i>1000</i>&nbsp;		int quad_handle = get_quad_(element_handle);</b>
+<b class="fc"><i>1001</i>&nbsp;		int head_element_handle = get_first_element_(quad_handle);</b>
+<b class="fc"><i>1002</i>&nbsp;		int tail_element_handle = get_last_element_(quad_handle);</b>
+<b class="fc"><i>1003</i>&nbsp;		int prev_element_handle = get_prev_element_(element_handle);</b>
+<b class="fc"><i>1004</i>&nbsp;		int next_element_handle = get_next_element_(element_handle);</b>
+<b class="fc"><i>1005</i>&nbsp;		assert (head_element_handle != -1 &amp;&amp; tail_element_handle != -1);</b>
+<i>1006</i>&nbsp;
+<b class="fc"><i>1007</i>&nbsp;		if (head_element_handle == element_handle) {</b>
+<b class="fc"><i>1008</i>&nbsp;			if (next_element_handle != -1)</b>
+<b class="fc"><i>1009</i>&nbsp;				set_prev_element_(next_element_handle, -1);</b>
+<i>1010</i>&nbsp;			else {
+<b class="fc"><i>1011</i>&nbsp;				assert (head_element_handle == tail_element_handle);</b>
+<b class="fc"><i>1012</i>&nbsp;				assert (get_local_element_count_(quad_handle) == 1);</b>
+<b class="fc"><i>1013</i>&nbsp;				set_last_element_(quad_handle, -1);</b>
+<i>1014</i>&nbsp;			}
+<i>1015</i>&nbsp;
+<b class="fc"><i>1016</i>&nbsp;			set_first_element_(quad_handle, next_element_handle);</b>
+<b class="fc"><i>1017</i>&nbsp;		} else if (tail_element_handle == element_handle) {</b>
+<b class="fc"><i>1018</i>&nbsp;			assert (prev_element_handle != -1);</b>
+<b class="fc"><i>1019</i>&nbsp;			assert (get_local_element_count_(quad_handle) &gt;= 2);</b>
+<b class="fc"><i>1020</i>&nbsp;			set_next_element_(prev_element_handle, -1);</b>
+<b class="fc"><i>1021</i>&nbsp;			set_last_element_(quad_handle, prev_element_handle);</b>
+<i>1022</i>&nbsp;		} else {
+<b class="fc"><i>1023</i>&nbsp;			assert (next_element_handle != -1 &amp;&amp; prev_element_handle != -1);</b>
+<b class="fc"><i>1024</i>&nbsp;			assert (get_local_element_count_(quad_handle) &gt;= 3);</b>
+<b class="fc"><i>1025</i>&nbsp;			set_prev_element_(next_element_handle, prev_element_handle);</b>
+<b class="fc"><i>1026</i>&nbsp;			set_next_element_(prev_element_handle, next_element_handle);</b>
+<i>1027</i>&nbsp;		}
+<i>1028</i>&nbsp;
+<b class="fc"><i>1029</i>&nbsp;		set_prev_element_(element_handle, -1);</b>
+<b class="fc"><i>1030</i>&nbsp;		set_next_element_(element_handle, -1);</b>
+<i>1031</i>&nbsp;
+<b class="fc"><i>1032</i>&nbsp;		set_local_element_count_(quad_handle, get_local_element_count_(quad_handle) - 1);</b>
+<b class="fc"><i>1033</i>&nbsp;		assert (get_local_element_count_(quad_handle) &gt;= 0);</b>
+<b class="fc"><i>1034</i>&nbsp;	}</b>
+<i>1035</i>&nbsp;
+<i>1036</i>&nbsp;	private boolean can_flush_(int quad_handle) {
+<b class="fc"><i>1037</i>&nbsp;		return get_local_element_count_(quad_handle) == m_flushing_count &amp;&amp; !has_children_(quad_handle);</b>
+<i>1038</i>&nbsp;	}
+<i>1039</i>&nbsp;
+<i>1040</i>&nbsp;	private void flush_(int height, Envelope2D extent, int quad_handle) {
+<i>1041</i>&nbsp;		int element;
+<b class="fc"><i>1042</i>&nbsp;		Envelope2D bounding_box = new Envelope2D();</b>
+<i>1043</i>&nbsp;
+<b class="fc"><i>1044</i>&nbsp;		assert (quad_handle != -1);</b>
+<i>1045</i>&nbsp;
+<b class="fc"><i>1046</i>&nbsp;		int element_handle = get_first_element_(quad_handle), next_handle = -1;</b>
+<b class="fc"><i>1047</i>&nbsp;		int data_handle = -1;</b>
+<b class="fc"><i>1048</i>&nbsp;		assert (element_handle != -1);</b>
+<i>1049</i>&nbsp;
+<i>1050</i>&nbsp;		do {
+<b class="fc"><i>1051</i>&nbsp;			data_handle = get_data_(element_handle);</b>
+<b class="fc"><i>1052</i>&nbsp;			element = get_element_value_(data_handle);</b>
+<b class="fc"><i>1053</i>&nbsp;			bounding_box.setCoords(get_bounding_box_value_(data_handle));</b>
+<i>1054</i>&nbsp;
+<b class="fc"><i>1055</i>&nbsp;			next_handle = get_next_element_(element_handle);</b>
+<i>1056</i>&nbsp;
+<b class="fc"><i>1057</i>&nbsp;			if (!m_b_store_duplicates)</b>
+<b class="fc"><i>1058</i>&nbsp;				insert_(element, bounding_box, height, extent, quad_handle, true, element_handle);</b>
+<i>1059</i>&nbsp;			else
+<b class="fc"><i>1060</i>&nbsp;				insert_duplicates_(element, bounding_box, height, extent, quad_handle, true, element_handle);</b>
+<i>1061</i>&nbsp;
+<b class="fc"><i>1062</i>&nbsp;			element_handle = next_handle;</b>
+<i>1063</i>&nbsp;
+<b class="fc"><i>1064</i>&nbsp;		} while (element_handle != -1);</b>
+<b class="fc"><i>1065</i>&nbsp;	}</b>
+<i>1066</i>&nbsp;
+<i>1067</i>&nbsp;	private boolean can_push_down_(int quad_handle) {
+<b class="fc"><i>1068</i>&nbsp;		return get_local_element_count_(quad_handle) &gt;= m_flushing_count || has_children_(quad_handle);</b>
+<i>1069</i>&nbsp;	}
+<i>1070</i>&nbsp;
+<i>1071</i>&nbsp;	private boolean has_children_(int parent) {
+<b class="fc"><i>1072</i>&nbsp;		return get_child_(parent, 0) != -1 || get_child_(parent, 1) != -1 || get_child_(parent, 2) != -1 || get_child_(parent, 3) != -1;</b>
+<i>1073</i>&nbsp;	}
+<i>1074</i>&nbsp;
+<i>1075</i>&nbsp;	private int create_child_(int parent, int quadrant) {
+<b class="fc"><i>1076</i>&nbsp;		int child = m_quad_tree_nodes.newElement();</b>
+<b class="fc"><i>1077</i>&nbsp;		set_child_(parent, quadrant, child);</b>
+<b class="fc"><i>1078</i>&nbsp;		set_sub_tree_element_count_(child, 0);</b>
+<b class="fc"><i>1079</i>&nbsp;		set_local_element_count_(child, 0);</b>
+<b class="fc"><i>1080</i>&nbsp;		set_parent_(child, parent);</b>
+<b class="fc"><i>1081</i>&nbsp;		set_height_and_quadrant_(child, get_height_(parent) + 1, quadrant);</b>
+<i>1082</i>&nbsp;
+<b class="fc"><i>1083</i>&nbsp;		if (m_b_store_duplicates)</b>
+<b class="fc"><i>1084</i>&nbsp;			set_contained_sub_tree_element_count_(child, 0);</b>
+<i>1085</i>&nbsp;
+<b class="fc"><i>1086</i>&nbsp;		return child;</b>
+<i>1087</i>&nbsp;	}
+<i>1088</i>&nbsp;
+<i>1089</i>&nbsp;	private void create_root_() {
+<b class="fc"><i>1090</i>&nbsp;		m_root = m_quad_tree_nodes.newElement();</b>
+<b class="fc"><i>1091</i>&nbsp;		set_sub_tree_element_count_(m_root, 0);</b>
+<b class="fc"><i>1092</i>&nbsp;		set_local_element_count_(m_root, 0);</b>
+<b class="fc"><i>1093</i>&nbsp;		set_height_and_quadrant_(m_root, 0, 0);</b>
+<i>1094</i>&nbsp;
+<b class="fc"><i>1095</i>&nbsp;		if (m_b_store_duplicates)</b>
+<b class="fc"><i>1096</i>&nbsp;			set_contained_sub_tree_element_count_(m_root, 0);</b>
+<b class="fc"><i>1097</i>&nbsp;	}</b>
+<i>1098</i>&nbsp;
+<i>1099</i>&nbsp;	private int create_element_() {
+<b class="fc"><i>1100</i>&nbsp;		int element_handle = m_element_nodes.newElement();</b>
+<i>1101</i>&nbsp;		int data_handle;
+<i>1102</i>&nbsp;
+<b class="fc"><i>1103</i>&nbsp;		if (m_free_data.size() &gt; 0) {</b>
+<b class="nc"><i>1104</i>&nbsp;			data_handle = m_free_data.get(m_free_data.size() - 1);</b>
+<b class="nc"><i>1105</i>&nbsp;			m_free_data.removeLast();</b>
+<i>1106</i>&nbsp;		} else {
+<b class="fc"><i>1107</i>&nbsp;			data_handle = m_data.size();</b>
+<b class="fc"><i>1108</i>&nbsp;			m_data.add(null);</b>
+<i>1109</i>&nbsp;		}
+<i>1110</i>&nbsp;
+<b class="fc"><i>1111</i>&nbsp;		set_data_(element_handle, data_handle);</b>
+<b class="fc"><i>1112</i>&nbsp;		return element_handle;</b>
+<i>1113</i>&nbsp;	}
+<i>1114</i>&nbsp;
+<i>1115</i>&nbsp;	private int create_element_from_duplicate_(int duplicate_element_handle) {
+<b class="fc"><i>1116</i>&nbsp;		int element_handle = m_element_nodes.newElement();</b>
+<b class="fc"><i>1117</i>&nbsp;		int data_handle = get_data_(duplicate_element_handle);</b>
+<b class="fc"><i>1118</i>&nbsp;		set_data_(element_handle, data_handle);</b>
+<b class="fc"><i>1119</i>&nbsp;		return element_handle;</b>
+<i>1120</i>&nbsp;	}
+<i>1121</i>&nbsp;
+<i>1122</i>&nbsp;	private void free_element_and_box_node_(int element_handle) {
+<b class="fc"><i>1123</i>&nbsp;		int data_handle = get_data_(element_handle);</b>
+<b class="fc"><i>1124</i>&nbsp;		m_free_data.add(data_handle);</b>
+<b class="fc"><i>1125</i>&nbsp;		m_element_nodes.deleteElement(element_handle);</b>
+<b class="fc"><i>1126</i>&nbsp;	}</b>
+<i>1127</i>&nbsp;
+<i>1128</i>&nbsp;	private int get_child_(int quad_handle, int quadrant) {
+<b class="fc"><i>1129</i>&nbsp;		return m_quad_tree_nodes.getField(quad_handle, quadrant);</b>
+<i>1130</i>&nbsp;	}
+<i>1131</i>&nbsp;
+<i>1132</i>&nbsp;	private void set_child_(int parent, int quadrant, int child) {
+<b class="fc"><i>1133</i>&nbsp;		m_quad_tree_nodes.setField(parent, quadrant, child);</b>
+<b class="fc"><i>1134</i>&nbsp;	}</b>
+<i>1135</i>&nbsp;
+<i>1136</i>&nbsp;	private int get_first_element_(int quad_handle) {
+<b class="fc"><i>1137</i>&nbsp;		return m_quad_tree_nodes.getField(quad_handle, 4);</b>
+<i>1138</i>&nbsp;	}
+<i>1139</i>&nbsp;
+<i>1140</i>&nbsp;	private void set_first_element_(int quad_handle, int head) {
+<b class="fc"><i>1141</i>&nbsp;		m_quad_tree_nodes.setField(quad_handle, 4, head);</b>
+<b class="fc"><i>1142</i>&nbsp;	}</b>
+<i>1143</i>&nbsp;
+<i>1144</i>&nbsp;	private int get_last_element_(int quad_handle) {
+<b class="fc"><i>1145</i>&nbsp;		return m_quad_tree_nodes.getField(quad_handle, 5);</b>
+<i>1146</i>&nbsp;	}
+<i>1147</i>&nbsp;
+<i>1148</i>&nbsp;	private void set_last_element_(int quad_handle, int tail) {
+<b class="fc"><i>1149</i>&nbsp;		m_quad_tree_nodes.setField(quad_handle, 5, tail);</b>
+<b class="fc"><i>1150</i>&nbsp;	}</b>
+<i>1151</i>&nbsp;
+<i>1152</i>&nbsp;
+<i>1153</i>&nbsp;	private int get_quadrant_(int quad_handle) {
+<b class="fc"><i>1154</i>&nbsp;		int height_quadrant_hybrid = m_quad_tree_nodes.getField(quad_handle, 6);</b>
+<b class="fc"><i>1155</i>&nbsp;		int quadrant = height_quadrant_hybrid &amp; m_quadrant_mask;</b>
+<b class="fc"><i>1156</i>&nbsp;		return quadrant;</b>
+<i>1157</i>&nbsp;	}
+<i>1158</i>&nbsp;
+<i>1159</i>&nbsp;	private int get_height_(int quad_handle) {
+<b class="fc"><i>1160</i>&nbsp;		int height_quadrant_hybrid = m_quad_tree_nodes.getField(quad_handle, 6);</b>
+<b class="fc"><i>1161</i>&nbsp;		int height = height_quadrant_hybrid &gt;&gt; m_height_bit_shift;</b>
+<b class="fc"><i>1162</i>&nbsp;		return height;</b>
+<i>1163</i>&nbsp;	}
+<i>1164</i>&nbsp;
+<i>1165</i>&nbsp;	private void set_height_and_quadrant_(int quad_handle, int height, int quadrant) {
+<b class="fc"><i>1166</i>&nbsp;		assert (quadrant &gt;= 0 &amp;&amp; quadrant &lt;= 3);</b>
+<b class="fc"><i>1167</i>&nbsp;		int height_quadrant_hybrid = (int) ((height &lt;&lt; m_height_bit_shift) | quadrant);</b>
+<b class="fc"><i>1168</i>&nbsp;		m_quad_tree_nodes.setField(quad_handle, 6, height_quadrant_hybrid);</b>
+<b class="fc"><i>1169</i>&nbsp;	}</b>
+<i>1170</i>&nbsp;
+<i>1171</i>&nbsp;	private int get_local_element_count_(int quad_handle) {
+<b class="fc"><i>1172</i>&nbsp;		return m_quad_tree_nodes.getField(quad_handle, 7);</b>
+<i>1173</i>&nbsp;	}
+<i>1174</i>&nbsp;
+<i>1175</i>&nbsp;	private void set_local_element_count_(int quad_handle, int count) {
+<b class="fc"><i>1176</i>&nbsp;		m_quad_tree_nodes.setField(quad_handle, 7, count);</b>
+<b class="fc"><i>1177</i>&nbsp;	}</b>
+<i>1178</i>&nbsp;
+<i>1179</i>&nbsp;	private int get_sub_tree_element_count_(int quad_handle) {
+<b class="fc"><i>1180</i>&nbsp;		return m_quad_tree_nodes.getField(quad_handle, 8);</b>
+<i>1181</i>&nbsp;	}
+<i>1182</i>&nbsp;
+<i>1183</i>&nbsp;	private void set_sub_tree_element_count_(int quad_handle, int count) {
+<b class="fc"><i>1184</i>&nbsp;		m_quad_tree_nodes.setField(quad_handle, 8, count);</b>
+<b class="fc"><i>1185</i>&nbsp;	}</b>
+<i>1186</i>&nbsp;
+<i>1187</i>&nbsp;	private int get_parent_(int child) {
+<b class="fc"><i>1188</i>&nbsp;		return m_quad_tree_nodes.getField(child, 9);</b>
+<i>1189</i>&nbsp;	}
+<i>1190</i>&nbsp;
+<i>1191</i>&nbsp;	private void set_parent_(int child, int parent) {
+<b class="fc"><i>1192</i>&nbsp;		m_quad_tree_nodes.setField(child, 9, parent);</b>
+<b class="fc"><i>1193</i>&nbsp;	}</b>
+<i>1194</i>&nbsp;
+<i>1195</i>&nbsp;	private int get_contained_sub_tree_element_count_(int quad_handle) {
+<b class="fc"><i>1196</i>&nbsp;		return m_quad_tree_nodes.getField(quad_handle, 10);</b>
+<i>1197</i>&nbsp;	}
+<i>1198</i>&nbsp;
+<i>1199</i>&nbsp;	private void set_contained_sub_tree_element_count_(int quad_handle, int count) {
+<b class="fc"><i>1200</i>&nbsp;		m_quad_tree_nodes.setField(quad_handle, 10, count);</b>
+<b class="fc"><i>1201</i>&nbsp;	}</b>
+<i>1202</i>&nbsp;
+<i>1203</i>&nbsp;	private int get_data_(int element_handle) {
+<b class="fc"><i>1204</i>&nbsp;		return m_element_nodes.getField(element_handle, 0);</b>
+<i>1205</i>&nbsp;	}
+<i>1206</i>&nbsp;
+<i>1207</i>&nbsp;	private void set_data_(int element_handle, int data_handle) {
+<b class="fc"><i>1208</i>&nbsp;		m_element_nodes.setField(element_handle, 0, data_handle);</b>
+<b class="fc"><i>1209</i>&nbsp;	}</b>
+<i>1210</i>&nbsp;
+<i>1211</i>&nbsp;	private int get_prev_element_(int element_handle) {
+<b class="fc"><i>1212</i>&nbsp;		return m_element_nodes.getField(element_handle, 1);</b>
+<i>1213</i>&nbsp;	}
+<i>1214</i>&nbsp;
+<i>1215</i>&nbsp;	private int get_next_element_(int element_handle) {
+<b class="fc"><i>1216</i>&nbsp;		return m_element_nodes.getField(element_handle, 2);</b>
+<i>1217</i>&nbsp;	}
+<i>1218</i>&nbsp;
+<i>1219</i>&nbsp;	private void set_prev_element_(int element_handle, int prev_handle) {
+<b class="fc"><i>1220</i>&nbsp;		m_element_nodes.setField(element_handle, 1, prev_handle);</b>
+<b class="fc"><i>1221</i>&nbsp;	}</b>
+<i>1222</i>&nbsp;
+<i>1223</i>&nbsp;	private void set_next_element_(int element_handle, int next_handle) {
+<b class="fc"><i>1224</i>&nbsp;		m_element_nodes.setField(element_handle, 2, next_handle);</b>
+<b class="fc"><i>1225</i>&nbsp;	}</b>
+<i>1226</i>&nbsp;
+<i>1227</i>&nbsp;	private int get_quad_(int element_handle) {
+<b class="fc"><i>1228</i>&nbsp;		return m_element_nodes.getField(element_handle, 3);</b>
+<i>1229</i>&nbsp;	}
+<i>1230</i>&nbsp;
+<i>1231</i>&nbsp;	private void set_quad_(int element_handle, int parent) {
+<b class="fc"><i>1232</i>&nbsp;		m_element_nodes.setField(element_handle, 3, parent);</b>
+<b class="fc"><i>1233</i>&nbsp;	}</b>
+<i>1234</i>&nbsp;
+<i>1235</i>&nbsp;	private int get_element_value_(int data_handle) {
+<b class="fc"><i>1236</i>&nbsp;		return m_data.get(data_handle).element;</b>
+<i>1237</i>&nbsp;	}
+<i>1238</i>&nbsp;
+<i>1239</i>&nbsp;	private Envelope2D get_bounding_box_value_(int data_handle) {
+<b class="fc"><i>1240</i>&nbsp;		return m_data.get(data_handle).box;</b>
+<i>1241</i>&nbsp;	}
+<i>1242</i>&nbsp;
+<i>1243</i>&nbsp;	private void set_data_values_(int data_handle, int element, Envelope2D bounding_box) {
+<b class="fc"><i>1244</i>&nbsp;		m_data.set(data_handle, new Data(element, bounding_box));</b>
+<b class="fc"><i>1245</i>&nbsp;	}</b>
+<i>1246</i>&nbsp;
+<i>1247</i>&nbsp;	private Envelope2D m_extent;
+<i>1248</i>&nbsp;	private Envelope2D m_data_extent;
+<i>1249</i>&nbsp;	private StridedIndexTypeCollection m_quad_tree_nodes;
+<i>1250</i>&nbsp;	private StridedIndexTypeCollection m_element_nodes;
+<i>1251</i>&nbsp;	private ArrayList&lt;Data&gt; m_data;
+<i>1252</i>&nbsp;	private AttributeStreamOfInt32 m_free_data;
+<i>1253</i>&nbsp;	private int m_root;
+<i>1254</i>&nbsp;	private int m_height;
+<i>1255</i>&nbsp;	private boolean m_b_store_duplicates;
+<i>1256</i>&nbsp;
+<b class="fc"><i>1257</i>&nbsp;	private int m_quadrant_mask = 3;</b>
+<b class="fc"><i>1258</i>&nbsp;	private int m_height_bit_shift = 2;</b>
+<b class="fc"><i>1259</i>&nbsp;	private int m_flushing_count = 5;</b>
+<i>1260</i>&nbsp;
+<i>1261</i>&nbsp;	static final class Data {
+<i>1262</i>&nbsp;		int element;
+<i>1263</i>&nbsp;		Envelope2D box;
+<i>1264</i>&nbsp;
+<b class="fc"><i>1265</i>&nbsp;		Data(int element_, Envelope2D box_) {</b>
+<b class="fc"><i>1266</i>&nbsp;			element = element_;</b>
+<b class="fc"><i>1267</i>&nbsp;			box = new Envelope2D();</b>
+<b class="fc"><i>1268</i>&nbsp;			box.setCoords(box_);</b>
+<b class="fc"><i>1269</i>&nbsp;		}</b>
+<i>1270</i>&nbsp;	}
+<i>1271</i>&nbsp;
+<i>1272</i>&nbsp;    /* m_quad_tree_nodes
+<i>1273</i>&nbsp;    * 0: m_north_east_child
+<i>1274</i>&nbsp;    * 1: m_north_west_child
+<i>1275</i>&nbsp;    * 2: m_south_west_child
+<i>1276</i>&nbsp;    * 3: m_south_east_child
+<i>1277</i>&nbsp;    * 4: m_head_element
+<i>1278</i>&nbsp;    * 5: m_tail_element
+<i>1279</i>&nbsp;    * 6: m_quadrant_and_height
+<i>1280</i>&nbsp;    * 7: m_local_element_count
+<i>1281</i>&nbsp;    * 8: m_sub_tree_element_count
+<i>1282</i>&nbsp;    * 9: m_parent_quad
+<i>1283</i>&nbsp;    * 10: m_height
+<i>1284</i>&nbsp;    */
+<i>1285</i>&nbsp;
+<i>1286</i>&nbsp;    /* m_element_nodes
+<i>1287</i>&nbsp;    * 0: m_data_handle
+<i>1288</i>&nbsp;    * 1: m_prev
+<i>1289</i>&nbsp;    * 2: m_next
+<i>1290</i>&nbsp;    * 3: m_parent_quad
+<i>1291</i>&nbsp;    */
+<i>1292</i>&nbsp;
+<i>1293</i>&nbsp;    /* m_data
+<i>1294</i>&nbsp;    * element
+<i>1295</i>&nbsp;    * box
+<i>1296</i>&nbsp;    */
+<i>1297</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-26 10:02</div>
+</div>
+</body>
+</html>

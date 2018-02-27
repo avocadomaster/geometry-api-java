@@ -1,0 +1,190 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OperatorSimplify</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OperatorSimplify (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OperatorSimplify</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (4/ 5)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;package com.esri.core.geometry;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;import com.esri.core.geometry.Operator.Type;
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;/**
+<i>29</i>&nbsp; * Simplifies the geometry or determines if the geometry is simple. The goal of the OperatorSimplify is to produce a geometry that is
+<i>30</i>&nbsp; * valid for the Geodatabase to store without additional processing.
+<i>31</i>&nbsp; * 
+<i>32</i>&nbsp; * The Geoprocessing tool CheckGeometries should accept geometries
+<i>33</i>&nbsp; * produced by this operator&#39;s execute method. For Polylines the effect of execute is the same as
+<i>34</i>&nbsp; * IPolyline6.NonPlanarSimplify, while for the Polygons and Multipoints it is same as ITopologicalOperator.Simplify.
+<i>35</i>&nbsp; * For the Point class this operator does nothing, and the point is always simple.
+<i>36</i>&nbsp; * 
+<i>37</i>&nbsp; * The isSimpleAsFeature should return true after the execute method.
+<i>38</i>&nbsp; * 
+<i>39</i>&nbsp; * See also OperatorSimplifyOGC.
+<i>40</i>&nbsp; *
+<i>41</i>&nbsp; */
+<b class="fc"><i>42</i>&nbsp;public abstract class OperatorSimplify extends Operator {</b>
+<i>43</i>&nbsp;	@Override
+<i>44</i>&nbsp;	public Operator.Type getType() {
+<b class="nc"><i>45</i>&nbsp;		return Operator.Type.Simplify;</b>
+<i>46</i>&nbsp;	}
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;	/**
+<i>49</i>&nbsp;	 *Tests if the Geometry is simple.
+<i>50</i>&nbsp;	 *@param geom The Geometry to be tested.
+<i>51</i>&nbsp;	 *@param spatialRef Spatial reference from which the tolerance is obtained. Can be null, then a 
+<i>52</i>&nbsp;	 *very small tolerance value is derived from the geometry bounds.
+<i>53</i>&nbsp;	 *@param bForceTest When True, the Geometry will be tested regardless of the internal IsKnownSimple flag.
+<i>54</i>&nbsp;	 *@param result if not null, will contain the results of the check.
+<i>55</i>&nbsp;	 *@param progressTracker Allows cancellation of a long operation. Can be null. 
+<i>56</i>&nbsp;	 **/
+<i>57</i>&nbsp;	public abstract boolean isSimpleAsFeature(Geometry geom,
+<i>58</i>&nbsp;			SpatialReference spatialRef, boolean bForceTest,
+<i>59</i>&nbsp;			NonSimpleResult result, ProgressTracker progressTracker);
+<i>60</i>&nbsp;
+<i>61</i>&nbsp;	/**
+<i>62</i>&nbsp;	 *Tests if the Geometry is simple (second call will use a cached IsKnownSimple flag and immediately return).
+<i>63</i>&nbsp;	 *@param geom The Geometry to be tested.
+<i>64</i>&nbsp;	 *@param spatialRef Spatial reference from which the tolerance is obtained. Can be null, then a 
+<i>65</i>&nbsp;	 *very small tolerance value is derived from the geometry bounds.
+<i>66</i>&nbsp;	 *@param progressTracker Allows cancellation of a long operation. Can be null.
+<i>67</i>&nbsp;	 *
+<i>68</i>&nbsp;	 */
+<i>69</i>&nbsp;	public boolean isSimpleAsFeature(Geometry geom,
+<i>70</i>&nbsp;			SpatialReference spatialRef, ProgressTracker progressTracker) {
+<b class="fc"><i>71</i>&nbsp;		return isSimpleAsFeature(geom, spatialRef, false, null, progressTracker);</b>
+<i>72</i>&nbsp;	}
+<i>73</i>&nbsp;
+<i>74</i>&nbsp;	/**
+<i>75</i>&nbsp;	 *Performs the Simplify operation on the geometry cursor.
+<i>76</i>&nbsp;	 *@param geoms Geometries to simplify.
+<i>77</i>&nbsp;	 *@param sr Spatial reference from which the tolerance is obtained. When null, the tolerance
+<i>78</i>&nbsp;	 *will be derived individually for each geometry from its bounds.
+<i>79</i>&nbsp;	 *@param bForceSimplify When True, the Geometry will be simplified regardless of the internal IsKnownSimple flag.
+<i>80</i>&nbsp;	 *@param progressTracker Allows cancellation of a long operation. Can be null.
+<i>81</i>&nbsp;	 *@return Returns a GeometryCursor of simplified geometries.
+<i>82</i>&nbsp;	 *
+<i>83</i>&nbsp;	 *The isSimpleAsFeature returns true after this method.
+<i>84</i>&nbsp;	 */
+<i>85</i>&nbsp;	public abstract GeometryCursor execute(GeometryCursor geoms,
+<i>86</i>&nbsp;			SpatialReference sr, boolean bForceSimplify,
+<i>87</i>&nbsp;			ProgressTracker progressTracker);
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;	/**
+<i>90</i>&nbsp;	 *Performs the Simplify operation on the geometry.
+<i>91</i>&nbsp;	 *@param geom Geometry to simplify.
+<i>92</i>&nbsp;	 *@param sr Spatial reference from which the tolerance is obtained. When null, the tolerance
+<i>93</i>&nbsp;	 *will be derived individually for each geometry from its bounds.
+<i>94</i>&nbsp;	 *@param bForceSimplify When True, the Geometry will be simplified regardless of the internal IsKnownSimple flag.
+<i>95</i>&nbsp;	 *@param progressTracker Allows cancellation of a long operation. Can be null.
+<i>96</i>&nbsp;	 *@return Returns a simple geometry.
+<i>97</i>&nbsp;	 *
+<i>98</i>&nbsp;	 *The isSimpleAsFeature returns true after this method.
+<i>99</i>&nbsp;	 */
+<i>100</i>&nbsp;	public abstract Geometry execute(Geometry geom, SpatialReference sr,
+<i>101</i>&nbsp;			boolean bForceSimplify, ProgressTracker progressTracker);
+<i>102</i>&nbsp;
+<i>103</i>&nbsp;	public static OperatorSimplify local() {
+<b class="fc"><i>104</i>&nbsp;		return (OperatorSimplify) OperatorFactoryLocal.getInstance()</b>
+<b class="fc"><i>105</i>&nbsp;				.getOperator(Type.Simplify);</b>
+<i>106</i>&nbsp;	}
+<i>107</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

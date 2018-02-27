@@ -1,0 +1,1311 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Envelope2D</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Envelope2D (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Envelope2D</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    58.6%
+  </span>
+  <span class="absValue">
+    (51/ 87)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    47.9%
+  </span>
+  <span class="absValue">
+    (270/ 564)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;package com.esri.core.geometry;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;import java.io.IOException;
+<i>28</i>&nbsp;import java.io.ObjectStreamException;
+<i>29</i>&nbsp;import java.io.Serializable;
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;/**
+<i>32</i>&nbsp; * An axis parallel 2-dimensional rectangle.
+<i>33</i>&nbsp; */
+<i>34</i>&nbsp;public final class Envelope2D implements Serializable {
+<i>35</i>&nbsp;	private static final long serialVersionUID = 1L;
+<i>36</i>&nbsp;	
+<i>37</i>&nbsp;	private final static int XLESSXMIN = 1;
+<i>38</i>&nbsp;	// private final int XGREATERXMAX = 2;
+<i>39</i>&nbsp;	private final static int YLESSYMIN = 4;
+<i>40</i>&nbsp;	// private final int YGREATERYMAX = 8;
+<i>41</i>&nbsp;	private final static int XMASK = 3;
+<i>42</i>&nbsp;	private final static int YMASK = 12;
+<i>43</i>&nbsp;
+<i>44</i>&nbsp;	public double xmin;
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;	public double ymin;
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;	public double xmax;
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;	public double ymax;
+<i>51</i>&nbsp;
+<i>52</i>&nbsp;	public static Envelope2D construct(double _xmin, double _ymin,
+<i>53</i>&nbsp;			double _xmax, double _ymax) {
+<b class="fc"><i>54</i>&nbsp;		Envelope2D env = new Envelope2D();</b>
+<b class="fc"><i>55</i>&nbsp;		env.xmin = _xmin;</b>
+<b class="fc"><i>56</i>&nbsp;		env.ymin = _ymin;</b>
+<b class="fc"><i>57</i>&nbsp;		env.xmax = _xmax;</b>
+<b class="fc"><i>58</i>&nbsp;		env.ymax = _ymax;</b>
+<b class="fc"><i>59</i>&nbsp;		return env;</b>
+<i>60</i>&nbsp;	}
+<i>61</i>&nbsp;
+<i>62</i>&nbsp;	public static Envelope2D construct(Envelope2D other) {
+<b class="nc"><i>63</i>&nbsp;		Envelope2D env = new Envelope2D();</b>
+<b class="nc"><i>64</i>&nbsp;		env.setCoords(other);</b>
+<b class="nc"><i>65</i>&nbsp;		return env;</b>
+<i>66</i>&nbsp;	}
+<i>67</i>&nbsp;	
+<b class="fc"><i>68</i>&nbsp;	public Envelope2D() {</b>
+<b class="fc"><i>69</i>&nbsp;		setEmpty();</b>
+<b class="fc"><i>70</i>&nbsp;	}</b>
+<i>71</i>&nbsp;
+<b class="fc"><i>72</i>&nbsp;	public Envelope2D(double _xmin, double _ymin, double _xmax, double _ymax) {</b>
+<b class="fc"><i>73</i>&nbsp;		xmin = _xmin;</b>
+<b class="fc"><i>74</i>&nbsp;		ymin = _ymin;</b>
+<b class="fc"><i>75</i>&nbsp;		xmax = _xmax;</b>
+<b class="fc"><i>76</i>&nbsp;		ymax = _ymax;</b>
+<b class="fc"><i>77</i>&nbsp;	}</b>
+<i>78</i>&nbsp;
+<b class="nc"><i>79</i>&nbsp;	public Envelope2D(Envelope2D other) {</b>
+<b class="nc"><i>80</i>&nbsp;		setCoords(other);</b>
+<b class="nc"><i>81</i>&nbsp;	}</b>
+<i>82</i>&nbsp;	
+<i>83</i>&nbsp;	public void setCoords(double _x, double _y) {
+<b class="fc"><i>84</i>&nbsp;		xmin = _x;</b>
+<b class="fc"><i>85</i>&nbsp;		ymin = _y;</b>
+<b class="fc"><i>86</i>&nbsp;		xmax = _x;</b>
+<b class="fc"><i>87</i>&nbsp;		ymax = _y;</b>
+<b class="fc"><i>88</i>&nbsp;	}</b>
+<i>89</i>&nbsp;
+<i>90</i>&nbsp;	public void setCoords(double _xmin, double _ymin, double _xmax, double _ymax) {
+<b class="fc"><i>91</i>&nbsp;		xmin = _xmin;</b>
+<b class="fc"><i>92</i>&nbsp;		ymin = _ymin;</b>
+<b class="fc"><i>93</i>&nbsp;		xmax = _xmax;</b>
+<b class="fc"><i>94</i>&nbsp;		ymax = _ymax;</b>
+<b class="fc"><i>95</i>&nbsp;		normalize();</b>
+<b class="fc"><i>96</i>&nbsp;	}</b>
+<i>97</i>&nbsp;
+<i>98</i>&nbsp;	public void setCoords(Point2D center, double width, double height) {
+<b class="fc"><i>99</i>&nbsp;		xmin = center.x - width * 0.5;</b>
+<b class="fc"><i>100</i>&nbsp;		xmax = xmin + width;</b>
+<b class="fc"><i>101</i>&nbsp;		ymin = center.y - height * 0.5;</b>
+<b class="fc"><i>102</i>&nbsp;		ymax = ymin + height;</b>
+<b class="fc"><i>103</i>&nbsp;		normalize();</b>
+<b class="fc"><i>104</i>&nbsp;	}</b>
+<i>105</i>&nbsp;
+<i>106</i>&nbsp;	public void setCoords(Point2D pt) {
+<b class="fc"><i>107</i>&nbsp;		xmin = pt.x;</b>
+<b class="fc"><i>108</i>&nbsp;		ymin = pt.y;</b>
+<b class="fc"><i>109</i>&nbsp;		xmax = pt.x;</b>
+<b class="fc"><i>110</i>&nbsp;		ymax = pt.y;</b>
+<b class="fc"><i>111</i>&nbsp;	}</b>
+<i>112</i>&nbsp;
+<i>113</i>&nbsp;	public void setCoords(Envelope2D envSrc) {
+<b class="fc"><i>114</i>&nbsp;		setCoords(envSrc.xmin, envSrc.ymin, envSrc.xmax, envSrc.ymax);</b>
+<b class="fc"><i>115</i>&nbsp;	}</b>
+<i>116</i>&nbsp;
+<i>117</i>&nbsp;	public Envelope2D getInflated(double dx, double dy) {
+<b class="nc"><i>118</i>&nbsp;		Envelope2D env = new Envelope2D();</b>
+<b class="nc"><i>119</i>&nbsp;		env.setCoords(this.xmin, this.ymin, this.xmax, this.ymax);</b>
+<b class="nc"><i>120</i>&nbsp;		env.inflate(dx, dy);</b>
+<b class="nc"><i>121</i>&nbsp;		return env;</b>
+<i>122</i>&nbsp;	}
+<i>123</i>&nbsp;
+<i>124</i>&nbsp;	/**
+<i>125</i>&nbsp;	 * Sets the envelope from the array of points. The envelope will be set to
+<i>126</i>&nbsp;	 * empty if the array is null.
+<i>127</i>&nbsp;	 */
+<i>128</i>&nbsp;	public void setFromPoints(Point2D[] points) {
+<b class="nc"><i>129</i>&nbsp;		if (points == null || points.length == 0) {</b>
+<b class="nc"><i>130</i>&nbsp;			setEmpty();</b>
+<b class="nc"><i>131</i>&nbsp;			return;</b>
+<i>132</i>&nbsp;		}
+<i>133</i>&nbsp;
+<b class="nc"><i>134</i>&nbsp;		Point2D pt = points[0];</b>
+<b class="nc"><i>135</i>&nbsp;		setCoords(pt.x, pt.y);</b>
+<b class="nc"><i>136</i>&nbsp;		for (int i = 1; i &lt; points.length; i++) {</b>
+<b class="nc"><i>137</i>&nbsp;			Point2D pt2d = points[i];</b>
+<b class="nc"><i>138</i>&nbsp;			mergeNE(pt2d.x, pt2d.y);</b>
+<i>139</i>&nbsp;		}
+<b class="nc"><i>140</i>&nbsp;	}</b>
+<i>141</i>&nbsp;
+<i>142</i>&nbsp;	public void setEmpty() {
+<b class="fc"><i>143</i>&nbsp;		xmin = NumberUtils.TheNaN;</b>
+<b class="fc"><i>144</i>&nbsp;		ymin = NumberUtils.TheNaN;</b>
+<b class="fc"><i>145</i>&nbsp;		xmax = NumberUtils.TheNaN;</b>
+<b class="fc"><i>146</i>&nbsp;		ymax = NumberUtils.TheNaN;</b>
+<b class="fc"><i>147</i>&nbsp;	}</b>
+<i>148</i>&nbsp;
+<i>149</i>&nbsp;	public void setInfinite() {
+<b class="nc"><i>150</i>&nbsp;		xmin = NumberUtils.negativeInf();</b>
+<b class="nc"><i>151</i>&nbsp;		xmax = NumberUtils.positiveInf();</b>
+<b class="nc"><i>152</i>&nbsp;		ymin = NumberUtils.negativeInf();</b>
+<b class="nc"><i>153</i>&nbsp;		ymax = NumberUtils.positiveInf();</b>
+<b class="nc"><i>154</i>&nbsp;	}</b>
+<i>155</i>&nbsp;
+<i>156</i>&nbsp;	public boolean isEmpty() {
+<b class="fc"><i>157</i>&nbsp;		return NumberUtils.isNaN(xmin) || NumberUtils.isNaN(ymin) || NumberUtils.isNaN(xmax) || NumberUtils.isNaN(ymax);</b>
+<i>158</i>&nbsp;	}
+<i>159</i>&nbsp;
+<i>160</i>&nbsp;	public void setCoords(Envelope1D xinterval, Envelope1D yinterval) {
+<b class="nc"><i>161</i>&nbsp;		if (xinterval.isEmpty() || yinterval.isEmpty()) {</b>
+<b class="nc"><i>162</i>&nbsp;			setEmpty();</b>
+<b class="nc"><i>163</i>&nbsp;			return;</b>
+<i>164</i>&nbsp;		}
+<i>165</i>&nbsp;
+<b class="nc"><i>166</i>&nbsp;		xmin = xinterval.vmin;</b>
+<b class="nc"><i>167</i>&nbsp;		xmax = xinterval.vmax;</b>
+<b class="nc"><i>168</i>&nbsp;		ymin = yinterval.vmin;</b>
+<b class="nc"><i>169</i>&nbsp;		ymax = yinterval.vmax;</b>
+<b class="nc"><i>170</i>&nbsp;	}</b>
+<i>171</i>&nbsp;
+<i>172</i>&nbsp;	public void merge(double x, double y) {
+<b class="fc"><i>173</i>&nbsp;		if (isEmpty()) {</b>
+<b class="fc"><i>174</i>&nbsp;			xmin = x;</b>
+<b class="fc"><i>175</i>&nbsp;			ymin = y;</b>
+<b class="fc"><i>176</i>&nbsp;			xmax = x;</b>
+<b class="fc"><i>177</i>&nbsp;			ymax = y;</b>
+<i>178</i>&nbsp;		} else {
+<b class="fc"><i>179</i>&nbsp;			if (xmin &gt; x)</b>
+<b class="fc"><i>180</i>&nbsp;				xmin = x;</b>
+<b class="fc"><i>181</i>&nbsp;			else if (xmax &lt; x)</b>
+<b class="fc"><i>182</i>&nbsp;				xmax = x;</b>
+<i>183</i>&nbsp;
+<b class="fc"><i>184</i>&nbsp;			if (ymin &gt; y)</b>
+<b class="fc"><i>185</i>&nbsp;				ymin = y;</b>
+<b class="fc"><i>186</i>&nbsp;			else if (ymax &lt; y)</b>
+<b class="fc"><i>187</i>&nbsp;				ymax = y;</b>
+<i>188</i>&nbsp;		}
+<b class="fc"><i>189</i>&nbsp;	}</b>
+<i>190</i>&nbsp;
+<i>191</i>&nbsp;	/**
+<i>192</i>&nbsp;	 * Merges a point with this envelope without checking if the envelope is
+<i>193</i>&nbsp;	 * empty. Use with care.
+<i>194</i>&nbsp;	 */
+<i>195</i>&nbsp;	public void mergeNE(double x, double y) {
+<b class="fc"><i>196</i>&nbsp;		if (xmin &gt; x)</b>
+<b class="fc"><i>197</i>&nbsp;			xmin = x;</b>
+<b class="fc"><i>198</i>&nbsp;		else if (xmax &lt; x)</b>
+<b class="fc"><i>199</i>&nbsp;			xmax = x;</b>
+<i>200</i>&nbsp;
+<b class="fc"><i>201</i>&nbsp;		if (ymin &gt; y)</b>
+<b class="fc"><i>202</i>&nbsp;			ymin = y;</b>
+<b class="fc"><i>203</i>&nbsp;		else if (ymax &lt; y)</b>
+<b class="fc"><i>204</i>&nbsp;			ymax = y;</b>
+<b class="fc"><i>205</i>&nbsp;	}</b>
+<i>206</i>&nbsp;
+<i>207</i>&nbsp;	public void merge(Point2D pt) {
+<b class="fc"><i>208</i>&nbsp;		merge(pt.x, pt.y);</b>
+<b class="fc"><i>209</i>&nbsp;	}</b>
+<i>210</i>&nbsp;
+<i>211</i>&nbsp;	public void merge(Point3D pt) {
+<b class="nc"><i>212</i>&nbsp;		merge(pt.x, pt.y);</b>
+<b class="nc"><i>213</i>&nbsp;	}</b>
+<i>214</i>&nbsp;
+<i>215</i>&nbsp;	public void merge(Envelope2D other) {
+<b class="fc"><i>216</i>&nbsp;		if (other.isEmpty())</b>
+<b class="fc"><i>217</i>&nbsp;			return;</b>
+<i>218</i>&nbsp;
+<b class="fc"><i>219</i>&nbsp;		merge(other.xmin, other.ymin);</b>
+<b class="fc"><i>220</i>&nbsp;		merge(other.xmax, other.ymax);</b>
+<b class="fc"><i>221</i>&nbsp;	}</b>
+<i>222</i>&nbsp;
+<i>223</i>&nbsp;	public void inflate(double dx, double dy) {
+<b class="fc"><i>224</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>225</i>&nbsp;			return;</b>
+<b class="fc"><i>226</i>&nbsp;		xmin -= dx;</b>
+<b class="fc"><i>227</i>&nbsp;		xmax += dx;</b>
+<b class="fc"><i>228</i>&nbsp;		ymin -= dy;</b>
+<b class="fc"><i>229</i>&nbsp;		ymax += dy;</b>
+<b class="fc"><i>230</i>&nbsp;		if (xmin &gt; xmax || ymin &gt; ymax)</b>
+<b class="nc"><i>231</i>&nbsp;			setEmpty();</b>
+<b class="fc"><i>232</i>&nbsp;	}</b>
+<i>233</i>&nbsp;
+<i>234</i>&nbsp;	public void scale(double f) {
+<b class="nc"><i>235</i>&nbsp;		if (f &lt; 0.0)</b>
+<b class="nc"><i>236</i>&nbsp;			setEmpty();</b>
+<i>237</i>&nbsp;
+<b class="nc"><i>238</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>239</i>&nbsp;			return;</b>
+<i>240</i>&nbsp;
+<b class="nc"><i>241</i>&nbsp;		xmin *= f;</b>
+<b class="nc"><i>242</i>&nbsp;		xmax *= f;</b>
+<b class="nc"><i>243</i>&nbsp;		ymin *= f;</b>
+<b class="nc"><i>244</i>&nbsp;		ymax *= f;</b>
+<b class="nc"><i>245</i>&nbsp;	}</b>
+<i>246</i>&nbsp;
+<i>247</i>&nbsp;	public void zoom(double factorX, double factorY) {
+<b class="nc"><i>248</i>&nbsp;		if (!isEmpty())</b>
+<b class="nc"><i>249</i>&nbsp;			setCoords(getCenter(), factorX * getWidth(), factorY * getHeight());</b>
+<b class="nc"><i>250</i>&nbsp;	}</b>
+<i>251</i>&nbsp;
+<i>252</i>&nbsp;	/**
+<i>253</i>&nbsp;	 * Checks if this envelope intersects the other.
+<i>254</i>&nbsp;	 * @return True if this envelope intersects the other.
+<i>255</i>&nbsp;	 */
+<i>256</i>&nbsp;	public boolean isIntersecting(Envelope2D other) {
+<i>257</i>&nbsp;		// No need to check if empty, this will work for empty envelopes too
+<i>258</i>&nbsp;		// (IEEE math)
+<b class="fc"><i>259</i>&nbsp;		return ((xmin &lt;= other.xmin) ? xmax &gt;= other.xmin : other.xmax &gt;= xmin)</b>
+<i>260</i>&nbsp;				&amp;&amp; // check that x projections overlap
+<i>261</i>&nbsp;				((ymin &lt;= other.ymin) ? ymax &gt;= other.ymin : other.ymax &gt;= ymin); // check
+<i>262</i>&nbsp;																					// that
+<i>263</i>&nbsp;																					// y
+<i>264</i>&nbsp;																					// projections
+<i>265</i>&nbsp;																					// overlap
+<i>266</i>&nbsp;	}
+<i>267</i>&nbsp;
+<i>268</i>&nbsp;	/**
+<i>269</i>&nbsp;	 * Checks if this envelope intersects the other assuming neither one is empty.
+<i>270</i>&nbsp;	 * @return True if this envelope intersects the other. Assumes this and
+<i>271</i>&nbsp;	 * other envelopes are not empty.
+<i>272</i>&nbsp;	 */
+<i>273</i>&nbsp;	public boolean isIntersectingNE(Envelope2D other) {
+<b class="fc"><i>274</i>&nbsp;		return ((xmin &lt;= other.xmin) ? xmax &gt;= other.xmin : other.xmax &gt;= xmin)</b>
+<i>275</i>&nbsp;				&amp;&amp; // check that x projections overlap
+<i>276</i>&nbsp;				((ymin &lt;= other.ymin) ? ymax &gt;= other.ymin : other.ymax &gt;= ymin); // check
+<i>277</i>&nbsp;																					// that
+<i>278</i>&nbsp;																					// y
+<i>279</i>&nbsp;																					// projections
+<i>280</i>&nbsp;																					// overlap
+<i>281</i>&nbsp;	}
+<i>282</i>&nbsp;
+<i>283</i>&nbsp;	/**
+<i>284</i>&nbsp;	 * Checks if this envelope intersects the other.
+<i>285</i>&nbsp;	 * @return True if this envelope intersects the other.
+<i>286</i>&nbsp;	 */
+<i>287</i>&nbsp;	public boolean isIntersecting(double xmin_, double ymin_, double xmax_, double ymax_) {
+<i>288</i>&nbsp;		// No need to check if empty, this will work for empty geoms too (IEEE
+<i>289</i>&nbsp;		// math)
+<b class="nc"><i>290</i>&nbsp;		return ((xmin &lt;= xmin_) ? xmax &gt;= xmin_ : xmax_ &gt;= xmin) &amp;&amp; // check</b>
+<i>291</i>&nbsp;																	// that x
+<i>292</i>&nbsp;																	// projections
+<i>293</i>&nbsp;																	// overlap
+<i>294</i>&nbsp;				((ymin &lt;= ymin_) ? ymax &gt;= ymin_ : ymax_ &gt;= ymin); // check that
+<i>295</i>&nbsp;																	// y
+<i>296</i>&nbsp;																	// projections
+<i>297</i>&nbsp;																	// overlap
+<i>298</i>&nbsp;	}
+<i>299</i>&nbsp;	
+<i>300</i>&nbsp;	/**
+<i>301</i>&nbsp;	 * Intersects this envelope with the other and stores result in this
+<i>302</i>&nbsp;	 * envelope.
+<i>303</i>&nbsp;	 * 
+<i>304</i>&nbsp;	 * @return True if this envelope intersects the other, otherwise sets this
+<i>305</i>&nbsp;	 *         envelope to empty state and returns False.
+<i>306</i>&nbsp;	 */
+<i>307</i>&nbsp;	public boolean intersect(Envelope2D other) {
+<b class="fc"><i>308</i>&nbsp;		if (isEmpty() || other.isEmpty())</b>
+<b class="nc"><i>309</i>&nbsp;			return false;</b>
+<i>310</i>&nbsp;
+<b class="fc"><i>311</i>&nbsp;		if (other.xmin &gt; xmin)</b>
+<b class="fc"><i>312</i>&nbsp;			xmin = other.xmin;</b>
+<i>313</i>&nbsp;
+<b class="fc"><i>314</i>&nbsp;		if (other.xmax &lt; xmax)</b>
+<b class="fc"><i>315</i>&nbsp;			xmax = other.xmax;</b>
+<i>316</i>&nbsp;
+<b class="fc"><i>317</i>&nbsp;		if (other.ymin &gt; ymin)</b>
+<b class="fc"><i>318</i>&nbsp;			ymin = other.ymin;</b>
+<i>319</i>&nbsp;
+<b class="fc"><i>320</i>&nbsp;		if (other.ymax &lt; ymax)</b>
+<b class="fc"><i>321</i>&nbsp;			ymax = other.ymax;</b>
+<i>322</i>&nbsp;
+<b class="fc"><i>323</i>&nbsp;		boolean bIntersecting = xmin &lt;= xmax &amp;&amp; ymin &lt;= ymax;</b>
+<i>324</i>&nbsp;
+<b class="fc"><i>325</i>&nbsp;		if (!bIntersecting)</b>
+<b class="fc"><i>326</i>&nbsp;			setEmpty();</b>
+<i>327</i>&nbsp;
+<b class="fc"><i>328</i>&nbsp;		return bIntersecting;</b>
+<i>329</i>&nbsp;	}
+<i>330</i>&nbsp;
+<i>331</i>&nbsp;	/**
+<i>332</i>&nbsp;	 * Queries a corner of the envelope.
+<i>333</i>&nbsp;	 * 
+<i>334</i>&nbsp;	 * @param index
+<i>335</i>&nbsp;	 *            Indicates a corner of the envelope.
+<i>336</i>&nbsp;	 *            &lt;p&gt;
+<i>337</i>&nbsp;	 *            0 means lower left or (xmin, ymin)
+<i>338</i>&nbsp;	 *            &lt;p&gt;
+<i>339</i>&nbsp;	 *            1 means upper left or (xmin, ymax)
+<i>340</i>&nbsp;	 *            &lt;p&gt;
+<i>341</i>&nbsp;	 *            2 means upper right or (xmax, ymax)
+<i>342</i>&nbsp;	 *            &lt;p&gt;
+<i>343</i>&nbsp;	 *            3 means lower right or (xmax, ymin)
+<i>344</i>&nbsp;	 * @return Point at a corner of the envelope.
+<i>345</i>&nbsp;	 * 
+<i>346</i>&nbsp;	 */
+<i>347</i>&nbsp;	public Point2D queryCorner(int index) {
+<b class="fc"><i>348</i>&nbsp;		switch (index) {</b>
+<i>349</i>&nbsp;		case 0:
+<b class="fc"><i>350</i>&nbsp;			return Point2D.construct(xmin, ymin);</b>
+<i>351</i>&nbsp;		case 1:
+<b class="fc"><i>352</i>&nbsp;			return Point2D.construct(xmin, ymax);</b>
+<i>353</i>&nbsp;		case 2:
+<b class="fc"><i>354</i>&nbsp;			return Point2D.construct(xmax, ymax);</b>
+<i>355</i>&nbsp;		case 3:
+<b class="fc"><i>356</i>&nbsp;			return Point2D.construct(xmax, ymin);</b>
+<i>357</i>&nbsp;		default:
+<b class="nc"><i>358</i>&nbsp;			throw new IndexOutOfBoundsException();</b>
+<i>359</i>&nbsp;
+<i>360</i>&nbsp;		}
+<i>361</i>&nbsp;	}
+<i>362</i>&nbsp;
+<i>363</i>&nbsp;	/**
+<i>364</i>&nbsp;	 * Queries corners into a given array. The array length must be at least
+<i>365</i>&nbsp;	 * 4. Starts from the lower left corner and goes clockwise.
+<i>366</i>&nbsp;	 */
+<i>367</i>&nbsp;	public void queryCorners(Point2D[] corners) {
+<b class="fc"><i>368</i>&nbsp;		if ((corners == null) || (corners.length &lt; 4))</b>
+<b class="nc"><i>369</i>&nbsp;			throw new IllegalArgumentException();</b>
+<b class="fc"><i>370</i>&nbsp;		if (corners[0] != null)</b>
+<b class="fc"><i>371</i>&nbsp;			corners[0].setCoords(xmin, ymin);</b>
+<i>372</i>&nbsp;		else
+<b class="fc"><i>373</i>&nbsp;			corners[0] = new Point2D(xmin, ymin);</b>
+<i>374</i>&nbsp;
+<b class="fc"><i>375</i>&nbsp;		if (corners[1] != null)</b>
+<b class="fc"><i>376</i>&nbsp;			corners[1].setCoords(xmin, ymax);</b>
+<i>377</i>&nbsp;		else
+<b class="fc"><i>378</i>&nbsp;			corners[1] = new Point2D(xmin, ymax);</b>
+<i>379</i>&nbsp;
+<b class="fc"><i>380</i>&nbsp;		if (corners[2] != null)</b>
+<b class="fc"><i>381</i>&nbsp;			corners[2].setCoords(xmax, ymax);</b>
+<i>382</i>&nbsp;		else
+<b class="fc"><i>383</i>&nbsp;			corners[2] = new Point2D(xmax, ymax);</b>
+<i>384</i>&nbsp;
+<b class="fc"><i>385</i>&nbsp;		if (corners[3] != null)</b>
+<b class="fc"><i>386</i>&nbsp;			corners[3].setCoords(xmax, ymin);</b>
+<i>387</i>&nbsp;		else
+<b class="fc"><i>388</i>&nbsp;			corners[3] = new Point2D(xmax, ymin);</b>
+<b class="fc"><i>389</i>&nbsp;	}</b>
+<i>390</i>&nbsp;
+<i>391</i>&nbsp;	/**
+<i>392</i>&nbsp;	 * Queries corners into a given array in reversed order. The array length
+<i>393</i>&nbsp;	 * must be at least 4. Starts from the lower left corner and goes
+<i>394</i>&nbsp;	 * counterclockwise.
+<i>395</i>&nbsp;	 */
+<i>396</i>&nbsp;	public void queryCornersReversed(Point2D[] corners) {
+<b class="fc"><i>397</i>&nbsp;		if (corners == null || ((corners != null) &amp;&amp; (corners.length &lt; 4)))</b>
+<b class="nc"><i>398</i>&nbsp;			throw new IllegalArgumentException();</b>
+<b class="fc"><i>399</i>&nbsp;		if (corners[0] != null)</b>
+<b class="fc"><i>400</i>&nbsp;			corners[0].setCoords(xmin, ymin);</b>
+<i>401</i>&nbsp;		else
+<b class="fc"><i>402</i>&nbsp;			corners[0] = new Point2D(xmin, ymin);</b>
+<i>403</i>&nbsp;
+<b class="fc"><i>404</i>&nbsp;		if (corners[1] != null)</b>
+<b class="fc"><i>405</i>&nbsp;			corners[1].setCoords(xmax, ymin);</b>
+<i>406</i>&nbsp;		else
+<b class="fc"><i>407</i>&nbsp;			corners[1] = new Point2D(xmax, ymin);</b>
+<i>408</i>&nbsp;
+<b class="fc"><i>409</i>&nbsp;		if (corners[2] != null)</b>
+<b class="fc"><i>410</i>&nbsp;			corners[2].setCoords(xmax, ymax);</b>
+<i>411</i>&nbsp;		else
+<b class="fc"><i>412</i>&nbsp;			corners[2] = new Point2D(xmax, ymax);</b>
+<i>413</i>&nbsp;		
+<b class="fc"><i>414</i>&nbsp;		if (corners[3] != null)</b>
+<b class="fc"><i>415</i>&nbsp;			corners[3].setCoords(xmin, ymax);</b>
+<i>416</i>&nbsp;		else
+<b class="fc"><i>417</i>&nbsp;			corners[3] = new Point2D(xmin, ymax);</b>
+<b class="fc"><i>418</i>&nbsp;	}</b>
+<i>419</i>&nbsp;
+<i>420</i>&nbsp;	public double getArea() {
+<b class="fc"><i>421</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>422</i>&nbsp;			return 0;</b>
+<b class="fc"><i>423</i>&nbsp;		return getWidth() * getHeight();</b>
+<i>424</i>&nbsp;	}
+<i>425</i>&nbsp;
+<i>426</i>&nbsp;	public double getLength() {
+<b class="nc"><i>427</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>428</i>&nbsp;			return 0;</b>
+<b class="nc"><i>429</i>&nbsp;		return 2.0 * (getWidth() + getHeight());</b>
+<i>430</i>&nbsp;	}
+<i>431</i>&nbsp;
+<i>432</i>&nbsp;	public void setFromPoints(Point2D[] points, int count) {
+<b class="nc"><i>433</i>&nbsp;		if (count == 0) {</b>
+<b class="nc"><i>434</i>&nbsp;			setEmpty();</b>
+<b class="nc"><i>435</i>&nbsp;			return;</b>
+<i>436</i>&nbsp;		}
+<b class="nc"><i>437</i>&nbsp;		xmin = points[0].x;</b>
+<b class="nc"><i>438</i>&nbsp;		ymin = points[0].y;</b>
+<b class="nc"><i>439</i>&nbsp;		xmax = xmin;</b>
+<b class="nc"><i>440</i>&nbsp;		ymax = ymin;</b>
+<b class="nc"><i>441</i>&nbsp;		for (int i = 1; i &lt; count; i++) {</b>
+<b class="nc"><i>442</i>&nbsp;			Point2D pt = points[i];</b>
+<b class="nc"><i>443</i>&nbsp;			if (pt.x &lt; xmin)</b>
+<b class="nc"><i>444</i>&nbsp;				xmin = pt.x;</b>
+<b class="nc"><i>445</i>&nbsp;			else if (pt.x &gt; xmax)</b>
+<b class="nc"><i>446</i>&nbsp;				xmax = pt.x;</b>
+<b class="nc"><i>447</i>&nbsp;			if (pt.y &lt; ymin)</b>
+<b class="nc"><i>448</i>&nbsp;				ymin = pt.y;</b>
+<b class="nc"><i>449</i>&nbsp;			else if (pt.y &gt; ymax)</b>
+<b class="nc"><i>450</i>&nbsp;				ymax = pt.y;</b>
+<i>451</i>&nbsp;		}
+<b class="nc"><i>452</i>&nbsp;	}</b>
+<i>453</i>&nbsp;
+<i>454</i>&nbsp;	public void reaspect(double arWidth, double arHeight) {
+<b class="nc"><i>455</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>456</i>&nbsp;			return;</b>
+<b class="nc"><i>457</i>&nbsp;		double newAspectRatio = arWidth / arHeight;</b>
+<b class="nc"><i>458</i>&nbsp;		double widthHalf = getWidth() * 0.5;</b>
+<b class="nc"><i>459</i>&nbsp;		double heightHalf = getHeight() * 0.5;</b>
+<i>460</i>&nbsp;
+<b class="nc"><i>461</i>&nbsp;		double newWidthHalf = heightHalf * newAspectRatio;</b>
+<b class="nc"><i>462</i>&nbsp;		if (widthHalf &lt;= newWidthHalf) {// preserve height, increase width</b>
+<b class="nc"><i>463</i>&nbsp;			double xc = getCenterX();</b>
+<b class="nc"><i>464</i>&nbsp;			xmin = xc - newWidthHalf;</b>
+<b class="nc"><i>465</i>&nbsp;			xmax = xc + newWidthHalf;</b>
+<b class="nc"><i>466</i>&nbsp;		} else {// preserve the width, increase height</b>
+<b class="nc"><i>467</i>&nbsp;			double newHeightHalf = widthHalf / newAspectRatio;</b>
+<b class="nc"><i>468</i>&nbsp;			double yc = getCenterY();</b>
+<b class="nc"><i>469</i>&nbsp;			ymin = yc - newHeightHalf;</b>
+<b class="nc"><i>470</i>&nbsp;			ymax = yc + newHeightHalf;</b>
+<i>471</i>&nbsp;		}
+<i>472</i>&nbsp;
+<b class="nc"><i>473</i>&nbsp;		normalize();</b>
+<b class="nc"><i>474</i>&nbsp;	}</b>
+<i>475</i>&nbsp;
+<i>476</i>&nbsp;	public double getCenterX() {
+<b class="fc"><i>477</i>&nbsp;		double cx = (xmax + xmin) / 2d;</b>
+<b class="fc"><i>478</i>&nbsp;		return cx;</b>
+<i>479</i>&nbsp;	}
+<i>480</i>&nbsp;
+<i>481</i>&nbsp;	public double getCenterY() {
+<b class="fc"><i>482</i>&nbsp;		double cy = (ymax + ymin) / 2d;</b>
+<b class="fc"><i>483</i>&nbsp;		return cy;</b>
+<i>484</i>&nbsp;	}
+<i>485</i>&nbsp;
+<i>486</i>&nbsp;	public double getWidth() {
+<b class="fc"><i>487</i>&nbsp;		return xmax - xmin;</b>
+<i>488</i>&nbsp;	}
+<i>489</i>&nbsp;
+<i>490</i>&nbsp;	public double getHeight() {
+<b class="fc"><i>491</i>&nbsp;		return ymax - ymin;</b>
+<i>492</i>&nbsp;	}
+<i>493</i>&nbsp;
+<i>494</i>&nbsp;	/**
+<i>495</i>&nbsp;	 * Moves the Envelope by given distance.
+<i>496</i>&nbsp;	 */
+<i>497</i>&nbsp;	public void move(double dx, double dy) {
+<b class="nc"><i>498</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>499</i>&nbsp;			return;</b>
+<b class="nc"><i>500</i>&nbsp;		xmin += dx;</b>
+<b class="nc"><i>501</i>&nbsp;		ymin += dy;</b>
+<b class="nc"><i>502</i>&nbsp;		xmax += dx;</b>
+<b class="nc"><i>503</i>&nbsp;		ymax += dy;</b>
+<b class="nc"><i>504</i>&nbsp;	}</b>
+<i>505</i>&nbsp;
+<i>506</i>&nbsp;	public void centerAt(double x, double y) {
+<b class="nc"><i>507</i>&nbsp;		move(x - getCenterX(), y - getCenterY());</b>
+<b class="nc"><i>508</i>&nbsp;	}</b>
+<i>509</i>&nbsp;
+<i>510</i>&nbsp;	void centerAt(Point2D pt) {
+<b class="nc"><i>511</i>&nbsp;		centerAt(pt.x, pt.y);</b>
+<b class="nc"><i>512</i>&nbsp;	}</b>
+<i>513</i>&nbsp;
+<i>514</i>&nbsp;	public void offset(double dx, double dy) {
+<b class="nc"><i>515</i>&nbsp;		xmin += dx;// NaN remains NaN</b>
+<b class="nc"><i>516</i>&nbsp;		xmax += dx;</b>
+<b class="nc"><i>517</i>&nbsp;		ymin += dy;</b>
+<b class="nc"><i>518</i>&nbsp;		ymax += dy;</b>
+<b class="nc"><i>519</i>&nbsp;	}</b>
+<i>520</i>&nbsp;
+<i>521</i>&nbsp;	public void normalize() {
+<b class="fc"><i>522</i>&nbsp;		if (isEmpty())</b>
+<b class="fc"><i>523</i>&nbsp;			return;</b>
+<i>524</i>&nbsp;
+<b class="fc"><i>525</i>&nbsp;		double min = Math.min(xmin, xmax);</b>
+<b class="fc"><i>526</i>&nbsp;		double max = Math.max(xmin, xmax);</b>
+<b class="fc"><i>527</i>&nbsp;		xmin = min;</b>
+<b class="fc"><i>528</i>&nbsp;		xmax = max;</b>
+<b class="fc"><i>529</i>&nbsp;		min = Math.min(ymin, ymax);</b>
+<b class="fc"><i>530</i>&nbsp;		max = Math.max(ymin, ymax);</b>
+<b class="fc"><i>531</i>&nbsp;		ymin = min;</b>
+<b class="fc"><i>532</i>&nbsp;		ymax = max;</b>
+<b class="fc"><i>533</i>&nbsp;	}</b>
+<i>534</i>&nbsp;
+<i>535</i>&nbsp;	public void queryLowerLeft(Point2D pt) {
+<b class="fc"><i>536</i>&nbsp;		pt.setCoords(xmin, ymin);</b>
+<b class="fc"><i>537</i>&nbsp;	}</b>
+<i>538</i>&nbsp;
+<i>539</i>&nbsp;	public void queryLowerRight(Point2D pt) {
+<b class="fc"><i>540</i>&nbsp;		pt.setCoords(xmax, ymin);</b>
+<b class="fc"><i>541</i>&nbsp;	}</b>
+<i>542</i>&nbsp;
+<i>543</i>&nbsp;	public void queryUpperLeft(Point2D pt) {
+<b class="fc"><i>544</i>&nbsp;		pt.setCoords(xmin, ymax);</b>
+<b class="fc"><i>545</i>&nbsp;	}</b>
+<i>546</i>&nbsp;
+<i>547</i>&nbsp;	public void queryUpperRight(Point2D pt) {
+<b class="fc"><i>548</i>&nbsp;		pt.setCoords(xmax, ymax);</b>
+<b class="fc"><i>549</i>&nbsp;	}</b>
+<i>550</i>&nbsp;
+<i>551</i>&nbsp;	/**
+<i>552</i>&nbsp;	 * Returns True if this envelope is valid (empty, or has xmin less or equal
+<i>553</i>&nbsp;	 * to xmax, or ymin less or equal to ymax).
+<i>554</i>&nbsp;	 */
+<i>555</i>&nbsp;	public boolean isValid() {
+<b class="fc"><i>556</i>&nbsp;		return isEmpty() || (xmin &lt;= xmax &amp;&amp; ymin &lt;= ymax);</b>
+<i>557</i>&nbsp;	}
+<i>558</i>&nbsp;
+<i>559</i>&nbsp;	/**
+<i>560</i>&nbsp;	 * Gets the center point of the envelope. The Center Point occurs at: ((XMin
+<i>561</i>&nbsp;	 * + XMax) / 2, (YMin + YMax) / 2).
+<i>562</i>&nbsp;	 * 
+<i>563</i>&nbsp;	 * @return the center point
+<i>564</i>&nbsp;	 */
+<i>565</i>&nbsp;	public Point2D getCenter() {
+<b class="fc"><i>566</i>&nbsp;		return new Point2D((xmax + xmin) / 2d, (ymax + ymin) / 2d);</b>
+<i>567</i>&nbsp;	}
+<i>568</i>&nbsp;
+<i>569</i>&nbsp;	public void queryCenter(Point2D center) {
+<b class="nc"><i>570</i>&nbsp;		center.x = (xmax + xmin) / 2d;</b>
+<b class="nc"><i>571</i>&nbsp;		center.y = (ymax + ymin) / 2d;</b>
+<b class="nc"><i>572</i>&nbsp;	}</b>
+<i>573</i>&nbsp;
+<i>574</i>&nbsp;	public void centerAt(Point c) {
+<b class="nc"><i>575</i>&nbsp;		double cx = (xmax - xmin) / 2d;</b>
+<b class="nc"><i>576</i>&nbsp;		double cy = (ymax - ymin) / 2d;</b>
+<i>577</i>&nbsp;
+<b class="nc"><i>578</i>&nbsp;		xmin = c.getX() - cx;</b>
+<b class="nc"><i>579</i>&nbsp;		xmax = c.getX() + cx;</b>
+<b class="nc"><i>580</i>&nbsp;		ymin = c.getY() - cy;</b>
+<b class="nc"><i>581</i>&nbsp;		ymax = c.getY() + cy;</b>
+<b class="nc"><i>582</i>&nbsp;	}</b>
+<i>583</i>&nbsp;
+<i>584</i>&nbsp;	public Point2D getLowerLeft() {
+<b class="fc"><i>585</i>&nbsp;		return new Point2D(xmin, ymin);</b>
+<i>586</i>&nbsp;	}
+<i>587</i>&nbsp;
+<i>588</i>&nbsp;	public Point2D getUpperLeft() {
+<b class="fc"><i>589</i>&nbsp;		return new Point2D(xmin, ymax);</b>
+<i>590</i>&nbsp;	}
+<i>591</i>&nbsp;
+<i>592</i>&nbsp;	public Point2D getLowerRight() {
+<b class="fc"><i>593</i>&nbsp;		return new Point2D(xmax, ymin);</b>
+<i>594</i>&nbsp;	}
+<i>595</i>&nbsp;
+<i>596</i>&nbsp;	public Point2D getUpperRight() {
+<b class="fc"><i>597</i>&nbsp;		return new Point2D(xmax, ymax);</b>
+<i>598</i>&nbsp;	}
+<i>599</i>&nbsp;
+<i>600</i>&nbsp;	public boolean contains(Point p) {
+<b class="nc"><i>601</i>&nbsp;		return contains(p.getX(), p.getY());</b>
+<i>602</i>&nbsp;	}
+<i>603</i>&nbsp;
+<i>604</i>&nbsp;	public boolean contains(Point2D p) {
+<b class="fc"><i>605</i>&nbsp;		return contains(p.x, p.y);</b>
+<i>606</i>&nbsp;	}
+<i>607</i>&nbsp;
+<i>608</i>&nbsp;	public boolean contains(double x, double y) {
+<i>609</i>&nbsp;		// Note: This will return False, if envelope is empty, thus no need to
+<i>610</i>&nbsp;		// call is_empty().
+<b class="fc"><i>611</i>&nbsp;		return x &gt;= xmin &amp;&amp; x &lt;= xmax &amp;&amp; y &gt;= ymin &amp;&amp; y &lt;= ymax;</b>
+<i>612</i>&nbsp;	}
+<i>613</i>&nbsp;
+<i>614</i>&nbsp;	/**
+<i>615</i>&nbsp;	 * Returns True if the envelope contains the other envelope (boundary
+<i>616</i>&nbsp;	 * inclusive).
+<i>617</i>&nbsp;	 */
+<i>618</i>&nbsp;	public boolean contains(Envelope2D other) {// Note: Will return False, if
+<i>619</i>&nbsp;												// either envelope is empty.
+<b class="fc"><i>620</i>&nbsp;		return other.xmin &gt;= xmin &amp;&amp; other.xmax &lt;= xmax &amp;&amp; other.ymin &gt;= ymin</b>
+<i>621</i>&nbsp;				&amp;&amp; other.ymax &lt;= ymax;
+<i>622</i>&nbsp;	}
+<i>623</i>&nbsp;
+<i>624</i>&nbsp;	/**
+<i>625</i>&nbsp;	 * Returns True if the envelope contains the point (boundary exclusive).
+<i>626</i>&nbsp;	 */
+<i>627</i>&nbsp;	public boolean containsExclusive(double x, double y) {
+<i>628</i>&nbsp;		// Note: This will return False, if envelope is empty, thus no need to
+<i>629</i>&nbsp;		// call is_empty().
+<b class="fc"><i>630</i>&nbsp;		return x &gt; xmin &amp;&amp; x &lt; xmax &amp;&amp; y &gt; ymin &amp;&amp; y &lt; ymax;</b>
+<i>631</i>&nbsp;	}
+<i>632</i>&nbsp;
+<i>633</i>&nbsp;	/**
+<i>634</i>&nbsp;	 * Returns True if the envelope contains the point (boundary exclusive).
+<i>635</i>&nbsp;	 */
+<i>636</i>&nbsp;	public boolean containsExclusive(Point2D pt) {
+<b class="fc"><i>637</i>&nbsp;		return containsExclusive(pt.x, pt.y);</b>
+<i>638</i>&nbsp;	}
+<i>639</i>&nbsp;
+<i>640</i>&nbsp;	/**
+<i>641</i>&nbsp;	 * Returns True if the envelope contains the other envelope (boundary
+<i>642</i>&nbsp;	 * exclusive).
+<i>643</i>&nbsp;	 */
+<i>644</i>&nbsp;	boolean containsExclusive(Envelope2D other) {
+<i>645</i>&nbsp;		// Note: This will return False, if either envelope is empty, thus no
+<i>646</i>&nbsp;		// need to call is_empty().
+<b class="fc"><i>647</i>&nbsp;		return other.xmin &gt; xmin &amp;&amp; other.xmax &lt; xmax &amp;&amp; other.ymin &gt; ymin</b>
+<i>648</i>&nbsp;				&amp;&amp; other.ymax &lt; ymax;
+<i>649</i>&nbsp;	}
+<i>650</i>&nbsp;
+<i>651</i>&nbsp;	@Override
+<i>652</i>&nbsp;	public boolean equals(Object _other) {
+<b class="fc"><i>653</i>&nbsp;		if (_other == this)</b>
+<b class="nc"><i>654</i>&nbsp;			return true;</b>
+<i>655</i>&nbsp;
+<b class="fc"><i>656</i>&nbsp;		if (!(_other instanceof Envelope2D))</b>
+<b class="fc"><i>657</i>&nbsp;			return false;</b>
+<i>658</i>&nbsp;
+<b class="fc"><i>659</i>&nbsp;		Envelope2D other = (Envelope2D) _other;</b>
+<b class="fc"><i>660</i>&nbsp;		if (isEmpty() &amp;&amp; other.isEmpty())</b>
+<b class="nc"><i>661</i>&nbsp;			return true;</b>
+<i>662</i>&nbsp;
+<b class="fc"><i>663</i>&nbsp;		if (xmin != other.xmin || ymin != other.ymin || xmax != other.xmax</b>
+<i>664</i>&nbsp;				|| ymax != other.ymax)
+<b class="nc"><i>665</i>&nbsp;			return false;</b>
+<i>666</i>&nbsp;
+<b class="fc"><i>667</i>&nbsp;		return true;</b>
+<i>668</i>&nbsp;	}
+<i>669</i>&nbsp;
+<i>670</i>&nbsp;	@Override
+<i>671</i>&nbsp;	public int hashCode() {
+<i>672</i>&nbsp;
+<b class="nc"><i>673</i>&nbsp;		long bits = Double.doubleToLongBits(xmin);</b>
+<b class="nc"><i>674</i>&nbsp;		int hc = (int) (bits ^ (bits &gt;&gt;&gt; 32));</b>
+<i>675</i>&nbsp;
+<b class="nc"><i>676</i>&nbsp;		int hash = NumberUtils.hash(hc);</b>
+<i>677</i>&nbsp;
+<b class="nc"><i>678</i>&nbsp;		bits = Double.doubleToLongBits(xmax);</b>
+<b class="nc"><i>679</i>&nbsp;		hc = (int) (bits ^ (bits &gt;&gt;&gt; 32));</b>
+<b class="nc"><i>680</i>&nbsp;		hash = NumberUtils.hash(hash, hc);</b>
+<i>681</i>&nbsp;
+<b class="nc"><i>682</i>&nbsp;		bits = Double.doubleToLongBits(ymin);</b>
+<b class="nc"><i>683</i>&nbsp;		hc = (int) (bits ^ (bits &gt;&gt;&gt; 32));</b>
+<b class="nc"><i>684</i>&nbsp;		hash = NumberUtils.hash(hash, hc);</b>
+<i>685</i>&nbsp;
+<b class="nc"><i>686</i>&nbsp;		bits = Double.doubleToLongBits(ymax);</b>
+<b class="nc"><i>687</i>&nbsp;		hc = (int) (bits ^ (bits &gt;&gt;&gt; 32));</b>
+<b class="nc"><i>688</i>&nbsp;		hash = NumberUtils.hash(hash, hc);</b>
+<i>689</i>&nbsp;
+<b class="nc"><i>690</i>&nbsp;		return hash;</b>
+<i>691</i>&nbsp;	}
+<i>692</i>&nbsp;
+<i>693</i>&nbsp;	Point2D _snapToBoundary(Point2D pt) {
+<b class="nc"><i>694</i>&nbsp;		Point2D p = new Point2D();</b>
+<b class="nc"><i>695</i>&nbsp;		p.setCoords(pt);</b>
+<b class="nc"><i>696</i>&nbsp;		if (p._isNan())</b>
+<b class="nc"><i>697</i>&nbsp;			return p;</b>
+<i>698</i>&nbsp;
+<b class="nc"><i>699</i>&nbsp;		if (isEmpty()) {</b>
+<b class="nc"><i>700</i>&nbsp;			p._setNan();</b>
+<b class="nc"><i>701</i>&nbsp;			return p;</b>
+<i>702</i>&nbsp;		}
+<i>703</i>&nbsp;
+<b class="nc"><i>704</i>&nbsp;		if (p.x &lt; xmin)</b>
+<b class="nc"><i>705</i>&nbsp;			p.x = xmin;</b>
+<b class="nc"><i>706</i>&nbsp;		else if (p.x &gt; xmax)</b>
+<b class="nc"><i>707</i>&nbsp;			p.x = xmax;</b>
+<i>708</i>&nbsp;
+<b class="nc"><i>709</i>&nbsp;		if (p.y &lt; ymin)</b>
+<b class="nc"><i>710</i>&nbsp;			p.y = ymin;</b>
+<b class="nc"><i>711</i>&nbsp;		else if (p.y &gt; ymax)</b>
+<b class="nc"><i>712</i>&nbsp;			p.y = ymax;</b>
+<i>713</i>&nbsp;
+<b class="nc"><i>714</i>&nbsp;		if (!p.equals(pt))</b>
+<b class="nc"><i>715</i>&nbsp;			return p;</b>
+<i>716</i>&nbsp;
+<i>717</i>&nbsp;		// p is inside envelope
+<b class="nc"><i>718</i>&nbsp;		Point2D center = getCenter();</b>
+<b class="nc"><i>719</i>&nbsp;		double deltax = p.x &lt; center.x ? p.x - xmin : xmax - p.x;</b>
+<b class="nc"><i>720</i>&nbsp;		double deltay = p.y &lt; center.y ? p.y - ymin : ymax - p.y;</b>
+<i>721</i>&nbsp;
+<b class="nc"><i>722</i>&nbsp;		if (deltax &lt; deltay)</b>
+<b class="nc"><i>723</i>&nbsp;			p.x = p.x &lt; center.x ? xmin : xmax;</b>
+<i>724</i>&nbsp;		else
+<b class="nc"><i>725</i>&nbsp;			p.y = p.y &lt; center.y ? ymin : ymax;</b>
+<i>726</i>&nbsp;
+<b class="nc"><i>727</i>&nbsp;		return p;</b>
+<i>728</i>&nbsp;	}
+<i>729</i>&nbsp;
+<i>730</i>&nbsp;	// Calculates distance of point from lower left corner of envelope,
+<i>731</i>&nbsp;	// moving clockwise along the envelope boundary.
+<i>732</i>&nbsp;	// The input point is assumed to lie exactly on envelope boundary
+<i>733</i>&nbsp;	// If this is not the case then a projection to the nearest position on the
+<i>734</i>&nbsp;	// envelope boundary is performed.
+<i>735</i>&nbsp;	// (If the user knows that the input point does most likely not lie on the
+<i>736</i>&nbsp;	// boundary,
+<i>737</i>&nbsp;	// it is more efficient to perform ProjectToBoundary before using this
+<i>738</i>&nbsp;	// function).
+<i>739</i>&nbsp;	double _boundaryDistance(Point2D pt) {
+<b class="nc"><i>740</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>741</i>&nbsp;			return NumberUtils.NaN();</b>
+<i>742</i>&nbsp;
+<b class="nc"><i>743</i>&nbsp;		if (pt.x == xmin)</b>
+<b class="nc"><i>744</i>&nbsp;			return pt.y - ymin;</b>
+<i>745</i>&nbsp;
+<b class="nc"><i>746</i>&nbsp;		double height = ymax - ymin;</b>
+<b class="nc"><i>747</i>&nbsp;		double width = xmax - xmin;</b>
+<i>748</i>&nbsp;
+<b class="nc"><i>749</i>&nbsp;		if (pt.y == ymax)</b>
+<b class="nc"><i>750</i>&nbsp;			return height + pt.x - xmin;</b>
+<i>751</i>&nbsp;
+<b class="nc"><i>752</i>&nbsp;		if (pt.x == xmax)</b>
+<b class="nc"><i>753</i>&nbsp;			return height + width + ymax - pt.y;</b>
+<i>754</i>&nbsp;
+<b class="nc"><i>755</i>&nbsp;		if (pt.y == ymin)</b>
+<b class="nc"><i>756</i>&nbsp;			return height * 2.0 + width + xmax - pt.x;</b>
+<i>757</i>&nbsp;
+<b class="nc"><i>758</i>&nbsp;		return _boundaryDistance(_snapToBoundary(pt));</b>
+<i>759</i>&nbsp;	}
+<i>760</i>&nbsp;
+<i>761</i>&nbsp;	// returns 0,..3 depending on which side pt lies.
+<i>762</i>&nbsp;	int _envelopeSide(Point2D pt) {
+<i>763</i>&nbsp;
+<b class="nc"><i>764</i>&nbsp;		if (isEmpty())</b>
+<b class="nc"><i>765</i>&nbsp;			return -1;</b>
+<i>766</i>&nbsp;
+<b class="nc"><i>767</i>&nbsp;		double boundaryDist = _boundaryDistance(pt);</b>
+<b class="nc"><i>768</i>&nbsp;		double height = ymax - ymin;</b>
+<b class="nc"><i>769</i>&nbsp;		double width = xmax - xmin;</b>
+<i>770</i>&nbsp;
+<b class="nc"><i>771</i>&nbsp;		if (boundaryDist &lt; height)</b>
+<b class="nc"><i>772</i>&nbsp;			return 0;</b>
+<i>773</i>&nbsp;
+<b class="nc"><i>774</i>&nbsp;		if ((boundaryDist -= height) &lt; width)</b>
+<b class="nc"><i>775</i>&nbsp;			return 1;</b>
+<i>776</i>&nbsp;
+<b class="nc"><i>777</i>&nbsp;		return boundaryDist - width &lt; height ? 2 : 3;</b>
+<i>778</i>&nbsp;	}
+<i>779</i>&nbsp;
+<i>780</i>&nbsp;	double _calculateToleranceFromEnvelope() {
+<b class="fc"><i>781</i>&nbsp;		if (isEmpty())</b>
+<b class="fc"><i>782</i>&nbsp;			return NumberUtils.doubleEps() * 100.0; // GEOMTERYX_EPSFACTOR</b>
+<i>783</i>&nbsp;													// 100.0;
+<b class="fc"><i>784</i>&nbsp;		double r = Math.abs(xmin) + Math.abs(xmax) + Math.abs(ymin)</b>
+<b class="fc"><i>785</i>&nbsp;				+ Math.abs(ymax) + 1;</b>
+<b class="fc"><i>786</i>&nbsp;		return r * NumberUtils.doubleEps() * 100.0; // GEOMTERYX_EPSFACTOR</b>
+<i>787</i>&nbsp;													// 100.0;
+<i>788</i>&nbsp;	}
+<i>789</i>&nbsp;
+<i>790</i>&nbsp;	public int clipLine(Point2D p1, Point2D p2)
+<i>791</i>&nbsp;	// Modified Cohen-Sutherland Line-Clipping Algorithm
+<i>792</i>&nbsp;	// returns:
+<i>793</i>&nbsp;	// 0 - the segment is outside of the clipping window
+<i>794</i>&nbsp;	// 1 - p1 was modified
+<i>795</i>&nbsp;	// 2 - p2 was modified
+<i>796</i>&nbsp;	// 3 - p1 and p2 were modified
+<i>797</i>&nbsp;	// 4 - the segment is complitely inside of the clipping window
+<i>798</i>&nbsp;	{
+<b class="fc"><i>799</i>&nbsp;		int c1 = _clipCode(p1), c2 = _clipCode(p2);</b>
+<i>800</i>&nbsp;
+<b class="fc"><i>801</i>&nbsp;		if ((c1 &amp; c2) != 0)// (c1 &amp; c2)</b>
+<b class="fc"><i>802</i>&nbsp;			return 0;</b>
+<i>803</i>&nbsp;
+<b class="fc"><i>804</i>&nbsp;		if ((c1 | c2) == 0)// (!(c1 | c2))</b>
+<b class="fc"><i>805</i>&nbsp;			return 4;</b>
+<i>806</i>&nbsp;
+<b class="fc"><i>807</i>&nbsp;		final int res = ((c1 != 0) ? 1 : 0) | ((c2 != 0) ? 2 : 0);// (c1 ? 1 :</b>
+<i>808</i>&nbsp;																	// 0) | (c2
+<i>809</i>&nbsp;																	// ? 2 : 0);
+<i>810</i>&nbsp;
+<i>811</i>&nbsp;		do {
+<b class="fc"><i>812</i>&nbsp;			double dx = p2.x - p1.x, dy = p2.y - p1.y;</b>
+<i>813</i>&nbsp;
+<b class="fc"><i>814</i>&nbsp;			boolean bDX = dx &gt; dy;</b>
+<i>815</i>&nbsp;
+<b class="fc"><i>816</i>&nbsp;			if (bDX) {</b>
+<b class="fc"><i>817</i>&nbsp;				if ((c1 &amp; XMASK) != 0)// (c1 &amp; XMASK)</b>
+<i>818</i>&nbsp;				{
+<b class="fc"><i>819</i>&nbsp;					if ((c1 &amp; XLESSXMIN) != 0)// (c1 &amp; XLESSXMIN)</b>
+<i>820</i>&nbsp;					{
+<b class="fc"><i>821</i>&nbsp;						p1.y += dy * (xmin - p1.x) / dx;</b>
+<b class="fc"><i>822</i>&nbsp;						p1.x = xmin;</b>
+<i>823</i>&nbsp;					} else {
+<b class="nc"><i>824</i>&nbsp;						p1.y += dy * (xmax - p1.x) / dx;</b>
+<b class="nc"><i>825</i>&nbsp;						p1.x = xmax;</b>
+<i>826</i>&nbsp;					}
+<i>827</i>&nbsp;
+<b class="fc"><i>828</i>&nbsp;					c1 = _clipCode(p1);</b>
+<b class="fc"><i>829</i>&nbsp;				} else if ((c2 &amp; XMASK) != 0)// (c2 &amp; XMASK)</b>
+<i>830</i>&nbsp;				{
+<b class="fc"><i>831</i>&nbsp;					if ((c2 &amp; XLESSXMIN) != 0) {</b>
+<b class="nc"><i>832</i>&nbsp;						p2.y += dy * (xmin - p2.x) / dx;</b>
+<b class="nc"><i>833</i>&nbsp;						p2.x = xmin;</b>
+<i>834</i>&nbsp;					} else {
+<b class="fc"><i>835</i>&nbsp;						p2.y += dy * (xmax - p2.x) / dx;</b>
+<b class="fc"><i>836</i>&nbsp;						p2.x = xmax;</b>
+<i>837</i>&nbsp;					}
+<i>838</i>&nbsp;
+<b class="fc"><i>839</i>&nbsp;					c2 = _clipCode(p2);</b>
+<b class="fc"><i>840</i>&nbsp;				} else if (c1 != 0)// (c1)</b>
+<i>841</i>&nbsp;				{
+<b class="fc"><i>842</i>&nbsp;					if ((c1 &amp; YLESSYMIN) != 0)// (c1 &amp; YLESSYMIN)</b>
+<i>843</i>&nbsp;					{
+<b class="fc"><i>844</i>&nbsp;						p1.x += dx * (ymin - p1.y) / dy;</b>
+<b class="fc"><i>845</i>&nbsp;						p1.y = ymin;</b>
+<i>846</i>&nbsp;					} else {
+<b class="fc"><i>847</i>&nbsp;						p1.x += dx * (ymax - p1.y) / dy;</b>
+<b class="fc"><i>848</i>&nbsp;						p1.y = ymax;</b>
+<i>849</i>&nbsp;					}
+<i>850</i>&nbsp;
+<b class="fc"><i>851</i>&nbsp;					c1 = _clipCode(p1);</b>
+<i>852</i>&nbsp;				} else {
+<b class="fc"><i>853</i>&nbsp;					if ((c2 &amp; YLESSYMIN) != 0)// (c2 &amp; YLESSYMIN)</b>
+<i>854</i>&nbsp;					{
+<b class="fc"><i>855</i>&nbsp;						p2.x += dx * (ymin - p2.y) / dy;</b>
+<b class="fc"><i>856</i>&nbsp;						p2.y = ymin;</b>
+<i>857</i>&nbsp;					} else {
+<b class="fc"><i>858</i>&nbsp;						p2.x += dx * (ymax - p2.y) / dy;</b>
+<b class="fc"><i>859</i>&nbsp;						p2.y = ymax;</b>
+<i>860</i>&nbsp;					}
+<i>861</i>&nbsp;
+<b class="fc"><i>862</i>&nbsp;					c2 = _clipCode(p2);</b>
+<i>863</i>&nbsp;				}
+<i>864</i>&nbsp;			} else {
+<b class="fc"><i>865</i>&nbsp;				if ((c1 &amp; YMASK) != 0)// (c1 &amp; YMASK)</b>
+<i>866</i>&nbsp;				{
+<b class="fc"><i>867</i>&nbsp;					if ((c1 &amp; YLESSYMIN) != 0)// (c1 &amp; YLESSYMIN)</b>
+<i>868</i>&nbsp;					{
+<b class="fc"><i>869</i>&nbsp;						p1.x += dx * (ymin - p1.y) / dy;</b>
+<b class="fc"><i>870</i>&nbsp;						p1.y = ymin;</b>
+<i>871</i>&nbsp;					} else {
+<b class="fc"><i>872</i>&nbsp;						p1.x += dx * (ymax - p1.y) / dy;</b>
+<b class="fc"><i>873</i>&nbsp;						p1.y = ymax;</b>
+<i>874</i>&nbsp;					}
+<i>875</i>&nbsp;
+<b class="fc"><i>876</i>&nbsp;					c1 = _clipCode(p1);</b>
+<b class="fc"><i>877</i>&nbsp;				} else if ((c2 &amp; YMASK) != 0)// (c2 &amp; YMASK)</b>
+<i>878</i>&nbsp;				{
+<b class="fc"><i>879</i>&nbsp;					if ((c2 &amp; YLESSYMIN) != 0) // (c2 &amp; YLESSYMIN)</b>
+<i>880</i>&nbsp;					{
+<b class="fc"><i>881</i>&nbsp;						p2.x += dx * (ymin - p2.y) / dy;</b>
+<b class="fc"><i>882</i>&nbsp;						p2.y = ymin;</b>
+<i>883</i>&nbsp;					} else {
+<b class="fc"><i>884</i>&nbsp;						p2.x += dx * (ymax - p2.y) / dy;</b>
+<b class="fc"><i>885</i>&nbsp;						p2.y = ymax;</b>
+<i>886</i>&nbsp;					}
+<i>887</i>&nbsp;
+<b class="fc"><i>888</i>&nbsp;					c2 = _clipCode(p2);</b>
+<b class="fc"><i>889</i>&nbsp;				} else if (c1 != 0)// (c1)</b>
+<i>890</i>&nbsp;				{
+<b class="fc"><i>891</i>&nbsp;					if ((c1 &amp; XLESSXMIN) != 0)// (c1 &amp; XLESSXMIN)</b>
+<i>892</i>&nbsp;					{
+<b class="fc"><i>893</i>&nbsp;						p1.y += dy * (xmin - p1.x) / dx;</b>
+<b class="fc"><i>894</i>&nbsp;						p1.x = xmin;</b>
+<i>895</i>&nbsp;					} else {
+<b class="fc"><i>896</i>&nbsp;						p1.y += dy * (xmax - p1.x) / dx;</b>
+<b class="fc"><i>897</i>&nbsp;						p1.x = xmax;</b>
+<i>898</i>&nbsp;					}
+<i>899</i>&nbsp;
+<b class="fc"><i>900</i>&nbsp;					c1 = _clipCode(p1);</b>
+<i>901</i>&nbsp;				} else {
+<b class="fc"><i>902</i>&nbsp;					if ((c2 &amp; XLESSXMIN) != 0)// (c2 &amp; XLESSXMIN)</b>
+<i>903</i>&nbsp;					{
+<b class="fc"><i>904</i>&nbsp;						p2.y += dy * (xmin - p2.x) / dx;</b>
+<b class="fc"><i>905</i>&nbsp;						p2.x = xmin;</b>
+<i>906</i>&nbsp;					} else {
+<b class="fc"><i>907</i>&nbsp;						p2.y += dy * (xmax - p2.x) / dx;</b>
+<b class="fc"><i>908</i>&nbsp;						p2.x = xmax;</b>
+<i>909</i>&nbsp;					}
+<i>910</i>&nbsp;
+<b class="fc"><i>911</i>&nbsp;					c2 = _clipCode(p2);</b>
+<i>912</i>&nbsp;				}
+<i>913</i>&nbsp;
+<i>914</i>&nbsp;				/*
+<i>915</i>&nbsp;				 * if (c1) //original code. Faster, but less robust numerically.
+<i>916</i>&nbsp;				 * ( //The Cohen-Sutherland Line-Clipping Algorithm) { if (c1 &amp;
+<i>917</i>&nbsp;				 * XLESSXMIN) { p1.y += dy * (xmin - p1.x) / dx; p1.x = xmin; }
+<i>918</i>&nbsp;				 * else if (c1 &amp; XGREATERXMAX) { p1.y += dy * (xmax - p1.x) /
+<i>919</i>&nbsp;				 * dx; p1.x = xmax; } else if (c1 &amp; YLESSYMIN) { p1.x += dx *
+<i>920</i>&nbsp;				 * (ymin - p1.y) / dy; p1.y = ymin; } else if (c1 &amp;
+<i>921</i>&nbsp;				 * YGREATERYMAX) { p1.x += dx * (ymax - p1.y) / dy; p1.y = ymax;
+<i>922</i>&nbsp;				 * }
+<i>923</i>&nbsp;				 * 
+<i>924</i>&nbsp;				 * c1 = _clipCode(p1, ClipRect); } else { if (c2 &amp; XLESSXMIN) {
+<i>925</i>&nbsp;				 * p2.y += dy * (xmin - p2.x) / dx; p2.x = xmin; } else if (c2 &amp;
+<i>926</i>&nbsp;				 * XGREATERXMAX) { p2.y += dy * (xmax - p2.x) / dx; p2.x = xmax;
+<i>927</i>&nbsp;				 * } else if (c2 &amp; YLESSYMIN) { p2.x += dx * (ymin - p2.y) / dy;
+<i>928</i>&nbsp;				 * p2.y = ymin; } else if (c2 &amp; YGREATERYMAX) { p2.x += dx *
+<i>929</i>&nbsp;				 * (ymax - p2.y) / dy; p2.y = ymax; }
+<i>930</i>&nbsp;				 * 
+<i>931</i>&nbsp;				 * c2 = _clipCode(p2, ClipRect); }
+<i>932</i>&nbsp;				 */
+<i>933</i>&nbsp;			}
+<i>934</i>&nbsp;
+<b class="fc"><i>935</i>&nbsp;			if ((c1 &amp; c2) != 0)// (c1 &amp; c2)</b>
+<b class="fc"><i>936</i>&nbsp;				return 0;</b>
+<i>937</i>&nbsp;
+<b class="fc"><i>938</i>&nbsp;		} while ((c1 | c2) != 0);// (c1 | c2);</b>
+<i>939</i>&nbsp;
+<b class="fc"><i>940</i>&nbsp;		return res;</b>
+<i>941</i>&nbsp;	}
+<i>942</i>&nbsp;
+<i>943</i>&nbsp;	int _clipCode(Point2D p)// returns a code from the Cohen-Sutherland (0000 is
+<i>944</i>&nbsp;							// boundary inclusive)
+<i>945</i>&nbsp;	{
+<b class="fc"><i>946</i>&nbsp;		int left = (p.x &lt; xmin) ? 1 : 0;</b>
+<b class="fc"><i>947</i>&nbsp;		int right = (p.x &gt; xmax) ? 1 : 0;</b>
+<b class="fc"><i>948</i>&nbsp;		int bottom = (p.y &lt; ymin) ? 1 : 0;</b>
+<b class="fc"><i>949</i>&nbsp;		int top = (p.y &gt; ymax) ? 1 : 0;</b>
+<b class="fc"><i>950</i>&nbsp;		return left | right &lt;&lt; 1 | bottom &lt;&lt; 2 | top &lt;&lt; 3;</b>
+<i>951</i>&nbsp;	}
+<i>952</i>&nbsp;
+<i>953</i>&nbsp;	// Clips and optionally extends line within envelope; modifies point &#39;from&#39;,
+<i>954</i>&nbsp;	// &#39;to&#39;.
+<i>955</i>&nbsp;	// Algorithm: Liang-Barsky parametric line-clipping (Foley, vanDam, Feiner,
+<i>956</i>&nbsp;	// Hughes, second edition, 117-124)
+<i>957</i>&nbsp;	// lineExtension: 0 no line eExtension, 1 extend line at from point, 2
+<i>958</i>&nbsp;	// extend line at endpoint, 3 extend line at both ends
+<i>959</i>&nbsp;	// boundaryDistances can be NULLPTR.
+<i>960</i>&nbsp;	// returns:
+<i>961</i>&nbsp;	// 0 - the segment is outside of the clipping window
+<i>962</i>&nbsp;	// 1 - p1 was modified
+<i>963</i>&nbsp;	// 2 - p2 was modified
+<i>964</i>&nbsp;	// 3 - p1 and p2 were modified
+<i>965</i>&nbsp;	// 4 - the segment is complitely inside of the clipping window
+<i>966</i>&nbsp;	int clipLine(Point2D p0, Point2D p1, int lineExtension, double[] segParams,
+<i>967</i>&nbsp;			double[] boundaryDistances) {
+<b class="nc"><i>968</i>&nbsp;		if (boundaryDistances != null) {</b>
+<b class="nc"><i>969</i>&nbsp;			boundaryDistances[0] = -1.0;</b>
+<b class="nc"><i>970</i>&nbsp;			boundaryDistances[1] = -1.0;</b>
+<i>971</i>&nbsp;		}
+<i>972</i>&nbsp;
+<b class="nc"><i>973</i>&nbsp;		double[] tOld = new double[2];// LOCALREFCLASS1(ArrayOf(double), int,</b>
+<i>974</i>&nbsp;										// tOld, 2);
+<b class="nc"><i>975</i>&nbsp;		int modified = 0;</b>
+<i>976</i>&nbsp;
+<b class="nc"><i>977</i>&nbsp;		Point2D delta = new Point2D(p1.x - p0.x, p1.y - p0.y);</b>
+<i>978</i>&nbsp;
+<b class="nc"><i>979</i>&nbsp;		if (delta.x == 0.0 &amp;&amp; delta.y == 0.0) // input line degenerates to a</b>
+<i>980</i>&nbsp;												// point
+<i>981</i>&nbsp;		{
+<b class="nc"><i>982</i>&nbsp;			segParams[0] = 0.0;</b>
+<b class="nc"><i>983</i>&nbsp;			segParams[1] = 0.0;</b>
+<b class="nc"><i>984</i>&nbsp;			return contains(p0) ? 4 : 0;</b>
+<i>985</i>&nbsp;		}
+<i>986</i>&nbsp;
+<b class="nc"><i>987</i>&nbsp;		segParams[0] = ((lineExtension &amp; 1) != 0) ? NumberUtils.negativeInf()</b>
+<i>988</i>&nbsp;				: 0.0;
+<b class="nc"><i>989</i>&nbsp;		segParams[1] = ((lineExtension &amp; 2) != 0) ? NumberUtils.positiveInf()</b>
+<i>990</i>&nbsp;				: 1.0;
+<b class="nc"><i>991</i>&nbsp;		tOld[0] = segParams[0];</b>
+<b class="nc"><i>992</i>&nbsp;		tOld[1] = segParams[1];</b>
+<i>993</i>&nbsp;
+<b class="nc"><i>994</i>&nbsp;		if (clipLineAuxiliary(delta.x, xmin - p0.x, segParams)</b>
+<b class="nc"><i>995</i>&nbsp;				&amp;&amp; clipLineAuxiliary(-delta.x, p0.x - xmax, segParams)</b>
+<b class="nc"><i>996</i>&nbsp;				&amp;&amp; clipLineAuxiliary(delta.y, ymin - p0.y, segParams)</b>
+<b class="nc"><i>997</i>&nbsp;				&amp;&amp; clipLineAuxiliary(-delta.y, p0.y - ymax, segParams)) {</b>
+<b class="nc"><i>998</i>&nbsp;			if (segParams[1] &lt; tOld[1]) {</b>
+<b class="nc"><i>999</i>&nbsp;				p1.scaleAdd(segParams[1], delta, p0);</b>
+<b class="nc"><i>1000</i>&nbsp;				_snapToBoundary(p1); // needed for accuracy</b>
+<b class="nc"><i>1001</i>&nbsp;				modified |= 2;</b>
+<i>1002</i>&nbsp;
+<b class="nc"><i>1003</i>&nbsp;				if (boundaryDistances != null)</b>
+<b class="nc"><i>1004</i>&nbsp;					boundaryDistances[1] = _boundaryDistance(p1);</b>
+<i>1005</i>&nbsp;			}
+<b class="nc"><i>1006</i>&nbsp;			if (segParams[0] &gt; tOld[0]) {</b>
+<b class="nc"><i>1007</i>&nbsp;				p0.scaleAdd(segParams[0], delta, p0);</b>
+<b class="nc"><i>1008</i>&nbsp;				_snapToBoundary(p0); // needed for accuracy</b>
+<b class="nc"><i>1009</i>&nbsp;				modified |= 1;</b>
+<i>1010</i>&nbsp;
+<b class="nc"><i>1011</i>&nbsp;				if (boundaryDistances != null)</b>
+<b class="nc"><i>1012</i>&nbsp;					boundaryDistances[0] = _boundaryDistance(p0);</b>
+<i>1013</i>&nbsp;			}
+<i>1014</i>&nbsp;		}
+<i>1015</i>&nbsp;
+<b class="nc"><i>1016</i>&nbsp;		return modified;</b>
+<i>1017</i>&nbsp;	}
+<i>1018</i>&nbsp;
+<i>1019</i>&nbsp;	boolean clipLineAuxiliary(double denominator, double numerator,
+<i>1020</i>&nbsp;			double[] segParams) {
+<b class="nc"><i>1021</i>&nbsp;		double t = numerator / denominator;</b>
+<b class="nc"><i>1022</i>&nbsp;		if (denominator &gt; 0.0) {</b>
+<b class="nc"><i>1023</i>&nbsp;			if (t &gt; segParams[1])</b>
+<b class="nc"><i>1024</i>&nbsp;				return false;</b>
+<i>1025</i>&nbsp;
+<b class="nc"><i>1026</i>&nbsp;			if (t &gt; segParams[0]) {</b>
+<b class="nc"><i>1027</i>&nbsp;				segParams[0] = t;</b>
+<b class="nc"><i>1028</i>&nbsp;				return true;</b>
+<i>1029</i>&nbsp;			}
+<b class="nc"><i>1030</i>&nbsp;		} else if (denominator &lt; 0.0) {</b>
+<b class="nc"><i>1031</i>&nbsp;			if (t &lt; segParams[0])</b>
+<b class="nc"><i>1032</i>&nbsp;				return false;</b>
+<i>1033</i>&nbsp;
+<b class="nc"><i>1034</i>&nbsp;			if (t &lt; segParams[1]) {</b>
+<b class="nc"><i>1035</i>&nbsp;				segParams[1] = t;</b>
+<b class="nc"><i>1036</i>&nbsp;				return true;</b>
+<i>1037</i>&nbsp;			}
+<i>1038</i>&nbsp;		} else
+<b class="nc"><i>1039</i>&nbsp;			return numerator &lt;= 0.0;</b>
+<i>1040</i>&nbsp;
+<b class="nc"><i>1041</i>&nbsp;		return true;</b>
+<i>1042</i>&nbsp;	}
+<i>1043</i>&nbsp;
+<i>1044</i>&nbsp;	/**
+<i>1045</i>&nbsp;	 * Returns True, envelope is degenerate (Width or Height are less than
+<i>1046</i>&nbsp;	 * tolerance). Note: this returns False for Empty envelope.
+<i>1047</i>&nbsp;	 */
+<i>1048</i>&nbsp;	public boolean isDegenerate(double tolerance) {
+<b class="fc"><i>1049</i>&nbsp;		return !isEmpty()</b>
+<b class="fc"><i>1050</i>&nbsp;				&amp;&amp; (getWidth() &lt;= tolerance || getHeight() &lt;= tolerance);</b>
+<i>1051</i>&nbsp;	}
+<i>1052</i>&nbsp;
+<i>1053</i>&nbsp;	Point2D _snapClip(Point2D pt)// clips the point if it is outside, then snaps
+<i>1054</i>&nbsp;									// it to the boundary.
+<i>1055</i>&nbsp;	{
+<b class="nc"><i>1056</i>&nbsp;		double x = NumberUtils.snap(pt.x, xmin, xmax);</b>
+<b class="nc"><i>1057</i>&nbsp;		double y = NumberUtils.snap(pt.y, ymin, ymax);</b>
+<b class="nc"><i>1058</i>&nbsp;		return new Point2D(x, y);</b>
+<i>1059</i>&nbsp;	}
+<i>1060</i>&nbsp;
+<i>1061</i>&nbsp;	public boolean isPointOnBoundary(Point2D pt, double tolerance) {
+<b class="nc"><i>1062</i>&nbsp;		return Math.abs(pt.x - xmin) &lt;= tolerance</b>
+<b class="nc"><i>1063</i>&nbsp;				|| Math.abs(pt.x - xmax) &lt;= tolerance</b>
+<b class="nc"><i>1064</i>&nbsp;				|| Math.abs(pt.y - ymin) &lt;= tolerance</b>
+<b class="nc"><i>1065</i>&nbsp;				|| Math.abs(pt.y - ymax) &lt;= tolerance;</b>
+<i>1066</i>&nbsp;	}
+<i>1067</i>&nbsp;
+<i>1068</i>&nbsp;	/**
+<i>1069</i>&nbsp;	 * Calculates minimum distance from this envelope to the other.
+<i>1070</i>&nbsp;	 * Returns 0 for empty envelopes.
+<i>1071</i>&nbsp;	 */
+<i>1072</i>&nbsp;	public double distance(/* const */Envelope2D other)
+<i>1073</i>&nbsp;	{
+<b class="nc"><i>1074</i>&nbsp;		return Math.sqrt(sqrDistance(other));</b>
+<i>1075</i>&nbsp;	}
+<i>1076</i>&nbsp;
+<i>1077</i>&nbsp;	/**
+<i>1078</i>&nbsp;	 * Calculates minimum distance from this envelope to the point.
+<i>1079</i>&nbsp;	 * Returns 0 for empty envelopes.
+<i>1080</i>&nbsp;	 */
+<i>1081</i>&nbsp;	public double distance(Point2D pt2D)
+<i>1082</i>&nbsp;	{
+<b class="nc"><i>1083</i>&nbsp;		return Math.sqrt(sqrDistance(pt2D));</b>
+<i>1084</i>&nbsp;	}
+<i>1085</i>&nbsp;
+<i>1086</i>&nbsp;	/**
+<i>1087</i>&nbsp;	 * Calculates minimum squared distance from this envelope to the other.
+<i>1088</i>&nbsp;	 * Returns 0 for empty envelopes.
+<i>1089</i>&nbsp;	 */
+<i>1090</i>&nbsp;	public double sqrDistance(Envelope2D other)
+<i>1091</i>&nbsp;	{
+<b class="fc"><i>1092</i>&nbsp;		double dx = 0;</b>
+<b class="fc"><i>1093</i>&nbsp;		double dy = 0;</b>
+<i>1094</i>&nbsp;		double nn;
+<i>1095</i>&nbsp;
+<b class="fc"><i>1096</i>&nbsp;		nn = xmin - other.xmax;</b>
+<b class="fc"><i>1097</i>&nbsp;		if (nn &gt; dx)</b>
+<b class="fc"><i>1098</i>&nbsp;			dx = nn;</b>
+<i>1099</i>&nbsp;
+<b class="fc"><i>1100</i>&nbsp;		nn = ymin - other.ymax;</b>
+<b class="fc"><i>1101</i>&nbsp;		if (nn &gt; dy)</b>
+<b class="fc"><i>1102</i>&nbsp;			dy = nn;</b>
+<i>1103</i>&nbsp;
+<b class="fc"><i>1104</i>&nbsp;		nn = other.xmin - xmax;</b>
+<b class="fc"><i>1105</i>&nbsp;		if (nn &gt; dx)</b>
+<b class="fc"><i>1106</i>&nbsp;			dx = nn;</b>
+<i>1107</i>&nbsp;
+<b class="fc"><i>1108</i>&nbsp;		nn = other.ymin - ymax;</b>
+<b class="fc"><i>1109</i>&nbsp;		if (nn &gt; dy)</b>
+<b class="fc"><i>1110</i>&nbsp;			dy = nn;</b>
+<i>1111</i>&nbsp;
+<b class="fc"><i>1112</i>&nbsp;		return dx * dx + dy * dy;</b>
+<i>1113</i>&nbsp;	}
+<i>1114</i>&nbsp;
+<i>1115</i>&nbsp;	/**
+<i>1116</i>&nbsp;	 * Calculates minimum squared distance from this envelope to the other.
+<i>1117</i>&nbsp;	 * Returns 0 for empty envelopes.
+<i>1118</i>&nbsp;	 */
+<i>1119</i>&nbsp;	public double sqrDistance(double xmin_, double ymin_, double xmax_, double ymax_)
+<i>1120</i>&nbsp;	{
+<b class="nc"><i>1121</i>&nbsp;		double dx = 0;</b>
+<b class="nc"><i>1122</i>&nbsp;		double dy = 0;</b>
+<i>1123</i>&nbsp;		double nn;
+<i>1124</i>&nbsp;
+<b class="nc"><i>1125</i>&nbsp;		nn = xmin - xmax_;</b>
+<b class="nc"><i>1126</i>&nbsp;		if (nn &gt; dx)</b>
+<b class="nc"><i>1127</i>&nbsp;			dx = nn;</b>
+<i>1128</i>&nbsp;
+<b class="nc"><i>1129</i>&nbsp;		nn = ymin - ymax_;</b>
+<b class="nc"><i>1130</i>&nbsp;		if (nn &gt; dy)</b>
+<b class="nc"><i>1131</i>&nbsp;			dy = nn;</b>
+<i>1132</i>&nbsp;
+<b class="nc"><i>1133</i>&nbsp;		nn = xmin_ - xmax;</b>
+<b class="nc"><i>1134</i>&nbsp;		if (nn &gt; dx)</b>
+<b class="nc"><i>1135</i>&nbsp;			dx = nn;</b>
+<i>1136</i>&nbsp;
+<b class="nc"><i>1137</i>&nbsp;		nn = ymin_ - ymax;</b>
+<b class="nc"><i>1138</i>&nbsp;		if (nn &gt; dy)</b>
+<b class="nc"><i>1139</i>&nbsp;			dy = nn;</b>
+<i>1140</i>&nbsp;
+<b class="nc"><i>1141</i>&nbsp;		return dx * dx + dy * dy;</b>
+<i>1142</i>&nbsp;	}
+<i>1143</i>&nbsp;	
+<i>1144</i>&nbsp;	/**
+<i>1145</i>&nbsp;	 *Returns squared max distance between two bounding boxes. This is furthest distance between points on the two envelopes.
+<i>1146</i>&nbsp;	 *
+<i>1147</i>&nbsp;	 *@param other The bounding box to calculate the max distance two.
+<i>1148</i>&nbsp;	 *@return Squared distance value.
+<i>1149</i>&nbsp;	 */
+<i>1150</i>&nbsp;	public double sqrMaxDistance(Envelope2D other) {
+<b class="nc"><i>1151</i>&nbsp;		if (isEmpty() || other.isEmpty())</b>
+<b class="nc"><i>1152</i>&nbsp;			return NumberUtils.TheNaN;</b>
+<i>1153</i>&nbsp;
+<b class="nc"><i>1154</i>&nbsp;		double dist = 0;</b>
+<b class="nc"><i>1155</i>&nbsp;		Point2D[] points = new Point2D[4];</b>
+<b class="nc"><i>1156</i>&nbsp;		queryCorners(points);</b>
+<b class="nc"><i>1157</i>&nbsp;		Point2D[] points_o = new Point2D[4];</b>
+<b class="nc"><i>1158</i>&nbsp;		other.queryCorners(points_o);</b>
+<b class="nc"><i>1159</i>&nbsp;		for (int i = 0; i &lt; 4; i++) {</b>
+<b class="nc"><i>1160</i>&nbsp;			for (int j = 0; j &lt; 4; j++) {</b>
+<b class="nc"><i>1161</i>&nbsp;				double d = Point2D.sqrDistance(points[i], points_o[j]);</b>
+<b class="nc"><i>1162</i>&nbsp;				if (d &gt; dist) {</b>
+<b class="nc"><i>1163</i>&nbsp;					dist = d;</b>
+<i>1164</i>&nbsp;				}
+<i>1165</i>&nbsp;			}
+<i>1166</i>&nbsp;		}
+<i>1167</i>&nbsp;
+<b class="nc"><i>1168</i>&nbsp;		return dist;</b>
+<i>1169</i>&nbsp;	}
+<i>1170</i>&nbsp;	
+<i>1171</i>&nbsp;	/**
+<i>1172</i>&nbsp;	 * Calculates minimum squared distance from this envelope to the point.
+<i>1173</i>&nbsp;	 * Returns 0 for empty envelopes.
+<i>1174</i>&nbsp;	 */
+<i>1175</i>&nbsp;	public double sqrDistance(Point2D pt2D)
+<i>1176</i>&nbsp;	{
+<b class="nc"><i>1177</i>&nbsp;		double dx = 0;</b>
+<b class="nc"><i>1178</i>&nbsp;		double dy = 0;</b>
+<i>1179</i>&nbsp;		double nn;
+<i>1180</i>&nbsp;
+<b class="nc"><i>1181</i>&nbsp;		nn = xmin - pt2D.x;</b>
+<b class="nc"><i>1182</i>&nbsp;		if (nn &gt; dx)</b>
+<b class="nc"><i>1183</i>&nbsp;			dx = nn;</b>
+<i>1184</i>&nbsp;
+<b class="nc"><i>1185</i>&nbsp;		nn = ymin - pt2D.y;</b>
+<b class="nc"><i>1186</i>&nbsp;		if (nn &gt; dy)</b>
+<b class="nc"><i>1187</i>&nbsp;			dy = nn;</b>
+<i>1188</i>&nbsp;
+<b class="nc"><i>1189</i>&nbsp;		nn = pt2D.x - xmax;</b>
+<b class="nc"><i>1190</i>&nbsp;		if (nn &gt; dx)</b>
+<b class="nc"><i>1191</i>&nbsp;			dx = nn;</b>
+<i>1192</i>&nbsp;
+<b class="nc"><i>1193</i>&nbsp;		nn = pt2D.y - ymax;</b>
+<b class="nc"><i>1194</i>&nbsp;		if (nn &gt; dy)</b>
+<b class="nc"><i>1195</i>&nbsp;			dy = nn;</b>
+<i>1196</i>&nbsp;
+<b class="nc"><i>1197</i>&nbsp;		return dx * dx + dy * dy;</b>
+<i>1198</i>&nbsp;	}
+<i>1199</i>&nbsp;
+<i>1200</i>&nbsp;	public void queryIntervalX(Envelope1D env1D)
+<i>1201</i>&nbsp;	{
+<b class="nc"><i>1202</i>&nbsp;		if (isEmpty()) {</b>
+<b class="nc"><i>1203</i>&nbsp;			env1D.setEmpty();</b>
+<i>1204</i>&nbsp;		} else {
+<b class="nc"><i>1205</i>&nbsp;			env1D.setCoords(xmin, xmax);</b>
+<i>1206</i>&nbsp;		}
+<b class="nc"><i>1207</i>&nbsp;	}</b>
+<i>1208</i>&nbsp;
+<i>1209</i>&nbsp;	public void queryIntervalY(Envelope1D env1D)
+<i>1210</i>&nbsp;	{
+<b class="nc"><i>1211</i>&nbsp;		if (isEmpty()) {</b>
+<b class="nc"><i>1212</i>&nbsp;			env1D.setEmpty();</b>
+<i>1213</i>&nbsp;		} else {
+<b class="nc"><i>1214</i>&nbsp;			env1D.setCoords(ymin, ymax);</b>
+<i>1215</i>&nbsp;		}
+<b class="nc"><i>1216</i>&nbsp;	}</b>
+<i>1217</i>&nbsp;	
+<i>1218</i>&nbsp;	 private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+<b class="fc"><i>1219</i>&nbsp;		 out.defaultWriteObject();</b>
+<b class="fc"><i>1220</i>&nbsp;	 }</b>
+<i>1221</i>&nbsp;	 private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+<b class="fc"><i>1222</i>&nbsp;		 in.defaultReadObject();</b>
+<b class="fc"><i>1223</i>&nbsp;	 }</b>
+<i>1224</i>&nbsp;	 private void readObjectNoData() throws ObjectStreamException {
+<b class="nc"><i>1225</i>&nbsp;		 setEmpty();</b>
+<b class="nc"><i>1226</i>&nbsp;	 }</b>
+<i>1227</i>&nbsp;
+<i>1228</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>

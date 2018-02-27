@@ -1,0 +1,148 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OperatorClipCursor</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.esri.core.geometry</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OperatorClipCursor (com.esri.core.geometry)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OperatorClipCursor</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    66.7%
+  </span>
+  <span class="absValue">
+    (2/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.6%
+  </span>
+  <span class="absValue">
+    (11/ 14)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; Copyright 1995-2015 Esri
+<i>3</i>&nbsp;
+<i>4</i>&nbsp;   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp;   you may not use this file except in compliance with the License.
+<i>6</i>&nbsp;   You may obtain a copy of the License at
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;       http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;   Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp;   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp;   See the License for the specific language governing permissions and
+<i>14</i>&nbsp;   limitations under the License.
+<i>15</i>&nbsp;
+<i>16</i>&nbsp; For additional information, contact:
+<i>17</i>&nbsp; Environmental Systems Research Institute, Inc.
+<i>18</i>&nbsp; Attn: Contracts Dept
+<i>19</i>&nbsp; 380 New York Street
+<i>20</i>&nbsp; Redlands, California, USA 92373
+<i>21</i>&nbsp;
+<i>22</i>&nbsp; email: contracts@esri.com
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;package com.esri.core.geometry;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;class OperatorClipCursor extends GeometryCursor {
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;	GeometryCursor m_inputGeometryCursor;
+<i>30</i>&nbsp;	SpatialReferenceImpl m_spatialRefImpl;
+<i>31</i>&nbsp;	Envelope2D m_envelope;
+<i>32</i>&nbsp;	double m_tolerance;
+<i>33</i>&nbsp;	int m_index;
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;	OperatorClipCursor(GeometryCursor geoms, Envelope2D envelope,
+<b class="fc"><i>36</i>&nbsp;			SpatialReference spatial_ref, ProgressTracker progress_tracker) {</b>
+<b class="fc"><i>37</i>&nbsp;		m_index = -1;</b>
+<b class="fc"><i>38</i>&nbsp;		if (geoms == null)</b>
+<b class="nc"><i>39</i>&nbsp;			throw new IllegalArgumentException();</b>
+<i>40</i>&nbsp;
+<b class="fc"><i>41</i>&nbsp;		m_envelope = envelope;</b>
+<b class="fc"><i>42</i>&nbsp;		m_inputGeometryCursor = geoms;</b>
+<b class="fc"><i>43</i>&nbsp;		m_spatialRefImpl = (SpatialReferenceImpl) spatial_ref;</b>
+<b class="fc"><i>44</i>&nbsp;		m_tolerance = InternalUtils.calculateToleranceFromGeometry(spatial_ref,</b>
+<i>45</i>&nbsp;				envelope, false);
+<b class="fc"><i>46</i>&nbsp;	}</b>
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;	@Override
+<i>49</i>&nbsp;	public Geometry next() {
+<i>50</i>&nbsp;		Geometry geometry;
+<b class="fc"><i>51</i>&nbsp;		if ((geometry = m_inputGeometryCursor.next()) != null) {</b>
+<b class="fc"><i>52</i>&nbsp;			m_index = m_inputGeometryCursor.getGeometryID();</b>
+<b class="fc"><i>53</i>&nbsp;			return Clipper.clip(geometry, m_envelope, m_tolerance, 0.0);</b>
+<i>54</i>&nbsp;		}
+<b class="nc"><i>55</i>&nbsp;		return null;</b>
+<i>56</i>&nbsp;	}
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;	@Override
+<i>59</i>&nbsp;	public int getGeometryID() {
+<b class="nc"><i>60</i>&nbsp;		return m_index;</b>
+<i>61</i>&nbsp;	}
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;	// virtual bool IsRecycling() OVERRIDE { return false; }
+<i>64</i>&nbsp;
+<i>65</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-02-27 21:44</div>
+</div>
+</body>
+</html>
