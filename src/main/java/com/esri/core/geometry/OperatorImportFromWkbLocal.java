@@ -427,154 +427,12 @@ class OperatorImportFromWkbLocal extends OperatorImportFromWkb {
 		int part_index = 0;
 
 		// read Coordinates
-		for (int ipolygon = 0; ipolygon < polygonCount; ipolygon++) {
-			offset += 5; // skip redundant byte order and type fields
-			int ipartcount = wkbHelper.getInt(offset);
-			offset += 4;
-			int ipolygonstart = ipolygonend;
-			ipolygonend = ipolygonstart + ipartcount;
-
-			for (int ipart = ipolygonstart; ipart < ipolygonend; ipart++) {
-				int ipointcount = wkbHelper.getInt(offset);
-				offset += 4;
-
-				if (ipointcount == 0)
-					continue;
-
-				int ipartstart = ipartend;
-				ipartend += ipointcount;
-				boolean bSkipLastPoint = true;
-
-				if (ipointcount == 1) {
-					ipartstart++;
-					ipartend++;
-					bSkipLastPoint = false;
-				} else if (ipointcount == 2) {
-					bSkipLastPoint = false;
-				} else {
-					// Check if start point is equal to end point
-
-					int tempOffset = offset;
-
-					double startx = wkbHelper.getDouble(tempOffset);
-					tempOffset += 8;
-					double starty = wkbHelper.getDouble(tempOffset);
-					tempOffset += 8;
-					double startz = NumberUtils.TheNaN;
-					double startm = NumberUtils.TheNaN;
-
-					if (bZs) {
-						startz = wkbHelper.getDouble(tempOffset);
-						tempOffset += 8;
-					}
-
-					if (bMs) {
-						startm = wkbHelper.getDouble(tempOffset);
-						tempOffset += 8;
-					}
-
-					tempOffset += (ipointcount - 2) * 2 * 8;
-
-					if (bZs)
-						tempOffset += (ipointcount - 2) * 8;
-
-					if (bMs)
-						tempOffset += (ipointcount - 2) * 8;
-
-					double endx = wkbHelper.getDouble(tempOffset);
-					tempOffset += 8;
-					double endy = wkbHelper.getDouble(tempOffset);
-					tempOffset += 8;
-					double endz = NumberUtils.TheNaN;
-					double endm = NumberUtils.TheNaN;
-
-					if (bZs) {
-						endz = wkbHelper.getDouble(tempOffset);
-						tempOffset += 8;
-					}
-
-					if (bMs) {
-						endm = wkbHelper.getDouble(tempOffset);
-						tempOffset += 8;
-					}
-
-					if ((startx == endx || (NumberUtils.isNaN(startx) && NumberUtils
-							.isNaN(endx)))
-							&& (starty == endy || (NumberUtils.isNaN(starty) && NumberUtils
-									.isNaN(endy)))
-							&& (!bZs || startz == endz || (NumberUtils
-									.isNaN(startz) && NumberUtils.isNaN(endz)))
-							&& (!bMs || startm == endm || (NumberUtils
-									.isNaN(startm) && NumberUtils.isNaN(endm))))
-						ipartend--;
-					else
-						bSkipLastPoint = false;
-				}
-
-				if (ipart == ipolygonstart)
-					pathFlags.setBits(ipart,
-							(byte) PathFlags.enumOGCStartPolygon);
-
-				parts.write(++part_index, ipartend);
-
-				// We must write from the buffer backwards - ogc polygon
-				// format is opposite of shapefile format
-				for (int i = ipartstart; i < ipartend; i++) {
-					double x = wkbHelper.getDouble(offset);
-					offset += 8;
-					double y = wkbHelper.getDouble(offset);
-					offset += 8;
-
-					position.write(2 * i, x);
-					position.write(2 * i + 1, y);
-
-					if (bZs) {
-						double z = wkbHelper.getDouble(offset);
-						offset += 8;
-
-						zs.write(i, z);
-						if (!VertexDescription.isDefaultValue(
-								VertexDescription.Semantics.Z, z))
-							bCreateZs = true;
-					}
-
-					if (bMs) {
-						double m = wkbHelper.getDouble(offset);
-						offset += 8;
-
-						ms.write(i, m);
-						if (!VertexDescription.isDefaultValue(
-								VertexDescription.Semantics.M, m))
-							bCreateMs = true;
-					}
-				}
-
-				if (bSkipLastPoint) {
-					offset += 2 * 8;
-
-					if (bZs)
-						offset += 8;
-
-					if (bMs)
-						offset += 8;
-				} else if (ipointcount == 1) {
-					double x = position.read(2 * ipartstart);
-					double y = position.read(2 * ipartstart + 1);
-					position.write(2 * (ipartstart - 1), x);
-					position.write(2 * (ipartstart - 1) + 1, y);
-
-					if (bZs) {
-						double z = zs.read(ipartstart);
-						zs.write(ipartstart - 1, z);
-					}
-
-					if (bMs) {
-						double m = ms.read(ipartstart);
-						ms.write(ipartstart - 1, m);
-					}
-				}
-			}
-		}
+		ReadPolygonCoordinates readPolygonCoordinates = new ReadPolygonCoordinates(offset, bMs, bZs, polygonCount,
+				wkbHelper, position, zs, ms, parts, pathFlags, bCreateMs, bCreateZs, ipartend, ipolygonend, part_index)
+				.invoke();
+		bCreateZs = readPolygonCoordinates.isbCreateZs();
+		bCreateMs = readPolygonCoordinates.isbCreateMs();
+		offset = readPolygonCoordinates.getOffset();
 
 		// set envelopes and assign AttributeStreams
 
@@ -627,7 +485,7 @@ class OperatorImportFromWkbLocal extends OperatorImportFromWkb {
 		
 		return newPolygon;
 	}
-	
+
 	private static class CPAPResult
 	{
 		public int point_count;
@@ -1075,5 +933,205 @@ class OperatorImportFromWkbLocal extends OperatorImportFromWkb {
 		wkbHelper.adjustment += offset;
 
 		return point;
+	}
+
+	private static class ReadPolygonCoordinates {
+		private int offset;
+		private boolean bMs;
+		private boolean bZs;
+		private int polygonCount;
+		private WkbHelper wkbHelper;
+		private AttributeStreamOfDbl position;
+		private AttributeStreamOfDbl zs;
+		private AttributeStreamOfDbl ms;
+		private AttributeStreamOfInt32 parts;
+		private AttributeStreamOfInt8 pathFlags;
+		private boolean bCreateMs;
+		private boolean bCreateZs;
+		private int ipartend;
+		private int ipolygonend;
+		private int part_index;
+
+		ReadPolygonCoordinates(int offset, boolean bMs, boolean bZs, int polygonCount, WkbHelper wkbHelper, AttributeStreamOfDbl position, AttributeStreamOfDbl zs, AttributeStreamOfDbl ms, AttributeStreamOfInt32 parts, AttributeStreamOfInt8 pathFlags, boolean bCreateMs, boolean bCreateZs, int ipartend, int ipolygonend, int part_index) {
+			this.offset = offset;
+			this.bMs = bMs;
+			this.bZs = bZs;
+			this.polygonCount = polygonCount;
+			this.wkbHelper = wkbHelper;
+			this.position = position;
+			this.zs = zs;
+			this.ms = ms;
+			this.parts = parts;
+			this.pathFlags = pathFlags;
+			this.bCreateMs = bCreateMs;
+			this.bCreateZs = bCreateZs;
+			this.ipartend = ipartend;
+			this.ipolygonend = ipolygonend;
+			this.part_index = part_index;
+		}
+
+		int getOffset() {
+			return offset;
+		}
+
+		boolean isbCreateMs() {
+			return bCreateMs;
+		}
+
+		boolean isbCreateZs() {
+			return bCreateZs;
+		}
+
+		ReadPolygonCoordinates invoke() {
+			for (int ipolygon = 0; ipolygon < polygonCount; ipolygon++) {
+                offset += 5; // skip redundant byte order and type fields
+                int ipartcount = wkbHelper.getInt(offset);
+                offset += 4;
+                int ipolygonstart = ipolygonend;
+                ipolygonend = ipolygonstart + ipartcount;
+
+                for (int ipart = ipolygonstart; ipart < ipolygonend; ipart++) {
+                    int ipointcount = wkbHelper.getInt(offset);
+                    offset += 4;
+
+                    if (ipointcount == 0)
+                        continue;
+
+                    int ipartstart = ipartend;
+                    ipartend += ipointcount;
+                    boolean bSkipLastPoint = true;
+
+                    if (ipointcount == 1) {
+                        ipartstart++;
+                        ipartend++;
+                        bSkipLastPoint = false;
+                    } else if (ipointcount == 2) {
+                        bSkipLastPoint = false;
+                    } else {
+                        // Check if start point is equal to end point
+
+                        int tempOffset = offset;
+
+                        double startx = wkbHelper.getDouble(tempOffset);
+                        tempOffset += 8;
+                        double starty = wkbHelper.getDouble(tempOffset);
+                        tempOffset += 8;
+                        double startz = NumberUtils.TheNaN;
+                        double startm = NumberUtils.TheNaN;
+
+                        if (bZs) {
+                            startz = wkbHelper.getDouble(tempOffset);
+                            tempOffset += 8;
+                        }
+
+                        if (bMs) {
+                            startm = wkbHelper.getDouble(tempOffset);
+                            tempOffset += 8;
+                        }
+
+                        tempOffset += (ipointcount - 2) * 2 * 8;
+
+                        if (bZs)
+                            tempOffset += (ipointcount - 2) * 8;
+
+                        if (bMs)
+                            tempOffset += (ipointcount - 2) * 8;
+
+                        double endx = wkbHelper.getDouble(tempOffset);
+                        tempOffset += 8;
+                        double endy = wkbHelper.getDouble(tempOffset);
+                        tempOffset += 8;
+                        double endz = NumberUtils.TheNaN;
+                        double endm = NumberUtils.TheNaN;
+
+                        if (bZs) {
+                            endz = wkbHelper.getDouble(tempOffset);
+                            tempOffset += 8;
+                        }
+
+                        if (bMs) {
+                            endm = wkbHelper.getDouble(tempOffset);
+                            tempOffset += 8;
+                        }
+
+                        if ((startx == endx || (NumberUtils.isNaN(startx) && NumberUtils
+                                .isNaN(endx)))
+                                && (starty == endy || (NumberUtils.isNaN(starty) && NumberUtils
+                                        .isNaN(endy)))
+                                && (!bZs || startz == endz || (NumberUtils
+                                        .isNaN(startz) && NumberUtils.isNaN(endz)))
+                                && (!bMs || startm == endm || (NumberUtils
+                                        .isNaN(startm) && NumberUtils.isNaN(endm))))
+                            ipartend--;
+                        else
+                            bSkipLastPoint = false;
+                    }
+
+                    if (ipart == ipolygonstart)
+                        pathFlags.setBits(ipart,
+                                (byte) PathFlags.enumOGCStartPolygon);
+
+                    parts.write(++part_index, ipartend);
+
+                    // We must write from the buffer backwards - ogc polygon
+                    // format is opposite of shapefile format
+                    for (int i = ipartstart; i < ipartend; i++) {
+                        double x = wkbHelper.getDouble(offset);
+                        offset += 8;
+                        double y = wkbHelper.getDouble(offset);
+                        offset += 8;
+
+                        position.write(2 * i, x);
+                        position.write(2 * i + 1, y);
+
+                        if (bZs) {
+                            double z = wkbHelper.getDouble(offset);
+                            offset += 8;
+
+                            zs.write(i, z);
+                            if (!VertexDescription.isDefaultValue(
+                                    VertexDescription.Semantics.Z, z))
+                                bCreateZs = true;
+                        }
+
+                        if (bMs) {
+                            double m = wkbHelper.getDouble(offset);
+                            offset += 8;
+
+                            ms.write(i, m);
+                            if (!VertexDescription.isDefaultValue(
+                                    VertexDescription.Semantics.M, m))
+                                bCreateMs = true;
+                        }
+                    }
+
+                    if (bSkipLastPoint) {
+                        offset += 2 * 8;
+
+                        if (bZs)
+                            offset += 8;
+
+                        if (bMs)
+                            offset += 8;
+                    } else if (ipointcount == 1) {
+                        double x = position.read(2 * ipartstart);
+                        double y = position.read(2 * ipartstart + 1);
+                        position.write(2 * (ipartstart - 1), x);
+                        position.write(2 * (ipartstart - 1) + 1, y);
+
+                        if (bZs) {
+                            double z = zs.read(ipartstart);
+                            zs.write(ipartstart - 1, z);
+                        }
+
+                        if (bMs) {
+                            double m = ms.read(ipartstart);
+                            ms.write(ipartstart - 1, m);
+                        }
+                    }
+                }
+            }
+			return this;
+		}
 	}
 }
