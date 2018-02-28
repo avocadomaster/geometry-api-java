@@ -255,135 +255,20 @@ class OperatorImportFromESRIShapeCursor extends GeometryCursor {
 		if (m_type == Geometry.GeometryType.Polygon
 				|| m_type == Geometry.GeometryType.Polyline
 				|| m_type == Geometry.GeometryType.Unknown) {
-			if (bPolygon)
-				multipath = new Polygon();
-			else
-				multipath = new Polyline();
-
-			multipathImpl = (MultiPathImpl) multipath._getImpl();
-
-			if (pointCount > 0) {
-				bbox = new Envelope();
-				bbox.setCoords(xmin, ymin, xmax, ymax);
-				parts = (AttributeStreamOfInt32) AttributeStreamBase
-						.createIndexStream(originalPartCount + 1);
-
-				int previstart = -1;
-				int lastCount = 0;
-				for (int i = 0; i < originalPartCount; i++) {
-					int istart = shapeBuffer.getInt(offset);
-					offset += 4;
-					lastCount = istart;
-					if (previstart > istart || istart < 0)// check that the part
-															// indices in the
-															// buffer are not
-															// corrupted
-						throw new GeometryException("corrupted geometry");
-
-					if (istart != previstart) {
-						parts.write(partCount, istart);
-						previstart = istart;
-						partCount++;
-					}
-				}
-
-				parts.resize(partCount + 1);
-				if (pointCount < lastCount)// check that the point count in the
-											// buffer is not corrupted
-					throw new GeometryException("corrupted geometry");
-
-				parts.write(partCount, pointCount);
-				pathFlags = (AttributeStreamOfInt8) AttributeStreamBase
-						.createByteStream(parts.size(), (byte) 0);
-
-				// Create empty position stream
-				position = (AttributeStreamOfDbl) AttributeStreamBase
-						.createAttributeStreamWithSemantics(Semantics.POSITION,
-								pointCount);
-
-				int startpart = parts.read(0);
-				// read xy coordinates
-				int xyindex = 0;
-				for (int ipart = 0; ipart < partCount; ipart++) {
-					int endpartActual = parts.read(ipart + 1);
-					// for polygons we read one point less, then analyze if the
-					// polygon is closed.
-					int endpart = (bPolygon) ? endpartActual - 1
-							: endpartActual;
-
-					double startx = shapeBuffer.getDouble(offset);
-					offset += 8;
-					double starty = shapeBuffer.getDouble(offset);
-					offset += 8;
-					position.write(2 * xyindex, startx);
-					position.write(2 * xyindex + 1, starty);
-					xyindex++;
-
-					for (int i = startpart + 1; i < endpart; i++) {
-						double x = shapeBuffer.getDouble(offset);
-						offset += 8;
-						double y = shapeBuffer.getDouble(offset);
-						offset += 8;
-						position.write(2 * xyindex, x);
-						position.write(2 * xyindex + 1, y);
-						xyindex++;
-					}
-
-					if (endpart - startpart < 2) {// a part with only one point
-						multipathImpl.setIsSimple(GeometryXSimple.Unknown, 0.0,
-								false);
-					}
-
-					if (bPolygon) {// read the last point of the part to decide
-									// if we need to close the polygon
-						if (startpart == endpart) {// a part with only one point
-							parts.write(ipart + 1, xyindex);
-						} else {
-							double x = shapeBuffer.getDouble(offset);
-							offset += 8;
-							double y = shapeBuffer.getDouble(offset);
-							offset += 8;
-
-							if (x != startx || y != starty) {// bad polygon. The
-																// last point is
-																// not the same
-																// as the last
-																// one. We need
-																// to add it so
-																// that we do
-																// not loose it.
-								position.write(2 * xyindex, x);
-								position.write(2 * xyindex + 1, y);
-								xyindex++;
-								multipathImpl.setIsSimple(
-										GeometryXSimple.Unknown, 0.0, false);
-								bHasBadRings = true;
-								// write part count to indicate we need to
-								// account for one extra point
-								// The count will be fixed after the attributes
-								// are processed. So we write negative only when
-								// there are attributes.
-								parts.write(ipart + 1,
-										bHasAttributes ? -xyindex : xyindex);
-							} else
-								parts.write(ipart + 1, xyindex);
-						}
-
-						pathFlags.setBits(ipart, (byte) PathFlags.enumClosed);
-					}
-
-					startpart = endpartActual;
-				}
-
-				if (bZs)
-					bbox.addAttribute(Semantics.Z);
-
-				if (bMs)
-					bbox.addAttribute(Semantics.M);
-
-				if (bIDs)
-					bbox.addAttribute(Semantics.ID);
-			}
+			ParseNonEnvelopeFromESRIShapeMultiPath parseNonEnvelopeFromESRIShapeMultiPath =
+					new ParseNonEnvelopeFromESRIShapeMultiPath(bPolygon, shapeBuffer, offset, bZs, bMs,
+							bIDs, bHasAttributes, bHasBadRings, xmin, ymin, xmax, ymax, originalPartCount,
+							partCount, pointCount, position, parts, pathFlags, bbox)
+							.invoke();
+			offset = parseNonEnvelopeFromESRIShapeMultiPath.getOffset();
+			parts = parseNonEnvelopeFromESRIShapeMultiPath.getParts();
+			partCount = parseNonEnvelopeFromESRIShapeMultiPath.getPartCount();
+			multipathImpl = parseNonEnvelopeFromESRIShapeMultiPath.getMultipathImpl();
+			bHasBadRings = parseNonEnvelopeFromESRIShapeMultiPath.isbHasBadRings();
+			pathFlags = parseNonEnvelopeFromESRIShapeMultiPath.getPathFlags();
+			position = parseNonEnvelopeFromESRIShapeMultiPath.getPosition();
+			multipath = parseNonEnvelopeFromESRIShapeMultiPath.getMultipath();
+			bbox = parseNonEnvelopeFromESRIShapeMultiPath.getBbox();
 		} else {
 			bbox = new Envelope();
 
@@ -405,203 +290,17 @@ class OperatorImportFromESRIShapeCursor extends GeometryCursor {
 
 		// read Zs
 		if (bZs) {
-			if (pointCount > 0) {
-				double zmin = Interop.translateFromAVNaN(shapeBuffer
-						.getDouble(offset));
-				offset += 8;
-				double zmax = Interop.translateFromAVNaN(shapeBuffer
-						.getDouble(offset));
-				offset += 8;
-
-				Envelope1D env = new Envelope1D();
-				env.setCoords(zmin, zmax);
-				bbox.setInterval(Semantics.Z, 0, env);
-
-				if (m_type == Geometry.GeometryType.Polygon
-						|| m_type == Geometry.GeometryType.Polyline
-						|| m_type == Geometry.GeometryType.Unknown) {
-					zs = (AttributeStreamOfDbl) AttributeStreamBase
-							.createAttributeStreamWithSemantics(Semantics.Z,
-									pointCount);
-
-					boolean bCreate = false;
-					int startpart = parts.read(0);
-					for (int ipart = 0; ipart < partCount; ipart++) {
-						int endpartActual = parts.read(ipart + 1);
-						int endpart = Math.abs(endpartActual);
-
-						double startz = Interop.translateFromAVNaN(shapeBuffer
-								.getDouble(offset));
-						offset += 8;
-						zs.write(startpart, startz);
-						if (!VertexDescription.isDefaultValue(Semantics.Z,
-								startz))
-							bCreate = true;
-
-						for (int i = startpart + 1; i < endpart; i++) {
-							double z = Interop.translateFromAVNaN(shapeBuffer
-									.getDouble(offset));
-							offset += 8;
-							zs.write(i, z);
-							if (!VertexDescription.isDefaultValue(Semantics.Z,
-									z))
-								bCreate = true;
-						}
-
-						if (bPolygon && endpartActual > 0) {
-							offset += 8;
-						}
-
-						startpart = endpart;
-					}
-
-					if (!bCreate)
-						zs = null;
-				} else
-					offset += pointCount * 8;
-			}
-
-			if (m_type == Geometry.GeometryType.Polygon
-					|| m_type == Geometry.GeometryType.Polyline
-					|| m_type == Geometry.GeometryType.Unknown)
-				multipathImpl.setAttributeStreamRef(Semantics.Z, zs);
+			offset = readZsFromESRIShapeMultiPath(bPolygon, shapeBuffer, offset, partCount, pointCount, zs, parts, bbox, multipathImpl);
 		}
 
 		// read Ms
 		if (bMs) {
-			if (pointCount > 0) {
-				double mmin = Interop.translateFromAVNaN(shapeBuffer
-						.getDouble(offset));
-				offset += 8;
-				double mmax = Interop.translateFromAVNaN(shapeBuffer
-						.getDouble(offset));
-				offset += 8;
-
-				Envelope1D env = new Envelope1D();
-				env.setCoords(mmin, mmax);
-				bbox.setInterval(Semantics.M, 0, env);
-
-				if (m_type == Geometry.GeometryType.Polygon
-						|| m_type == Geometry.GeometryType.Polyline
-						|| m_type == Geometry.GeometryType.Unknown) {
-					ms = (AttributeStreamOfDbl) AttributeStreamBase
-							.createAttributeStreamWithSemantics(Semantics.M,
-									pointCount);
-
-					boolean bCreate = false;
-					int startpart = parts.read(0);
-					for (int ipart = 0; ipart < partCount; ipart++) {
-						int endpartActual = parts.read(ipart + 1);
-						int endpart = Math.abs(endpartActual);
-
-						double startm = Interop.translateFromAVNaN(shapeBuffer
-								.getDouble(offset));
-						offset += 8;
-						ms.write(startpart, startm);
-						if (!VertexDescription.isDefaultValue(Semantics.M,
-								startm))
-							bCreate = true;
-
-						for (int i = startpart + 1; i < endpart; i++) {
-							double m = Interop.translateFromAVNaN(shapeBuffer
-									.getDouble(offset));
-							offset += 8;
-							ms.write(i, m);
-							if (!VertexDescription.isDefaultValue(Semantics.M,
-									m))
-								bCreate = true;
-						}
-
-						if (bPolygon && endpartActual > 0) {
-							offset += 8;
-						}
-
-						startpart = endpart;
-					}
-
-					if (!bCreate)
-						ms = null;
-				} else
-					offset += pointCount * 8;
-			}
-
-			if (m_type == Geometry.GeometryType.Polygon
-					|| m_type == Geometry.GeometryType.Polyline
-					|| m_type == Geometry.GeometryType.Unknown)
-				multipathImpl.setAttributeStreamRef(Semantics.M, ms);
+			offset = readMsFromESRIShapeMultiPath(bPolygon, shapeBuffer, offset, partCount, pointCount, ms, parts, bbox, multipathImpl);
 		}
 
 		// read IDs
 		if (bIDs) {
-			if (pointCount > 0) {
-				double idmin = NumberUtils.doubleMax();
-				double idmax = -NumberUtils.doubleMax();
-
-				if (m_type == Geometry.GeometryType.Polygon
-						|| m_type == Geometry.GeometryType.Polyline
-						|| m_type == Geometry.GeometryType.Unknown) {
-					ids = (AttributeStreamOfInt32) AttributeStreamBase
-							.createAttributeStreamWithSemantics(Semantics.ID,
-									pointCount);
-
-					boolean bCreate = false;
-					int startpart = parts.read(0);
-					for (int ipart = 0; ipart < partCount; ipart++) {
-						int endpartActual = parts.read(ipart + 1);
-						int endpart = Math.abs(endpartActual);
-
-						int startid = shapeBuffer.getInt(offset);
-						offset += 4;
-						ids.write(startpart, startid);
-						if (!VertexDescription.isDefaultValue(Semantics.ID,
-								startid))
-							bCreate = true;
-
-						for (int i = startpart + 1; i < endpart; i++) {
-							int id = shapeBuffer.getInt(offset);
-							offset += 4;
-							ids.write(i, id);
-							if (!bCreate
-									&& !VertexDescription.isDefaultValue(
-											Semantics.ID, id))
-								bCreate = true;
-
-							if (idmin > id)
-								idmin = id;
-							else if (idmax < id)
-								idmax = id;
-						}
-
-						if (bPolygon && endpartActual > 0) {
-							offset += 4;
-						}
-
-						startpart = endpart;
-					}
-
-					if (!bCreate)
-						ids = null;
-				} else {
-					for (int i = 0; i < pointCount; i++) {
-						int id = shapeBuffer.getInt(offset);
-						offset += 4;
-
-						if (idmin > id)
-							idmin = id;
-						else if (idmax < id)
-							idmax = id;
-					}
-				}
-
-				Envelope1D env = new Envelope1D();
-				env.setCoords(idmin, idmax);
-				bbox.setInterval(Semantics.ID, 0, env);
-			}
-
-			if (m_type == Geometry.GeometryType.Polygon
-					|| m_type == Geometry.GeometryType.Polyline
-					|| m_type == Geometry.GeometryType.Unknown)
-				multipathImpl.setAttributeStreamRef(Semantics.ID, ids);
+			readIDsFromESRIShapeMultiPath(bPolygon, shapeBuffer, offset, partCount, pointCount, ids, parts, bbox, multipathImpl);
 		}
 
 		if (bHasBadRings && bHasAttributes) {// revert our hack for bad polygons
@@ -633,6 +332,250 @@ class OperatorImportFromESRIShapeCursor extends GeometryCursor {
 																		// instead?
 
 		return (Geometry) multipath;
+	}
+
+	/**
+	 * Read IDs From ESRI Shape
+	 * @param bPolygon
+	 * @param shapeBuffer
+	 * @param offset
+	 * @param partCount
+	 * @param pointCount
+	 * @param ids
+	 * @param parts
+	 * @param bbox
+	 * @param multipathImpl
+	 */
+	private void readIDsFromESRIShapeMultiPath(boolean bPolygon, ByteBuffer shapeBuffer, int offset, int partCount,
+											   int pointCount, AttributeStreamOfInt32 ids, AttributeStreamOfInt32 parts,
+											   Envelope bbox, MultiPathImpl multipathImpl) {
+		if (pointCount > 0) {
+            double idmin = NumberUtils.doubleMax();
+            double idmax = -NumberUtils.doubleMax();
+
+            if (m_type == Geometry.GeometryType.Polygon
+                    || m_type == Geometry.GeometryType.Polyline
+                    || m_type == Geometry.GeometryType.Unknown) {
+                ids = (AttributeStreamOfInt32) AttributeStreamBase
+                        .createAttributeStreamWithSemantics(Semantics.ID,
+                                pointCount);
+
+                boolean bCreate = false;
+                int startpart = parts.read(0);
+                for (int ipart = 0; ipart < partCount; ipart++) {
+                    int endpartActual = parts.read(ipart + 1);
+                    int endpart = Math.abs(endpartActual);
+
+                    int startid = shapeBuffer.getInt(offset);
+                    offset += 4;
+                    ids.write(startpart, startid);
+                    if (!VertexDescription.isDefaultValue(Semantics.ID,
+                            startid))
+                        bCreate = true;
+
+                    for (int i = startpart + 1; i < endpart; i++) {
+                        int id = shapeBuffer.getInt(offset);
+                        offset += 4;
+                        ids.write(i, id);
+                        if (!bCreate
+                                && !VertexDescription.isDefaultValue(
+                                        Semantics.ID, id))
+                            bCreate = true;
+
+                        if (idmin > id)
+                            idmin = id;
+                        else if (idmax < id)
+                            idmax = id;
+                    }
+
+                    if (bPolygon && endpartActual > 0) {
+                        offset += 4;
+                    }
+
+                    startpart = endpart;
+                }
+
+                if (!bCreate)
+                    ids = null;
+            } else {
+                for (int i = 0; i < pointCount; i++) {
+                    int id = shapeBuffer.getInt(offset);
+                    offset += 4;
+
+                    if (idmin > id)
+                        idmin = id;
+                    else if (idmax < id)
+                        idmax = id;
+                }
+            }
+
+            Envelope1D env = new Envelope1D();
+            env.setCoords(idmin, idmax);
+            bbox.setInterval(Semantics.ID, 0, env);
+        }
+
+		if (m_type == Geometry.GeometryType.Polygon
+                || m_type == Geometry.GeometryType.Polyline
+                || m_type == Geometry.GeometryType.Unknown)
+            multipathImpl.setAttributeStreamRef(Semantics.ID, ids);
+	}
+
+	/**
+	 * Read Ms from ESRI shape
+	 * @param bPolygon
+	 * @param shapeBuffer
+	 * @param offset
+	 * @param partCount
+	 * @param pointCount
+	 * @param ms
+	 * @param parts
+	 * @param bbox
+	 * @param multipathImpl
+	 * @return
+	 */
+	private int readMsFromESRIShapeMultiPath(boolean bPolygon, ByteBuffer shapeBuffer, int offset, int partCount,
+											 int pointCount, AttributeStreamOfDbl ms, AttributeStreamOfInt32 parts,
+											 Envelope bbox, MultiPathImpl multipathImpl) {
+		if (pointCount > 0) {
+            double mmin = Interop.translateFromAVNaN(shapeBuffer
+                    .getDouble(offset));
+            offset += 8;
+            double mmax = Interop.translateFromAVNaN(shapeBuffer
+                    .getDouble(offset));
+            offset += 8;
+
+            Envelope1D env = new Envelope1D();
+            env.setCoords(mmin, mmax);
+            bbox.setInterval(Semantics.M, 0, env);
+
+            if (m_type == Geometry.GeometryType.Polygon
+                    || m_type == Geometry.GeometryType.Polyline
+                    || m_type == Geometry.GeometryType.Unknown) {
+                ms = (AttributeStreamOfDbl) AttributeStreamBase
+                        .createAttributeStreamWithSemantics(Semantics.M,
+                                pointCount);
+
+                boolean bCreate = false;
+                int startpart = parts.read(0);
+                for (int ipart = 0; ipart < partCount; ipart++) {
+                    int endpartActual = parts.read(ipart + 1);
+                    int endpart = Math.abs(endpartActual);
+
+                    double startm = Interop.translateFromAVNaN(shapeBuffer
+                            .getDouble(offset));
+                    offset += 8;
+                    ms.write(startpart, startm);
+                    if (!VertexDescription.isDefaultValue(Semantics.M,
+                            startm))
+                        bCreate = true;
+
+                    for (int i = startpart + 1; i < endpart; i++) {
+                        double m = Interop.translateFromAVNaN(shapeBuffer
+                                .getDouble(offset));
+                        offset += 8;
+                        ms.write(i, m);
+                        if (!VertexDescription.isDefaultValue(Semantics.M,
+                                m))
+                            bCreate = true;
+                    }
+
+                    if (bPolygon && endpartActual > 0) {
+                        offset += 8;
+                    }
+
+                    startpart = endpart;
+                }
+
+                if (!bCreate)
+                    ms = null;
+            } else
+                offset += pointCount * 8;
+        }
+
+		if (m_type == Geometry.GeometryType.Polygon
+                || m_type == Geometry.GeometryType.Polyline
+                || m_type == Geometry.GeometryType.Unknown)
+            multipathImpl.setAttributeStreamRef(Semantics.M, ms);
+		return offset;
+	}
+
+	/**
+	 * Read Zs from ESRI Shape
+	 * @param bPolygon
+	 * @param shapeBuffer
+	 * @param offset
+	 * @param partCount
+	 * @param pointCount
+	 * @param zs
+	 * @param parts
+	 * @param bbox
+	 * @param multipathImpl
+	 * @return
+	 */
+	private int readZsFromESRIShapeMultiPath(boolean bPolygon, ByteBuffer shapeBuffer, int offset, int partCount,
+											 int pointCount, AttributeStreamOfDbl zs, AttributeStreamOfInt32 parts,
+											 Envelope bbox, MultiPathImpl multipathImpl) {
+		if (pointCount > 0) {
+            double zmin = Interop.translateFromAVNaN(shapeBuffer
+                    .getDouble(offset));
+            offset += 8;
+            double zmax = Interop.translateFromAVNaN(shapeBuffer
+                    .getDouble(offset));
+            offset += 8;
+
+            Envelope1D env = new Envelope1D();
+            env.setCoords(zmin, zmax);
+            bbox.setInterval(Semantics.Z, 0, env);
+
+            if (m_type == Geometry.GeometryType.Polygon
+                    || m_type == Geometry.GeometryType.Polyline
+                    || m_type == Geometry.GeometryType.Unknown) {
+                zs = (AttributeStreamOfDbl) AttributeStreamBase
+                        .createAttributeStreamWithSemantics(Semantics.Z,
+                                pointCount);
+
+                boolean bCreate = false;
+                int startpart = parts.read(0);
+                for (int ipart = 0; ipart < partCount; ipart++) {
+                    int endpartActual = parts.read(ipart + 1);
+                    int endpart = Math.abs(endpartActual);
+
+                    double startz = Interop.translateFromAVNaN(shapeBuffer
+                            .getDouble(offset));
+                    offset += 8;
+                    zs.write(startpart, startz);
+                    if (!VertexDescription.isDefaultValue(Semantics.Z,
+                            startz))
+                        bCreate = true;
+
+                    for (int i = startpart + 1; i < endpart; i++) {
+                        double z = Interop.translateFromAVNaN(shapeBuffer
+                                .getDouble(offset));
+                        offset += 8;
+                        zs.write(i, z);
+                        if (!VertexDescription.isDefaultValue(Semantics.Z,
+                                z))
+                            bCreate = true;
+                    }
+
+                    if (bPolygon && endpartActual > 0) {
+                        offset += 8;
+                    }
+
+                    startpart = endpart;
+                }
+
+                if (!bCreate)
+                    zs = null;
+            } else
+                offset += pointCount * 8;
+        }
+
+		if (m_type == Geometry.GeometryType.Polygon
+                || m_type == Geometry.GeometryType.Polyline
+                || m_type == Geometry.GeometryType.Unknown)
+            multipathImpl.setAttributeStreamRef(Semantics.Z, zs);
+		return offset;
 	}
 
 	private Geometry importFromESRIShapeMultiPoint(int modifiers,
@@ -1009,4 +952,229 @@ class OperatorImportFromESRIShapeCursor extends GeometryCursor {
 		return (Geometry) point;
 	}
 
+	/**
+	 * Class that can parse non envelope geometric types from buffer
+	 */
+	private class ParseNonEnvelopeFromESRIShapeMultiPath {
+		private boolean bPolygon;
+		private ByteBuffer shapeBuffer;
+		private int offset;
+		private boolean bZs;
+		private boolean bMs;
+		private boolean bIDs;
+		private boolean bHasAttributes;
+		private boolean bHasBadRings;
+		private double xmin;
+		private double ymin;
+		private double xmax;
+		private double ymax;
+		private int originalPartCount;
+		private int partCount;
+		private int pointCount;
+		private AttributeStreamOfDbl position;
+		private AttributeStreamOfInt32 parts;
+		private AttributeStreamOfInt8 pathFlags;
+		private MultiPath multipath;
+		private MultiPathImpl multipathImpl;
+		private Envelope bbox;
+
+		ParseNonEnvelopeFromESRIShapeMultiPath(boolean bPolygon, ByteBuffer shapeBuffer, int offset,
+											   boolean bZs, boolean bMs, boolean bIDs, boolean bHasAttributes,
+											   boolean bHasBadRings, double xmin, double ymin, double xmax,
+											   double ymax, int originalPartCount, int partCount,
+											   int pointCount, AttributeStreamOfDbl position,
+											   AttributeStreamOfInt32 parts, AttributeStreamOfInt8 pathFlags, Envelope bbox) {
+			this.bPolygon = bPolygon;
+			this.shapeBuffer = shapeBuffer;
+			this.offset = offset;
+			this.bZs = bZs;
+			this.bMs = bMs;
+			this.bIDs = bIDs;
+			this.bHasAttributes = bHasAttributes;
+			this.bHasBadRings = bHasBadRings;
+			this.xmin = xmin;
+			this.ymin = ymin;
+			this.xmax = xmax;
+			this.ymax = ymax;
+			this.originalPartCount = originalPartCount;
+			this.partCount = partCount;
+			this.pointCount = pointCount;
+			this.position = position;
+			this.parts = parts;
+			this.pathFlags = pathFlags;
+			this.bbox = bbox;
+		}
+
+		int getOffset() {
+			return offset;
+		}
+
+		boolean isbHasBadRings() {
+			return bHasBadRings;
+		}
+
+		int getPartCount() {
+			return partCount;
+		}
+
+		AttributeStreamOfDbl getPosition() {
+			return position;
+		}
+
+		AttributeStreamOfInt32 getParts() {
+			return parts;
+		}
+
+		AttributeStreamOfInt8 getPathFlags() {
+			return pathFlags;
+		}
+
+		MultiPath getMultipath() {
+			return multipath;
+		}
+
+		MultiPathImpl getMultipathImpl() {
+			return multipathImpl;
+		}
+
+		Envelope getBbox() {
+			return bbox;
+		}
+
+		/**
+		 * Parse non envelope from ESRI shape
+		 */
+		ParseNonEnvelopeFromESRIShapeMultiPath invoke() {
+			if (bPolygon)
+				multipath = new Polygon();
+			else
+				multipath = new Polyline();
+
+			multipathImpl = (MultiPathImpl) multipath._getImpl();
+
+			if (pointCount > 0) {
+				bbox = new Envelope();
+				bbox.setCoords(xmin, ymin, xmax, ymax);
+				parts = (AttributeStreamOfInt32) AttributeStreamBase
+						.createIndexStream(originalPartCount + 1);
+
+				int previstart = -1;
+				int lastCount = 0;
+				for (int i = 0; i < originalPartCount; i++) {
+					int istart = shapeBuffer.getInt(offset);
+					offset += 4;
+					lastCount = istart;
+					if (previstart > istart || istart < 0)// check that the part
+															// indices in the
+															// buffer are not
+															// corrupted
+						throw new GeometryException("corrupted geometry");
+
+					if (istart != previstart) {
+						parts.write(partCount, istart);
+						previstart = istart;
+						partCount++;
+					}
+				}
+
+				parts.resize(partCount + 1);
+				if (pointCount < lastCount)// check that the point count in the
+											// buffer is not corrupted
+					throw new GeometryException("corrupted geometry");
+
+				parts.write(partCount, pointCount);
+				pathFlags = (AttributeStreamOfInt8) AttributeStreamBase
+						.createByteStream(parts.size(), (byte) 0);
+
+				// Create empty position stream
+				position = (AttributeStreamOfDbl) AttributeStreamBase
+						.createAttributeStreamWithSemantics(Semantics.POSITION,
+								pointCount);
+
+				int startpart = parts.read(0);
+				// read xy coordinates
+				int xyindex = 0;
+				for (int ipart = 0; ipart < partCount; ipart++) {
+					int endpartActual = parts.read(ipart + 1);
+					// for polygons we read one point less, then analyze if the
+					// polygon is closed.
+					int endpart = (bPolygon) ? endpartActual - 1
+							: endpartActual;
+
+					double startx = shapeBuffer.getDouble(offset);
+					offset += 8;
+					double starty = shapeBuffer.getDouble(offset);
+					offset += 8;
+					position.write(2 * xyindex, startx);
+					position.write(2 * xyindex + 1, starty);
+					xyindex++;
+
+					for (int i = startpart + 1; i < endpart; i++) {
+						double x = shapeBuffer.getDouble(offset);
+						offset += 8;
+						double y = shapeBuffer.getDouble(offset);
+						offset += 8;
+						position.write(2 * xyindex, x);
+						position.write(2 * xyindex + 1, y);
+						xyindex++;
+					}
+
+					if (endpart - startpart < 2) {// a part with only one point
+						multipathImpl.setIsSimple(GeometryXSimple.Unknown, 0.0,
+								false);
+					}
+
+					if (bPolygon) {// read the last point of the part to decide
+									// if we need to close the polygon
+						if (startpart == endpart) {// a part with only one point
+							parts.write(ipart + 1, xyindex);
+						} else {
+							double x = shapeBuffer.getDouble(offset);
+							offset += 8;
+							double y = shapeBuffer.getDouble(offset);
+							offset += 8;
+
+							if (x != startx || y != starty) {// bad polygon. The
+																// last point is
+																// not the same
+																// as the last
+																// one. We need
+																// to add it so
+																// that we do
+																// not loose it.
+								position.write(2 * xyindex, x);
+								position.write(2 * xyindex + 1, y);
+								xyindex++;
+								multipathImpl.setIsSimple(
+										GeometryXSimple.Unknown, 0.0, false);
+								bHasBadRings = true;
+								// write part count to indicate we need to
+								// account for one extra point
+								// The count will be fixed after the attributes
+								// are processed. So we write negative only when
+								// there are attributes.
+								parts.write(ipart + 1,
+										bHasAttributes ? -xyindex : xyindex);
+							} else
+								parts.write(ipart + 1, xyindex);
+						}
+
+						pathFlags.setBits(ipart, (byte) PathFlags.enumClosed);
+					}
+
+					startpart = endpartActual;
+				}
+
+				if (bZs)
+					bbox.addAttribute(Semantics.Z);
+
+				if (bMs)
+					bbox.addAttribute(Semantics.M);
+
+				if (bIDs)
+					bbox.addAttribute(Semantics.ID);
+			}
+			return this;
+		}
+	}
 }
