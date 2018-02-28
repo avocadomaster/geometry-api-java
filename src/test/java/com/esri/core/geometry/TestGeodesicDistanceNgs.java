@@ -15,7 +15,7 @@ public class TestGeodesicDistanceNgs extends TestCase {
 	}
 
 	@Test
-	public void test1() {
+	public void testPointsAreSame() {
 		PeDouble p1 = new PeDouble(0);
 		PeDouble p2 = new PeDouble(0);
 		PeDouble p3 = new PeDouble(0);
@@ -26,7 +26,7 @@ public class TestGeodesicDistanceNgs extends TestCase {
 	}
 	
 	@Test
-	public void test2() {
+	public void testAntipodal1() {
 		PeDouble p1 = new PeDouble(0);
 		PeDouble p2 = new PeDouble(0);
 		PeDouble p3 = new PeDouble(0);
@@ -37,7 +37,7 @@ public class TestGeodesicDistanceNgs extends TestCase {
 	}
 	
 	@Test
-	public void test3() {
+	public void testAntipodal2() {
 		PeDouble p1 = new PeDouble(0);
 		PeDouble p2 = new PeDouble(0);
 		PeDouble p3 = new PeDouble(0);
@@ -48,7 +48,7 @@ public class TestGeodesicDistanceNgs extends TestCase {
 	}
 	
 	@Test
-	public void test4() {
+	public void testSphere() {
 		PeDouble p1 = new PeDouble(0);
 		PeDouble p2 = new PeDouble(0);
 		PeDouble p3 = new PeDouble(0);
