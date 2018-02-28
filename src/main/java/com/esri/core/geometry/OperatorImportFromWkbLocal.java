@@ -381,111 +381,19 @@ class OperatorImportFromWkbLocal extends OperatorImportFromWkb {
 		}
 
 		// Find total point count and part count
-		int point_count = 0;
-		int partCount = 0;
-		int tempOffset = offset;
-		for (int ipolygon = 0; ipolygon < polygonCount; ipolygon++) {
-			tempOffset += 5; // skip redundant byte order and type fields
-			int ipartcount = wkbHelper.getInt(tempOffset);
-			tempOffset += 4;
-
-			for (int ipart = 0; ipart < ipartcount; ipart++) {
-				int ipointcount = wkbHelper.getInt(tempOffset);
-				tempOffset += 4;
-
-				// If ipointcount == 0, then we have an empty part
-				if (ipointcount == 0)
-					continue;
-
-				if (ipointcount <= 2) {
-					tempOffset += ipointcount * 2 * 8;
-
-					if (bZs)
-						tempOffset += ipointcount * 8;
-
-					if (bMs)
-						tempOffset += ipointcount * 8;
-
-					if (ipointcount == 1)
-						point_count += ipointcount + 1;
-					else
-						point_count += ipointcount;
-
-					partCount++;
-
-					continue;
-				}
-
-				double startx = wkbHelper.getDouble(tempOffset);
-				tempOffset += 8;
-				double starty = wkbHelper.getDouble(tempOffset);
-				tempOffset += 8;
-				double startz = NumberUtils.TheNaN;
-				double startm = NumberUtils.TheNaN;
-
-				if (bZs) {
-					startz = wkbHelper.getDouble(tempOffset);
-					tempOffset += 8;
-				}
-
-				if (bMs) {
-					startm = wkbHelper.getDouble(tempOffset);
-					tempOffset += 8;
-				}
-
-				tempOffset += (ipointcount - 2) * 2 * 8;
-
-				if (bZs)
-					tempOffset += (ipointcount - 2) * 8;
-
-				if (bMs)
-					tempOffset += (ipointcount - 2) * 8;
-
-				double endx = wkbHelper.getDouble(tempOffset);
-				tempOffset += 8;
-				double endy = wkbHelper.getDouble(tempOffset);
-				tempOffset += 8;
-				double endz = NumberUtils.TheNaN;
-				double endm = NumberUtils.TheNaN;
-
-				if (bZs) {
-					endz = wkbHelper.getDouble(tempOffset);
-					tempOffset += 8;
-				}
-
-				if (bMs) {
-					endm = wkbHelper.getDouble(tempOffset);
-					tempOffset += 8;
-				}
-
-				if ((startx == endx || (NumberUtils.isNaN(startx) && NumberUtils
-						.isNaN(endx)))
-						&& (starty == endy || (NumberUtils.isNaN(starty) && NumberUtils
-								.isNaN(endy)))
-						&& (!bZs || startz == endz || (NumberUtils
-								.isNaN(startz) && NumberUtils.isNaN(endz)))
-						&& (!bMs || startm == endm || (NumberUtils
-								.isNaN(startm) && NumberUtils.isNaN(endm)))) {
-					point_count += ipointcount - 1;
-				} else {
-					point_count += ipointcount;
-				}
-
-				partCount++;
-			}
-		}
-
+		CPAPResult res = calculatePointAndPartCount(offset, bMs, bZs, polygonCount, wkbHelper);
+		return createNewPolygon(offset, bMs, bZs, polygonCount, wkbHelper, res.point_count, res.partCount, importFlags);
+	}
+	
+	private static Geometry createNewPolygon(int offset, boolean bMs, boolean bZs, int polygonCount, WkbHelper wkbHelper, int point_count, int partCount, int importFlags)
+	{
+		Geometry newPolygon = new Polygon();
 		AttributeStreamOfDbl position = null;
 		AttributeStreamOfDbl zs = null;
 		AttributeStreamOfDbl ms = null;
 		AttributeStreamOfInt32 parts = null;
 		AttributeStreamOfInt8 pathFlags = null;
-
-		Geometry newPolygon;
-		MultiPathImpl polygon;
-
-		newPolygon = new Polygon();
-		polygon = (MultiPathImpl) newPolygon._getImpl();
+		MultiPathImpl polygon = (MultiPathImpl) newPolygon._getImpl();
 
 		if (bZs)
 			polygon.addAttribute(VertexDescription.Semantics.Z);
@@ -546,7 +454,7 @@ class OperatorImportFromWkbLocal extends OperatorImportFromWkb {
 				} else {
 					// Check if start point is equal to end point
 
-					tempOffset = offset;
+					int tempOffset = offset;
 
 					double startx = wkbHelper.getDouble(tempOffset);
 					tempOffset += 8;
@@ -716,9 +624,121 @@ class OperatorImportFromWkbLocal extends OperatorImportFromWkb {
 
 		polygon.setDirtyOGCFlags(false);
 		wkbHelper.adjustment += offset;
-
+		
 		return newPolygon;
 	}
+	
+	private static class CPAPResult
+	{
+		public int point_count;
+		public int partCount;
+		public CPAPResult(int point_count, int partCount)
+		{
+			this.point_count = point_count;
+			this.partCount = partCount;
+		}
+	}
+	
+	private static CPAPResult calculatePointAndPartCount(int offset, boolean bMs, boolean bZs, int polygonCount, WkbHelper wkbHelper)
+	{
+		int point_count = 0;
+		int partCount = 0;
+		int tempOffset = offset;
+		for (int ipolygon = 0; ipolygon < polygonCount; ipolygon++) {
+			tempOffset += 5; // skip redundant byte order and type fields
+			int ipartcount = wkbHelper.getInt(tempOffset);
+			tempOffset += 4;
+
+			for (int ipart = 0; ipart < ipartcount; ipart++) {
+				int ipointcount = wkbHelper.getInt(tempOffset);
+				tempOffset += 4;
+
+				// If ipointcount == 0, then we have an empty part
+				if (ipointcount == 0)
+					continue;
+
+				if (ipointcount <= 2) {
+					tempOffset += ipointcount * 2 * 8;
+
+					if (bZs)
+						tempOffset += ipointcount * 8;
+
+					if (bMs)
+						tempOffset += ipointcount * 8;
+
+					if (ipointcount == 1)
+						point_count += ipointcount + 1;
+					else
+						point_count += ipointcount;
+
+					partCount++;
+
+					continue;
+				}
+
+				double startx = wkbHelper.getDouble(tempOffset);
+				tempOffset += 8;
+				double starty = wkbHelper.getDouble(tempOffset);
+				tempOffset += 8;
+				double startz = NumberUtils.TheNaN;
+				double startm = NumberUtils.TheNaN;
+
+				if (bZs) {
+					startz = wkbHelper.getDouble(tempOffset);
+					tempOffset += 8;
+				}
+
+				if (bMs) {
+					startm = wkbHelper.getDouble(tempOffset);
+					tempOffset += 8;
+				}
+
+				tempOffset += (ipointcount - 2) * 2 * 8;
+
+				if (bZs)
+					tempOffset += (ipointcount - 2) * 8;
+
+				if (bMs)
+					tempOffset += (ipointcount - 2) * 8;
+
+				double endx = wkbHelper.getDouble(tempOffset);
+				tempOffset += 8;
+				double endy = wkbHelper.getDouble(tempOffset);
+				tempOffset += 8;
+				double endz = NumberUtils.TheNaN;
+				double endm = NumberUtils.TheNaN;
+
+				if (bZs) {
+					endz = wkbHelper.getDouble(tempOffset);
+					tempOffset += 8;
+				}
+
+				if (bMs) {
+					endm = wkbHelper.getDouble(tempOffset);
+					tempOffset += 8;
+				}
+
+				if ((startx == endx || (NumberUtils.isNaN(startx) && NumberUtils
+						.isNaN(endx)))
+						&& (starty == endy || (NumberUtils.isNaN(starty) && NumberUtils
+								.isNaN(endy)))
+						&& (!bZs || startz == endz || (NumberUtils
+								.isNaN(startz) && NumberUtils.isNaN(endz)))
+						&& (!bMs || startm == endm || (NumberUtils
+								.isNaN(startm) && NumberUtils.isNaN(endm)))) {
+					point_count += ipointcount - 1;
+				} else {
+					point_count += ipointcount;
+				}
+
+				partCount++;
+			}
+		}
+		return new CPAPResult(point_count, partCount);
+		
+	}
+	
+	
 
 	private static Geometry importFromWkbPolyline(boolean bMultiPolyline,
 			int importFlags, boolean bZs, boolean bMs, WkbHelper wkbHelper) {
